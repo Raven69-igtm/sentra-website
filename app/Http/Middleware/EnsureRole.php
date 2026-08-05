@@ -25,11 +25,8 @@ class EnsureRole
             ]);
         }
 
-        // Superadmin bypasses role checks
-        if ($user->isSuperAdmin()) {
-            return $next($request);
-        }
-
+        // Superadmin TIDAK lagi bypass: akses modul operasional mengikuti
+        // role eksplisit (superadmin hanya untuk modul superadmin/*).
         // Expanded check: jika role yang diminta adalah 'admin', izinkan admin_ppa dan admin_dinsos
         if (in_array('admin', $roles, true) && in_array($user->role, ['admin', 'admin_ppa', 'admin_dinsos'], true)) {
             return $next($request);
