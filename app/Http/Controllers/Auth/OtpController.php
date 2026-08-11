@@ -22,25 +22,26 @@ public function sendOtp(Request $request)
         return redirect()->back()->withErrors(['email' => 'Email tidak ditemukan.']);
     }
 
-    if ($user->role !== 'admin') {
+    if (!in_array($user->role, ['admin', 'admin_ppa', 'admin_dinsos', 'superadmin'], true)) {
         return redirect()->back()->withErrors(['email' => 'Hanya admin yang dapat melakukan reset password.']);
     }
 
+    $minutes = (int) (\App\Models\SystemSetting::get('otp_expiry_minutes', 5));
     $otp = rand(100000, 999999);
-    $expiry = Carbon::now()->addMinutes(5);
+    $expiry = Carbon::now()->addMinutes($minutes);
 
     DB::table('akun')->where('email', $request->email)->update([
         'otp' => $otp,
         'otp_expiry' => $expiry
     ]);
 
-    Mail::raw("Kode OTP Anda adalah: $otp. Berlaku selama 5 menit.", function ($message) use ($request) {
+    Mail::raw("Kode OTP Anda adalah: $otp. Berlaku selama {$minutes} menit.", function ($message) use ($request) {
         $message->to($request->email)->subject('Reset Password - Kode OTP');
     });
 
     session(['email' => $request->email]);
 
-    return redirect()->route('otp.form')->with('message', 'Kode OTP telah dikirim ke email Anda.');
+    return redirect()->route('otp.form')->with('message', "Kode OTP telah dikirim ke email Anda (berlaku {$minutes} menit).");
 }
 
 

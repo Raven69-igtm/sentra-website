@@ -4,10 +4,15 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="apple-touch-icon" sizes="76x76" href="{{ 'backend/assets/img/logo-sentra.png' }}">
-    <link rel="icon" type="image/png" href="{{ 'backend/assets/img/logo-sentra.png' }}">
+    @if ($appLogo = \App\Models\SystemSetting::get('app_logo'))
+        <link rel="apple-touch-icon" sizes="76x76" href="{{ asset($appLogo) }}">
+        <link rel="icon" type="image/png" href="{{ asset($appLogo) }}">
+    @else
+        <link rel="apple-touch-icon" sizes="76x76" href="{{ asset('backend/assets/img/logo-sentra.png') }}">
+        <link rel="icon" type="image/png" href="{{ asset('backend/assets/img/logo-sentra.png') }}">
+    @endif
     <title>
-        SENTRA
+        {{ \App\Models\SystemSetting::get('app_name', 'SENTRA') }} - Login
     </title>
     <!--     Fonts and icons     -->
     <link rel="stylesheet" type="text/css"
@@ -40,8 +45,8 @@
 
                         <div class="col-xl-5 col-lg-5 col-md-7 d-flex flex-column ms-auto me-auto ms-lg-auto me-lg-0">
                             <div class="card-header ms-3">
-                                <h3 class="font-weight-bolder custom-title">Login</h3>
-                                <p class="mb-0 custom-subtitle">Masukkan Email dan Password untuk Login</p>
+                                <h3 class="font-weight-bolder custom-title">Login {{ \App\Models\SystemSetting::get('app_name', 'SENTRA') }}</h3>
+                                <p class="mb-0 custom-subtitle">Portal {{ \App\Models\SystemSetting::get('instansi_name', 'Dinas Sosial PPPA') }}</p>
                             </div>
 
                             <div class="card card-plain">
