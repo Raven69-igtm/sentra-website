@@ -19,9 +19,11 @@ use App\Http\Controllers\Superadmin\SuperadminDashboardController;
 use App\Http\Controllers\Superadmin\SuperadminAkunController;
 use App\Http\Controllers\Superadmin\SuperadminRoleController;
 use App\Http\Controllers\Superadmin\SuperadminSettingController;
-use App\Http\Controllers\Superadmin\SuperadminLaporanController;
+use App\Http\Controllers\Superadmin\SuperadminProfileController;
+use App\Http\Controllers\Superadmin\SuperadminAuditController;
 use App\Http\Controllers\DinsosDashboardController;
 use App\Http\Controllers\DinsosLaporanController;
+use App\Models\ActivityLog;
 
 // =======================
 // ROUTE GUEST (BELUM LOGIN)
@@ -48,11 +50,12 @@ Route::middleware(['guest'])->group(function () {
 // =======================
 Route::middleware(['auth'])->group(function () {
 
-    // Dashboard
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    // Dashboard (modul operasional admin instansi — superadmin tidak diizinkan)
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->middleware('role:admin')->name('dashboard');
 
-    // Laporan
-Route::controller(LaporanController::class)->group(function () {
+    // Laporan (modul operasional — akses dibatasi per instansi via role:admin + scope forUser)
+Route::controller(LaporanController::class)->middleware('role:admin')->group(function () {
     Route::get('/laporan', 'proses')->name('laporan_proses');
     Route::get('/laporan_selesai', 'laporan_selesai')->name('selesai');
     Route::get('/laporan/{id}', 'laporan_show')->name('laporan.show');
@@ -65,8 +68,8 @@ Route::controller(LaporanController::class)->group(function () {
     Route::put('/laporan/{id}/rujuk', 'rujuk')->name('laporan.rujuk');
 });
 
-    // Informasi
-    Route::controller(InformasiController::class)->group(function () {
+    // Informasi (pengelolaan konten publik oleh admin instansi)
+    Route::controller(InformasiController::class)->middleware('role:admin')->group(function () {
         Route::get('/informasi', 'index')->name('informasi.index');
         Route::post('/informasi', 'store')->name('informasi.store');
         Route::get('/informasi/{id}/edit', 'edit')->name('informasi.edit');
@@ -74,15 +77,18 @@ Route::controller(LaporanController::class)->group(function () {
         Route::delete('/informasi/{id}', 'destroy')->name('informasi.destroy');
     });
 
-    // Informasi Anak
-    Route::delete('/anak/{id}', [InformasiAnakController::class, 'destroy'])->name('anak.destroy');
+    // Informasi Anak (data dalam laporan — bukan milik superadmin)
+    Route::delete('/anak/{id}', [InformasiAnakController::class, 'destroy'])
+        ->middleware('role:admin')->name('anak.destroy');
 
-    // Rekapan
-    Route::get('/rekapan', [RekapanController::class, 'index'])->name('rekapan');
-    Route::post('/rekapan/export', [RekapanController::class, 'exportSimple'])->name('rekapan.export');
+    // Rekapan (rekap & unduhan laporan — dibatasi per instansi)
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/rekapan', [RekapanController::class, 'index'])->name('rekapan');
+        Route::post('/rekapan/export', [RekapanController::class, 'exportSimple'])->name('rekapan.export');
+    });
 
     // Notifikasi
-    Route::controller(NotifikasiController::class)->prefix('admin/notifikasi')->group(function () {
+    Route::controller(NotifikasiController::class)->middleware('role:admin')->prefix('admin/notifikasi')->group(function () {
         Route::get('/', 'index')->name('admin.notifikasi');
         Route::get('/dropdown', 'showNotifikasi')->name('admin.notifikasi.dropdown');
         Route::get('/count', 'getCount')->name('admin.notifikasi.count');
@@ -146,13 +152,21 @@ Route::controller(LaporanController::class)->group(function () {
         Route::get('/settings', [SuperadminSettingController::class, 'index'])->name('settings.index');
         Route::post('/settings', [SuperadminSettingController::class, 'update'])->name('settings.update');
 
-        // Monitoring & Audit Laporan Global
-        Route::get('/laporan', [SuperadminLaporanController::class, 'index'])->name('laporan.index');
-        Route::get('/laporan/{id}', [SuperadminLaporanController::class, 'show'])->name('laporan.show');
+        // Profil pribadi superadmin (nama/email/no. HP + ganti password).
+        // Role & status sengaja tidak dapat diubah dari sini.
+        Route::get('/profil', [SuperadminProfileController::class, 'edit'])->name('profile.edit');
+        Route::put('/profil', [SuperadminProfileController::class, 'update'])->name('profile.update');
+        Route::put('/profil/password', [SuperadminProfileController::class, 'updatePassword'])->name('profile.password');
+
+        // Audit Aktivitas Sistem (metadata saja — tanpa isi laporan / identitas pelapor)
+        Route::get('/audit', [SuperadminAuditController::class, 'index'])->name('audit.index');
+        Route::get('/audit/{id}', [SuperadminAuditController::class, 'show'])->name('audit.show');
     });
 
     // Logout
     Route::post('/logout', function () {
+        ActivityLog::record('logout', 'Logout dari panel sistem.');
+
         Auth::logout();
         request()->session()->invalidate();
         request()->session()->regenerateToken();
