@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Superadmin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Akun;
+use App\Models\ActivityLog;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -58,7 +59,7 @@ class SuperadminAkunController extends Controller
             'email' => 'required|email|max:100|unique:akun,email',
             'notelp' => 'required|string|max:20',
             'password' => 'required|string|min:6',
-            'role' => 'required|string|max:30',
+            'role' => 'required|string|max:30|exists:roles,name',
             'jenis_kelamin' => 'nullable|in:Pria,Wanita',
             'alamat' => 'nullable|string|max:255',
             'is_active' => 'nullable|boolean',
@@ -66,7 +67,9 @@ class SuperadminAkunController extends Controller
 
         $validated['is_active'] = $request->boolean('is_active', true);
 
-        Akun::create($validated);
+        $akun = Akun::create($validated);
+
+        ActivityLog::record('data', "Membuat akun baru '{$akun->nama}' ({$akun->email}) dengan role {$akun->role}.", 'akun', "akun-{$akun->id_akun}");
 
         return redirect()->route('superadmin.akun.index')
             ->with('success', 'Akun berhasil dibuat.');
@@ -88,7 +91,7 @@ class SuperadminAkunController extends Controller
             'email' => ['required', 'email', 'max:100', Rule::unique('akun', 'email')->ignore($akun->id_akun, 'id_akun')],
             'notelp' => 'required|string|max:20',
             'password' => 'nullable|string|min:6',
-            'role' => 'required|string|max:30',
+            'role' => 'required|string|max:30|exists:roles,name',
             'jenis_kelamin' => 'nullable|in:Pria,Wanita',
             'alamat' => 'nullable|string|max:255',
             'is_active' => 'nullable|boolean',
@@ -118,6 +121,8 @@ class SuperadminAkunController extends Controller
 
         $akun->save();
 
+        ActivityLog::record('data', "Memperbarui data akun '{$akun->nama}' ({$akun->email}, role {$akun->role}).", 'akun', "akun-{$akun->id_akun}");
+
         return redirect()->route('superadmin.akun.index')
             ->with('success', 'Data akun berhasil diperbarui.');
     }
@@ -141,6 +146,8 @@ class SuperadminAkunController extends Controller
 
         $akun->delete();
 
+        ActivityLog::record('data', "Menghapus akun '{$akun->nama}' ({$akun->email}, role {$akun->role}).", 'akun', "akun-{$akun->id_akun}");
+
         return redirect()->route('superadmin.akun.index')
             ->with('success', 'Akun berhasil dihapus.');
     }
@@ -154,6 +161,8 @@ class SuperadminAkunController extends Controller
         $akun = Akun::findOrFail($id);
         $akun->password = $request->new_password; // Mutator otomatis hash
         $akun->save();
+
+        ActivityLog::record('data', "Me-reset password akun '{$akun->nama}' ({$akun->email}).", 'akun', "akun-{$akun->id_akun}");
 
         return back()->with('success', "Password untuk akun {$akun->nama} berhasil direset.");
     }
@@ -177,6 +186,8 @@ class SuperadminAkunController extends Controller
         $akun->save();
 
         $statusText = $akun->is_active ? 'diaktifkan' : 'dinonaktifkan';
+        ActivityLog::record('data', "Akun '{$akun->nama}' ({$akun->email}) {$statusText}.", 'akun', "akun-{$akun->id_akun}");
+
         return back()->with('success', "Akun {$akun->nama} berhasil {$statusText}.");
     }
 }

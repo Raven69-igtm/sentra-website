@@ -15,7 +15,7 @@
 
     <div class="card p-2">
         <div class="card-body p-3">
-            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3" data-live-region="akun-meta">
                 <div>
                     <h5 class="fw-bold text-dark mb-1" style="font-size: 1.05rem;">Daftar Akun</h5>
                     <p class="text-muted mb-0" style="font-size: 0.82rem;">
@@ -28,7 +28,7 @@
             </div>
 
             {{-- FILTER BAR --}}
-            <form method="GET" action="{{ route('superadmin.akun.index') }}" class="mb-4">
+            <form method="GET" action="{{ route('superadmin.akun.index') }}" data-livewire-navigate class="mb-4">
                 <div class="row g-2 align-items-center">
                     <div class="col-md-4 col-sm-12">
                         <div class="search-pill-wrapper w-100" style="height: 44px;">
@@ -38,7 +38,7 @@
                     </div>
                     <div class="col-md-3 col-sm-6">
                         <select name="role" class="form-select rounded-pill px-3" style="height: 44px; border: 1px solid #E2E8F0; font-size: 0.88rem;">
-                            <option value="">-- Semua Role --</option>
+                            <option value=""> Semua Role </option>
                             <option value="superadmin" {{ request('role') === 'superadmin' ? 'selected' : '' }}>Superadmin</option>
                             <option value="admin_ppa" {{ request('role') === 'admin_ppa' ? 'selected' : '' }}>Admin PPA</option>
                             <option value="admin_dinsos" {{ request('role') === 'admin_dinsos' ? 'selected' : '' }}>Admin Dinsos</option>
@@ -48,7 +48,7 @@
                     </div>
                     <div class="col-md-2 col-sm-6">
                         <select name="status" class="form-select rounded-pill px-3" style="height: 44px; border: 1px solid #E2E8F0; font-size: 0.88rem;">
-                            <option value="">-- Semua Status --</option>
+                            <option value=""> Semua Status </option>
                             <option value="aktif" {{ request('status') === 'aktif' ? 'selected' : '' }}>Aktif</option>
                             <option value="nonaktif" {{ request('status') === 'nonaktif' ? 'selected' : '' }}>Nonaktif</option>
                         </select>
@@ -57,13 +57,15 @@
                         <button type="submit" class="btn btn-oripio-dark btn-pill me-2 flex-grow-1" style="height: 44px;">
                             <i class="fa fa-filter me-1"></i> Filter
                         </button>
-                        <a href="{{ route('superadmin.akun.index') }}" class="btn btn-oripio-light btn-pill" style="height: 44px;">
+                        <a href="{{ route('superadmin.akun.index') }}" wire:navigate class="btn btn-oripio-light btn-pill" style="height: 44px;">
                             Reset
                         </a>
                     </div>
                 </div>
             </form>
 
+            {{-- Area hasil filter: ditukar parsial oleh live filter (tanpa reload) --}}
+            <div data-live-region="akun-results">
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
                     <thead>
@@ -122,7 +124,7 @@
                                 </td>
                                 <td class="text-end">
                                     <div class="d-inline-flex align-items-center">
-                                        <a href="{{ route('superadmin.akun.edit', $akun->id_akun) }}" class="btn-circle-action me-1" title="Edit Akun" style="width: 34px; height: 34px;">
+                                        <a href="{{ route('superadmin.akun.edit', $akun->id_akun) }}" wire:navigate class="btn-circle-action me-1" title="Edit Akun" style="width: 34px; height: 34px;">
                                             <i class="fa fa-pencil" style="font-size: 0.82rem;"></i>
                                         </a>
 
@@ -193,8 +195,9 @@
             </div>
 
             <div class="d-flex justify-content-end mt-4">
-                {{ $akunList->links('pagination::bootstrap-4') }}
+                {{ $akunList->links('pagination.superadmin') }}
             </div>
+            </div><!-- /data-live-region: akun-results -->
         </div>
     </div>
 </div>

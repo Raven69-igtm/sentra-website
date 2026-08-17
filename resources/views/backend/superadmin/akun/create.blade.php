@@ -110,7 +110,7 @@
                 </div>
 
                 <div class="d-flex justify-content-end align-items-center mt-4 pt-3" style="border-top: 1px solid var(--oripio-border-subtle);">
-                    <a href="{{ route('superadmin.akun.index') }}" class="btn btn-oripio-light btn-pill me-2">Batal</a>
+                    <a href="{{ route('superadmin.akun.index') }}" wire:navigate class="btn btn-oripio-light btn-pill me-2">Batal</a>
                     <button type="submit" class="btn btn-oripio-primary btn-pill">
                         <i class="fa fa-save me-1"></i> Simpan Akun
                     </button>
