@@ -4,77 +4,75 @@
             {{-- SEKSI 1: MAIN MENU --}}
             <li class="sidebar-section-label">Main Menu</li>
             <li class="{{ request()->routeIs('superadmin.dashboard') ? 'mm-active' : '' }}">
-                <a href="{{ route('superadmin.dashboard') }}" aria-expanded="false">
+                <a href="{{ route('superadmin.dashboard') }}" wire:navigate aria-expanded="false" title="Dashboard">
                     <i class="fa fa-th-large"></i>
                     <span class="nav-text">Dashboard</span>
                 </a>
             </li>
-            <li class="{{ request()->routeIs('superadmin.laporan.*') ? 'mm-active' : '' }}">
-                <a href="{{ route('superadmin.laporan.index') }}" aria-expanded="false" class="d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center">
-                        <i class="fa fa-line-chart"></i>
-                        <span class="nav-text">Audit Laporan</span>
-                    </div>
+            <li class="{{ request()->routeIs('superadmin.audit.*') ? 'mm-active' : '' }}">
+                <a class="has-arrow" href="javascript:void()"
+                    title="Audit Aktivitas Sistem"
+                    aria-expanded="{{ request()->routeIs('superadmin.audit.*') ? 'true' : 'false' }}">
+                    <i class="fa fa-history"></i>
+                    <span class="nav-text">Audit Aktivitas</span>
                     @php
-                        $laporanCount = \App\Models\Laporan::count();
+                        $aktivitasCount = \App\Models\ActivityLog::count();
                     @endphp
-                    @if ($laporanCount > 0)
-                        <span class="badge bg-light text-muted rounded-pill px-2 py-1" style="font-size: 0.72rem; font-weight: 600;">{{ $laporanCount }}</span>
+                    @if ($aktivitasCount > 0)
+                        <span class="badge bg-light text-muted rounded-pill px-2 py-1">{{ $aktivitasCount }}</span>
                     @endif
                 </a>
+                <ul aria-expanded="{{ request()->routeIs('superadmin.audit.*') ? 'true' : 'false' }}"
+                    class="{{ request()->routeIs('superadmin.audit.*') ? 'in' : '' }}">
+                    <li>
+                        <a href="{{ route('superadmin.audit.index') }}" wire:navigate
+                            class="{{ request()->routeIs('superadmin.audit.*') && !request()->query('instansi') ? 'mm-active' : '' }}">
+                            Semua Aktivitas
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('superadmin.audit.index', ['instansi' => 'UPTD PPA']) }}" wire:navigate
+                            class="{{ request()->query('instansi') === 'UPTD PPA' ? 'mm-active' : '' }}">
+                            Aktivitas Admin PPA
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('superadmin.audit.index', ['instansi' => 'Dinas Sosial']) }}" wire:navigate
+                            class="{{ request()->query('instansi') === 'Dinas Sosial' ? 'mm-active' : '' }}">
+                            Aktivitas Admin Dinsos
+                        </a>
+                    </li>
+                </ul>
             </li>
             <li class="{{ request()->routeIs('superadmin.akun.*') ? 'mm-active' : '' }}">
-                <a href="{{ route('superadmin.akun.index') }}" aria-expanded="false" class="d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center">
-                        <i class="fa fa-users"></i>
-                        <span class="nav-text">Kelola Akun</span>
-                    </div>
+                <a href="{{ route('superadmin.akun.index') }}" wire:navigate aria-expanded="false" title="Kelola Akun">
+                    <i class="fa fa-users"></i>
+                    <span class="nav-text">Kelola Akun</span>
                     @php
                         $akunCount = \App\Models\Akun::count();
                     @endphp
                     @if ($akunCount > 0)
-                        <span class="badge bg-light text-muted rounded-pill px-2 py-1" style="font-size: 0.72rem; font-weight: 600;">{{ $akunCount }}</span>
+                        <span class="badge bg-light text-muted rounded-pill px-2 py-1">{{ $akunCount }}</span>
                     @endif
                 </a>
             </li>
             <li class="{{ request()->routeIs('superadmin.roles.*') ? 'mm-active' : '' }}">
-                <a href="{{ route('superadmin.roles.index') }}" aria-expanded="false">
+                <a href="{{ route('superadmin.roles.index') }}" wire:navigate aria-expanded="false" title="Role &amp; Permission">
                     <i class="fa fa-shield"></i>
                     <span class="nav-text">Role & Permission</span>
                 </a>
             </li>
 
-            {{-- SEKSI 2: PENGAWASAN INSTANSI --}}
-            <li class="sidebar-section-label">Pengawasan Instansi</li>
-            <li>
-                <a href="{{ route('superadmin.laporan.index') }}?kategori=ppa" aria-expanded="false">
-                    <i class="fa fa-female"></i>
-                    <span class="nav-text">Kasus UPTD PPA</span>
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('superadmin.laporan.index') }}?kategori=dinsos" aria-expanded="false">
-                    <i class="fa fa-handshake"></i>
-                    <span class="nav-text">Rujukan Dinas Sosial</span>
-                </a>
-            </li>
-
-            {{-- SEKSI 3: GENERAL / PENGATURAN --}}
+            {{-- SEKSI 2: GENERAL / PENGATURAN --}}
             <li class="sidebar-section-label">General</li>
             <li class="{{ request()->routeIs('superadmin.settings.*') ? 'mm-active' : '' }}">
-                <a href="{{ route('superadmin.settings.index') }}" aria-expanded="false">
+                <a href="{{ route('superadmin.settings.index') }}" wire:navigate aria-expanded="false" title="Settings">
                     <i class="fa fa-cog"></i>
                     <span class="nav-text">Settings</span>
                 </a>
             </li>
             <li>
-                <a href="{{ route('dashboard') }}" aria-expanded="false" target="_blank">
-                    <i class="fa fa-external-link"></i>
-                    <span class="nav-text">Portal Operasional</span>
-                </a>
-            </li>
-            <li>
-                <a href="javascript:void(0)" onclick="confirmSuperadminLogout()" aria-expanded="false" class="text-danger">
+                <a href="javascript:void(0)" onclick="confirmSuperadminLogout()" aria-expanded="false" class="text-danger" title="Log out">
                     <i class="fa fa-sign-out text-danger"></i>
                     <span class="nav-text text-danger">Log out</span>
                 </a>

@@ -5,9 +5,13 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Superadmin Konsol - SENTRA</title>
+    <title>Superadmin Konsol - {{ \App\Models\SystemSetting::get('app_name', 'SENTRA') }}</title>
     <!-- Favicon icon -->
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('admin/assets_2/images/logo-sentra.png') }}">
+    @if ($appLogo = \App\Models\SystemSetting::get('app_logo'))
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset($appLogo) }}">
+    @else
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('admin/assets_2/images/logo-sentra.png') }}">
+    @endif
     <link href="{{ asset('admin/assets_2/css/style.css') }}" rel="stylesheet">
     <!-- DataTables + Bootstrap 4 -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap4.min.css">
@@ -68,6 +72,41 @@
             width: var(--oripio-sidebar);
         }
 
+        /* BRAND SIDEBAR: logo + nama aplikasi mengisi header.
+           Memakai !important agar tidak bisa ditimpa CSS template
+           (template membatasi .brand-title dengan max-width: 150px). */
+        .nav-header .brand-title {
+            max-width: none !important;
+            margin-left: 14px !important;
+        }
+
+        .nav-header .brand-title span {
+            font-size: 1.5rem !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.05em !important;
+            line-height: 1.1 !important;
+        }
+
+        /* MASK REVEAL pada nama aplikasi ("tirai" tersingkap kiri→kanan).
+           Hanya `clip-path` + `opacity` — tanpa split huruf, tanpa kursor.
+           Kelas `.brand-unveil` dipasang HANYA pada halaman pertama setelah
+           login (navbar memakai session()->pull), jadi perpindahan halaman
+           berikutnya tidak menjalankan animasi apa pun. */
+        @keyframes brand-unveil {
+            from {
+                clip-path: inset(0 100% 0 0);
+                opacity: 0.35;
+            }
+            to {
+                clip-path: inset(0 0 0 0);
+                opacity: 1;
+            }
+        }
+
+        .nav-header .brand-title .brand-unveil {
+            animation: brand-unveil 1000ms cubic-bezier(0.4, 0, 0.2, 1) backwards;
+        }
+
         /* SIDEBAR MODERN LIGHT */
         .quixnav {
             background: #FFFFFF !important;
@@ -78,56 +117,150 @@
             box-shadow: none !important;
         }
 
-        .quixnav .metismenu {
-            padding: 10px 14px !important;
+        /* SIDEBAR MENU — satu geometri untuk ikon & teks.
+           Semua item memakai struktur sama (<i> + <span.nav-text> [+ badge])
+           dengan `gap` tetap. Prefix #main-wrapper dipakai agar seluruh
+           aturan di bawah konsisten menang atas CSS tema (style.css), yang
+           memberi item aktif padding/margin/radius berbeda. */
+        #main-wrapper .quixnav .metismenu {
+            padding: 10px 12px !important;
         }
 
-        .quixnav .metismenu > li > a {
+        #main-wrapper .quixnav .metismenu > li > a {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: flex-start !important;
+            gap: 12px !important;
+            padding: 11px 14px !important;
+            margin: 0 0 4px 0 !important;
+            border-radius: var(--oripio-radius-sm) !important;
             color: #475569 !important;
             font-size: 0.92rem !important;
             font-weight: 500 !important;
-            padding: 12px 16px !important;
-            border-radius: var(--oripio-radius-sm) !important;
-            margin-bottom: 4px;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
+            line-height: 1.35 !important;
+            transition: background-color 0.2s ease, color 0.2s ease;
         }
 
-        .quixnav .metismenu > li > a i {
-            font-size: 1.15rem;
-            width: 24px;
-            margin-right: 12px;
-            color: #94A3B8;
+        /* Kotak ikon 20x20, glyph selalu terpusat lewat flex-center sehingga
+           posisi ikon tidak bergantung lebar glyph Font Awesome. Tema memberi
+           ikon `padding: 0 7px; top: -2px` (style.css:10322) — dinetralkan. */
+        #main-wrapper .quixnav .metismenu > li > a > i {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex: 0 0 20px !important;
+            width: 20px !important;
+            height: 20px !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            position: static !important;
+            top: auto !important;
+            font-size: 1rem !important;
+            line-height: 1 !important;
+            text-align: center !important;
+            color: #94A3B8 !important;
             transition: color 0.2s ease;
         }
 
-        .quixnav .metismenu > li:hover > a {
-            background-color: #F8FAFC !important;
-            color: var(--oripio-text-main) !important;
+        /* Teks mengisi sisa ruang → awal teks selalu x = 14 + 20 + 12 = 46px. */
+        #main-wrapper .quixnav .metismenu > li > a .nav-text {
+            flex: 1 1 auto !important;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: inherit !important;
         }
 
-        .quixnav .metismenu > li:hover > a i {
+        /* Badge angka menempel kanan dengan jarak tetap 18px dari tepi pil,
+           sama untuk item bercaret (has-arrow) maupun tidak, agar kolom
+           angka rata kanan. */
+        #main-wrapper .quixnav .metismenu > li > a .badge {
+            flex: 0 0 auto !important;
+            margin: 0 18px 0 auto !important;
+        }
+
+        /* State hover: geometri identik dengan state normal. */
+        #main-wrapper .quixnav .metismenu > li:hover > a,
+        #main-wrapper .quixnav .metismenu > li:focus > a {
+            background-color: #F8FAFC !important;
+            color: var(--oripio-text-main) !important;
+            padding: 11px 14px !important;
+            margin-right: 0 !important;
+            border-radius: var(--oripio-radius-sm) !important;
+        }
+
+        #main-wrapper .quixnav .metismenu > li:hover > a i {
             color: var(--oripio-primary) !important;
         }
 
-        .quixnav .metismenu > li.mm-active > a {
+        /* State aktif: padding & margin disamakan (tema memakai 12px 18px
+           dan margin-right 8px, penyebab ikon menu aktif bergeser 4px). */
+        #main-wrapper .quixnav .metismenu > li.mm-active > a {
             background-color: var(--oripio-mint-light) !important;
             color: var(--oripio-primary) !important;
             font-weight: 700 !important;
+            padding: 11px 14px !important;
+            margin-right: 0 !important;
+            border-radius: var(--oripio-radius-sm) !important;
         }
 
-        .quixnav .metismenu > li.mm-active > a i {
+        #main-wrapper .quixnav .metismenu > li.mm-active > a i,
+        #main-wrapper .quixnav .metismenu > li.mm-active > a .nav-text {
             color: var(--oripio-primary) !important;
         }
 
+        /* Sub-menu (menu anak) — submenu Audit Aktivitas Sistem.
+           Override tema bawaan (sidebar gelap) agar cocok dengan sidebar
+           putih oripio: teks slate, hover mint lembut, aktif hijau primer. */
+        .quixnav .metismenu ul {
+            background: transparent !important;
+            padding: 0 0 6px !important;
+        }
+
+        /* Template asli mengecat ul sub-menu hijau pekat (#059652) saat
+           induknya aktif. Selector persis sama + ditulis setelah CSS
+           template = aturan ini yang menang. */
+        .quixnav .metismenu > li.mm-active ul,
+        .quixnav .metismenu > li.mm-active ul ul {
+            background: transparent !important;
+        }
+
+        .quixnav .metismenu ul li a {
+            display: block !important;
+            color: #64748B !important;
+            font-size: 0.85rem !important;
+            font-weight: 500 !important;
+            /* 46px = padding 14 + kolom ikon 20 + gap 12 → sejajar teks induk */
+            padding: 9px 14px 9px 46px !important;
+            border-radius: var(--oripio-radius-sm) !important;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .quixnav .metismenu ul li a:hover {
+            background-color: #F8FAFC !important;
+            color: var(--oripio-primary) !important;
+        }
+
+        .quixnav .metismenu ul li a.mm-active {
+            color: var(--oripio-primary) !important;
+            font-weight: 600 !important;
+            background-color: var(--oripio-mint-light) !important;
+        }
+
+        .quixnav .metismenu li > a.has-arrow::after {
+            color: #94A3B8;
+        }
+
+        /* Label seksi (MAIN MENU / GENERAL) sejajar dengan awal teks menu:
+           12 (padding metismenu) + 46 (14 padding + 20 ikon + 12 gap). */
         .sidebar-section-label {
             font-size: 11px !important;
             text-transform: uppercase !important;
             letter-spacing: 0.06em !important;
             font-weight: 700 !important;
             color: #94A3B8 !important;
-            padding: 16px 16px 6px !important;
+            padding: 16px 12px 6px 46px !important;
             list-style: none;
         }
 
@@ -171,7 +304,7 @@
         }
 
         #main-wrapper.menu-toggle .nav-header .brand-logo img {
-            height: 28px !important;
+            height: 32px !important;
             width: auto !important;
         }
 
@@ -195,6 +328,55 @@
             #main-wrapper.menu-toggle .quixnav .metismenu > li > a .badge {
                 display: none !important;
             }
+
+            /* ---- Mode ikon-only (sidebar tertutup, desktop) ----
+               Rail selebar 3.75rem (60px). Padding 8px → pil 44px, dan
+               kolom ikon dibuat selebar pil sehingga ikon SELALU tepat
+               di tengah. Flyout hover bawaan tema (a melebar 250px)
+               dibatalkan agar label tidak menembus area konten; label
+               tetap tersedia lewat atribut title (tooltip). */
+            /* ---- Mode ikon-only (sidebar tertutup, desktop) ----
+               Rail 3.75rem (60px). Padding 8px → pil 44px; kolom ikon dibuat
+               selebar pil sehingga ikon SELALU tepat di tengah. Flyout hover
+               bawaan tema (a melebar 250px) dibatalkan agar label tidak
+               menembus area konten; label tetap ada lewat atribut title. */
+            #main-wrapper.menu-toggle .quixnav .metismenu {
+                padding: 10px 8px !important;
+            }
+
+            #main-wrapper.menu-toggle .quixnav .metismenu > li > a,
+            #main-wrapper.menu-toggle .quixnav .metismenu > li:hover > a,
+            #main-wrapper.menu-toggle .quixnav .metismenu > li.mm-active > a {
+                width: auto !important;
+                padding: 11px 0 !important;
+                margin-right: 0 !important;
+                gap: 0 !important;
+                justify-content: center !important;
+            }
+
+            /* Ikon mengisi lebar pil (44px) → titik tengah ikon berimpit
+               dengan titik tengah pil, apa pun lebar glyph-nya. */
+            #main-wrapper.menu-toggle .quixnav .metismenu > li > a > i,
+            #main-wrapper.menu-toggle .quixnav .metismenu > li:hover > a > i,
+            #main-wrapper.menu-toggle .quixnav .metismenu > li.mm-active > a > i {
+                flex: 0 0 44px !important;
+                width: 44px !important;
+                min-width: 44px !important;
+                height: 22px !important;
+                margin: 0 !important;
+                font-size: 1.05rem !important;
+            }
+
+            #main-wrapper.menu-toggle .quixnav .metismenu > li > a .nav-text,
+            #main-wrapper.menu-toggle .quixnav .metismenu > li > a .badge {
+                display: none !important;
+            }
+
+            /* Mode ikon-only: sub-menu ikut disembunyikan agar tidak
+               menembus area konten. */
+            #main-wrapper.menu-toggle .quixnav .metismenu ul {
+                display: none !important;
+            }
         }
 
         /* CARDS */
@@ -208,6 +390,7 @@
 
         .card:hover {
             box-shadow: var(--oripio-shadow-hover) !important;
+            transform: translateY(-2px);
         }
 
         .card-header {
@@ -218,6 +401,113 @@
 
         .card-body {
             padding: 24px !important;
+        }
+
+        /* ============================================================
+           MOTION SYSTEM — mikro-animasi elegan & hemat performa.
+           Aturan: hanya `transform` dan `opacity` yang dianimasikan
+           (tidak pernah width/height/top/left) agar tidak memicu
+           layout ulang. Semua memakai fill-mode `backwards` supaya
+           transform hover/press tetap berfungsi setelah animasi usai.
+           ============================================================ */
+        @keyframes fade-rise {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes grow-bar {
+            from { transform: scaleY(0); }
+            to { transform: scaleY(1); }
+        }
+
+        @keyframes pop-in {
+            0% { transform: scale(1); }
+            45% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes slide-down {
+            from { opacity: 0; transform: translateY(-6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes menu-in {
+            from { opacity: 0; transform: translateY(-6px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* [1] PAGE ENTER — konten masuk halus, replay tiap navigasi */
+        .content-body > .container-fluid {
+            animation: fade-rise 400ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+        }
+
+        /* [2][5] REVEAL — jeda berjenjang diambil dari custom property --d */
+        [data-reveal] {
+            animation: fade-rise 400ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+            animation-delay: var(--d, 0ms);
+        }
+
+        /* [4] BAR CHART GROW — scaleY dari dasar, bukan animasi height */
+        [data-grow-bar] {
+            transform-origin: bottom center;
+            animation: grow-bar 500ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+            animation-delay: var(--d, 0ms);
+        }
+
+        /* [6] ROW FADE — hanya saat load awal halaman. Setelah body
+           mendapat class `page-settled` (600ms), live filter menukar
+           region tanpa animasi agar tabel tidak berkedip. */
+        body:not(.page-settled) [data-live-region] table > tbody > tr {
+            animation: fade-in 250ms ease-out backwards;
+        }
+
+        /* [5] STAGGER BARIS AKTIVITAS TERKINI — maks 5 item, 40ms */
+        .table-activity > tbody > tr {
+            animation: fade-rise 250ms ease-out backwards;
+        }
+
+        .table-activity > tbody > tr:nth-child(2) { animation-delay: 40ms; }
+        .table-activity > tbody > tr:nth-child(3) { animation-delay: 80ms; }
+        .table-activity > tbody > tr:nth-child(4) { animation-delay: 120ms; }
+        .table-activity > tbody > tr:nth-child(5) { animation-delay: 160ms; }
+
+        /* [8] BUTTON PRESS — specificity `body .btn` agar menang atas
+           .btn-oripio-primary:hover (translateY) yang muncul lebih bawah */
+        body .btn:active,
+        body .btn-pill:active {
+            transform: scale(0.97);
+            transition-duration: 120ms;
+        }
+
+        /* [9] DROPDOWN PROFIL — fade + scale dari sudut kanan atas */
+        .header-profile .dropdown-menu.show {
+            transform-origin: top right;
+            animation: menu-in 180ms ease-out backwards;
+        }
+
+        /* [10] ALERT MASUK */
+        .app-alert {
+            animation: slide-down 300ms ease-out backwards;
+        }
+
+        /* [12] BADGE SIDEBAR POP */
+        .quixnav .metismenu .badge {
+            animation: pop-in 300ms ease-out backwards;
+        }
+
+        /* KILL-SWITCH — hormati preferensi "reduce motion" pengguna */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.001ms !important;
+                transition-duration: 0.001ms !important;
+            }
         }
 
         /* BUTTONS & PILLS */
@@ -422,6 +712,15 @@
         .table-activity tbody td .badge {
             padding: 4px 10px !important;
             font-size: 0.68rem !important;
+        }
+
+        /* Di layar sempit kolom tabel tidak boleh dipaksa menyempit sampai
+           teksnya bertumpuk per kata. Biarkan baris tetap satu baris dan
+           andalkan .table-responsive untuk scroll horizontal. */
+        @media (max-width: 767.98px) {
+            .table-responsive .table tbody td {
+                white-space: nowrap !important;
+            }
         }
 
         .table-hover tbody tr:hover {
@@ -1056,7 +1355,20 @@
         body *:not(i):not(svg) {
             font-size: 12px !important;
         }
+
+        /* Navigasi Livewire: preloader hanya dipakai pada load pertama. */
+        html.superadmin-navigated #preloader {
+            display: none !important;
+        }
+
+        /* custom.min.js menambahkan class "show" hanya sekali saat window load.
+           Karena body diganti oleh Livewire navigate, pastikan wrapper baru
+           tetap terlihat (tanpa ini halaman tampak blank karena opacity: 0). */
+        html.superadmin-navigated #main-wrapper {
+            opacity: 1 !important;
+        }
     </style>
+    @livewireStyles
 </head>
 
 <body>
@@ -1080,16 +1392,362 @@
     </div>
 
     <!-- SCRIPTS -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap4.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.3/sweetalert2.all.min.js"></script>
+    {{-- Pustaka inti cukup dimuat sekali. Livewire navigate hanya mengganti
+         <body>, jadi tanpa data-navigate-once script akan dieksekusi ulang dan
+         memicu error "already declared". --}}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" data-navigate-once></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js" data-navigate-once></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js" data-navigate-once></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js" data-navigate-once></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap4.min.js" data-navigate-once></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.3/sweetalert2.all.min.js" data-navigate-once></script>
     @stack('scripts')
-    <script src="{{ asset('admin/assets_2/vendor/global/global.min.js') }}"></script>
+    <script src="{{ asset('admin/assets_2/vendor/global/global.min.js') }}" data-navigate-once></script>
+    {{-- quixnav-init.js sengaja tidak ditandai: ia harus jalan ulang agar atribut
+         data-* pada <body> yang baru dipasang kembali oleh quixSettings. --}}
     <script src="{{ asset('admin/assets_2/js/quixnav-init.js') }}"></script>
-    <script src="{{ asset('admin/assets_2/js/custom.min.js') }}"></script>
+    <script src="{{ asset('admin/assets_2/js/custom.min.js') }}" data-navigate-once></script>
+
+    @livewireScripts
+
+    {{-- Handler persisten (didaftarkan sekali ke document, tidak ikut terhapus
+         saat <body> diganti). Menyiapkan ulang komponen tema setelah navigasi. --}}
+    <script data-navigate-once>
+        (function () {
+            // ============ MOTION SYSTEM ============
+            // Pelengkap animasi CSS: count-up angka, penanda body.page-settled,
+            // dan auto-dismiss alert. Semua idempoten sehingga aman dipanggil
+            // berulang (load awal + setiap livewire:navigated).
+            var motionSettleTimer = null;
+
+            function motionCountUp(el) {
+                if (el.hasAttribute('data-countup-done')) return;
+                el.setAttribute('data-countup-done', '1');
+
+                var target = parseInt(el.getAttribute('data-target'), 10);
+                if (isNaN(target) || target <= 0) return;
+
+                var duration = 700;
+                var startedAt = null;
+
+                function frame(now) {
+                    if (startedAt === null) startedAt = now;
+                    var progress = Math.min(1, (now - startedAt) / duration);
+                    var eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+                    el.textContent = Math.round(target * eased).toLocaleString('id-ID');
+                    if (progress < 1) window.requestAnimationFrame(frame);
+                }
+
+                el.textContent = '0';
+                window.requestAnimationFrame(frame);
+            }
+
+            function initMotion() {
+                // [3] COUNT-UP — mulai sekali saat kartu terlihat
+                var counters = document.querySelectorAll('[data-countup]:not([data-countup-done])');
+
+                if (counters.length && 'IntersectionObserver' in window) {
+                    var observer = new IntersectionObserver(function (entries) {
+                        entries.forEach(function (entry) {
+                            if (!entry.isIntersecting) return;
+                            motionCountUp(entry.target);
+                            observer.unobserve(entry.target);
+                        });
+                    }, { threshold: 0.25 });
+
+                    counters.forEach(function (counter) { observer.observe(counter); });
+                } else {
+                    counters.forEach(motionCountUp);
+                }
+
+                // [6] Setelah 600ms halaman dianggap "settled": row fade mati
+                // agar penukaran region oleh live filter tidak berkedip.
+                if (motionSettleTimer) clearTimeout(motionSettleTimer);
+                if (document.body) {
+                    document.body.classList.remove('page-settled');
+                    motionSettleTimer = setTimeout(function () {
+                        if (document.body) document.body.classList.add('page-settled');
+                    }, 600);
+                }
+
+                // [11] AUTO-DISMISS ALERT — memudar setelah 6 detik
+                document.querySelectorAll('.app-alert-auto:not([data-dismiss-armed])').forEach(function (alertEl) {
+                    alertEl.setAttribute('data-dismiss-armed', '1');
+
+                    setTimeout(function () {
+                        if (!alertEl.isConnected) return;
+                        alertEl.style.transition = 'opacity 400ms ease, transform 400ms ease';
+                        alertEl.style.opacity = '0';
+                        alertEl.style.transform = 'translateY(-6px)';
+                        setTimeout(function () {
+                            if (alertEl.isConnected) alertEl.remove();
+                        }, 420);
+                    }, 6000);
+                });
+            }
+
+            function reinitSuperadmin() {
+                // Animasi & perilaku halaman dijalankan lebih dulu agar tetap
+                // berjalan walau jQuery belum siap.
+                initMotion();
+
+                // Tema menyembunyikan #main-wrapper (opacity: 0) sampai class
+                // "show" dipasang. Body baru hasil navigasi perlu class ini.
+                var wrapperEl = document.getElementById('main-wrapper');
+                if (wrapperEl) wrapperEl.classList.add('show');
+
+                var $ = window.jQuery;
+                if (!$) return;
+
+                // global.min.js menyimpan referensi lama `var body = $('body')`.
+                // Setelah Livewire mengganti <body>, referensi itu menunjuk ke
+                // body lama sehingga atribut posisi header/sidebar tidak
+                // terpasang pada body baru (navbar profil jadi bergeser).
+                // Perbarui referensinya lalu jalankan ulang konfigurasi tema.
+                if (window.quixSettings) {
+                    window.body = $('body');
+                    new window.quixSettings({
+                        typography: 'roboto',
+                        version: 'light',
+                        layout: 'vertical',
+                        headerBg: 'color_1',
+                        navheaderBg: 'color_1',
+                        sidebarBg: 'color_1',
+                        sidebarStyle: 'full',
+                        sidebarPosition: 'fixed',
+                        headerPosition: 'fixed',
+                        containerLayout: 'wide',
+                        direction: 'ltr'
+                    });
+                }
+
+                // metisMenu sidebar
+                if ($.fn.metisMenu) {
+                    $('#menu').metisMenu();
+                }
+
+                // Scrollbar sidebar
+                if (window.PerfectScrollbar && document.querySelector('.quixnav-scroll')) {
+                    new window.PerfectScrollbar('.quixnav-scroll');
+                }
+
+                // Tinggi minimum area konten seperti custom.min.js
+                var winH = window.outerHeight;
+                if (winH > 0) {
+                    $('.content-body').css('min-height', (winH + 60) + 'px');
+                }
+
+                // Di layar kecil, tutup sidebar setelah pindah halaman
+                if (window.innerWidth < 1200) {
+                    var wrapper = document.getElementById('main-wrapper');
+                    if (wrapper) wrapper.classList.remove('menu-toggle');
+                }
+            }
+
+            document.addEventListener('livewire:navigated', function () {
+                // Preloader tidak perlu tampil lagi setelah navigasi pertama.
+                document.documentElement.classList.add('superadmin-navigated');
+                var preloader = document.getElementById('preloader');
+                if (preloader) preloader.style.display = 'none';
+
+                reinitSuperadmin();
+            });
+
+            // ============ LIVE FILTER (tanpa refresh) ============
+            // Form filter GET bertanda data-livewire-navigate diperbarui secara
+            // parsial: hanya elemen [data-live-region] yang ditukar hasilnya,
+            // sementara sidebar, header, dan form filter tidak disentuh —
+            // sehingga terasa instan tanpa reload halaman.
+
+            function buildLiveUrl(form) {
+                var target = form.getAttribute('action') || window.location.pathname;
+                var url = new URL(target, window.location.origin);
+                var data = new FormData(form);
+
+                data.forEach(function (value, key) {
+                    if (value === '' || value === null) return;
+                    url.searchParams.set(key, value);
+                });
+
+                return url.pathname + url.search;
+            }
+
+            function fallbackLiveNavigate(url) {
+                if (window.Livewire && typeof window.Livewire.navigate === 'function') {
+                    window.Livewire.navigate(url);
+                } else {
+                    window.location.href = url;
+                }
+            }
+
+            var liveRegionToken = 0;
+
+            function partialLoad(url) {
+                var token = ++liveRegionToken;
+
+                fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin'
+                })
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.text();
+                    })
+                    .then(function (html) {
+                        if (token !== liveRegionToken) return; // respons kedaluwarsa, abaikan
+
+                        var doc = new DOMParser().parseFromString(html, 'text/html');
+                        var swapped = 0;
+
+                        document.querySelectorAll('[data-live-region]').forEach(function (el) {
+                            var fresh = doc.querySelector('[data-live-region="' + el.getAttribute('data-live-region') + '"]');
+                            if (fresh) {
+                                el.innerHTML = fresh.innerHTML;
+                                swapped++;
+                            }
+                        });
+
+                        if (!swapped) {
+                            fallbackLiveNavigate(url);
+                            return;
+                        }
+
+                        // Selaraskan URL address bar tanpa menambah riwayat.
+                        try { window.history.replaceState(window.history.state, '', url); } catch (e) {}
+                    })
+                    .catch(function () { fallbackLiveNavigate(url); });
+            }
+
+            function pageHasLiveRegions() {
+                return !!document.querySelector('[data-live-region]');
+            }
+
+            // Submit (tombol Filter / Enter) pada halaman live → update parsial.
+            document.addEventListener('submit', function (event) {
+                var form = event.target;
+                if (!form || !form.hasAttribute('data-livewire-navigate')) return;
+                if ((form.getAttribute('method') || 'get').toLowerCase() !== 'get') return;
+
+                var url = buildLiveUrl(form);
+
+                if (pageHasLiveRegions()) {
+                    event.preventDefault();
+                    partialLoad(url);
+                    return;
+                }
+
+                // Fallback: navigasi Livewire penuh (soft navigation).
+                if (!window.Livewire || typeof window.Livewire.navigate !== 'function') return;
+                event.preventDefault();
+                window.Livewire.navigate(url);
+            });
+
+            // Auto-submit: filter langsung diterapkan saat mengetik/memilih.
+            var liveFilterTimers = new WeakMap();
+            var lastLiveInputName = null;
+
+            function queueLiveFilterSubmit(form, delay) {
+                if (!form || !form.hasAttribute('data-livewire-navigate')) return;
+                if ((form.getAttribute('method') || 'get').toLowerCase() !== 'get') return;
+
+                var pending = liveFilterTimers.get(form);
+                if (pending) clearTimeout(pending);
+
+                liveFilterTimers.set(form, setTimeout(function () {
+                    liveFilterTimers.delete(form);
+                    if (!form.isConnected) return;
+
+                    if (pageHasLiveRegions()) {
+                        partialLoad(buildLiveUrl(form));
+                        return;
+                    }
+
+                    // Halaman tanpa area live: submit biasa — interceptor di atas
+                    // akan memprosesnya sebagai navigasi Livewire.
+                    if (typeof form.requestSubmit === 'function') {
+                        form.requestSubmit();
+                    } else {
+                        form.submit();
+                    }
+                }, delay));
+            }
+
+            document.addEventListener('input', function (event) {
+                var el = event.target;
+                var form = el && el.closest ? el.closest('form[data-livewire-navigate]') : null;
+                if (!form) return;
+                if (el.name) lastLiveInputName = el.name;
+                queueLiveFilterSubmit(form, 450);
+            });
+
+            document.addEventListener('change', function (event) {
+                var el = event.target;
+                var form = el && el.closest ? el.closest('form[data-livewire-navigate]') : null;
+                if (!form) return;
+                // Dropdown & tanggal langsung diterapkan; input teks didebounce singkat.
+                queueLiveFilterSubmit(form, el.tagName === 'SELECT' || el.type === 'date' ? 0 : 150);
+            });
+
+            // Klik pagination di dalam area live → update parsial juga (tanpa reload).
+            // Fase capture agar mengungguli listener navigasi Livewire.
+            document.addEventListener('click', function (event) {
+                if (!event.target || typeof event.target.closest !== 'function') return;
+                var link = event.target.closest('[data-live-region] .pagination a[href]');
+                if (!link) return;
+
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                partialLoad(link.href);
+            }, true);
+
+            // Setelah fallback navigasi soft, kembalikan fokus ke input pencarian
+            // terakhir agar pengguna bisa melanjutkan mengetik.
+            document.addEventListener('livewire:navigated', function () {
+                if (!lastLiveInputName) return;
+                var el = document.querySelector('form[data-livewire-navigate] [name="' + lastLiveInputName + '"]');
+                if (el && typeof el.focus === 'function') {
+                    el.focus();
+                    var len = (el.value || '').length;
+                    try { el.setSelectionRange(len, len); } catch (e) { /* input non-teks */ }
+                }
+                lastLiveInputName = null;
+            });
+
+            // ============ TOGGLE SIDEBAR ============
+            // custom.min.js sudah memasang handler sendiri pada .nav-control.
+            // Dulu kita menambah handler kedua (via jQuery) sehingga satu klik
+            // men-toggle DUA kali → sidebar tidak bisa ditutup pada load awal.
+            // Sekarang hanya SATU penentu: listener fase-capture di document,
+            // yang berjalan lebih dulu lalu menghentikan propagasi agar handler
+            // tema (dan handler lain) tidak ikut men-toggle.
+            document.addEventListener('click', function (event) {
+                if (!event.target || typeof event.target.closest !== 'function') return;
+
+                var control = event.target.closest('.nav-control');
+                if (!control) return;
+
+                var wrapper = document.getElementById('main-wrapper');
+                if (!wrapper) return;
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                wrapper.classList.toggle('menu-toggle');
+
+                document.querySelectorAll('.hamburger').forEach(function (el) {
+                    el.classList.toggle('is-active');
+                });
+            }, true);
+
+            // Load awal: jalankan motion sekali di sini. Navigasi berikutnya
+            // ditangani lewat reinitSuperadmin (event livewire:navigated).
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initMotion);
+            } else {
+                initMotion();
+            }
+        })();
+    </script>
 </body>
 
 </html>
