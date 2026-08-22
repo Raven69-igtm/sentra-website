@@ -23,7 +23,7 @@
 
     @if ($pageActionUrl && $pageActionLabel)
         <div class="mt-3 mt-md-0">
-            <a href="{{ $pageActionUrl }}" class="btn {{ $pageActionClass }} btn-pill shadow-sm">
+            <a href="{{ $pageActionUrl }}" wire:navigate class="btn {{ $pageActionClass }} btn-pill shadow-sm">
                 <i class="fa {{ $pageActionIcon }} me-2"></i> {{ $pageActionLabel }}
             </a>
         </div>
