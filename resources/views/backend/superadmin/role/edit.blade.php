@@ -113,7 +113,7 @@
                 </div>
 
                 <div class="d-flex justify-content-end align-items-center mt-4 pt-3" style="border-top: 1px solid var(--oripio-border-subtle);">
-                    <a href="{{ route('superadmin.roles.index') }}" class="btn btn-oripio-light btn-pill me-2">Batal</a>
+                    <a href="{{ route('superadmin.roles.index') }}" wire:navigate class="btn btn-oripio-light btn-pill me-2">Batal</a>
                     <button type="submit" class="btn btn-oripio-primary btn-pill">
                         <i class="fa fa-save me-1"></i> Simpan Perubahan Hak Akses
                     </button>
@@ -124,20 +124,29 @@
 </div>
 
 <script>
-    let allChecked = false;
+    window.__permAllChecked = false;
 
-    function toggleAllPermissions() {
-        allChecked = !allChecked;
-        document.querySelectorAll('.perm-check').forEach(cb => cb.checked = allChecked);
-        document.getElementById('toggleAllBtn').innerHTML = allChecked
-            ? '<i class="fa fa-square me-1"></i> Batal Pilih Semua'
-            : '<i class="fa fa-square-check me-1"></i> Pilih Semua';
-    }
+    window.toggleAllPermissions = function () {
+        window.__permAllChecked = !window.__permAllChecked;
+        document.querySelectorAll('.perm-check').forEach(function (cb) {
+            cb.checked = window.__permAllChecked;
+        });
+        var btn = document.getElementById('toggleAllBtn');
+        if (btn) {
+            btn.innerHTML = window.__permAllChecked
+                ? '<i class="fa fa-square me-1"></i> Batal Pilih Semua'
+                : '<i class="fa fa-square-check me-1"></i> Pilih Semua';
+        }
+    };
 
-    function toggleGroup(groupSlug) {
-        const checkboxes = document.querySelectorAll('.perm-group-' + groupSlug);
-        const anyUnchecked = Array.from(checkboxes).some(cb => !cb.checked);
-        checkboxes.forEach(cb => cb.checked = anyUnchecked);
-    }
+    window.toggleGroup = function (groupSlug) {
+        var checkboxes = document.querySelectorAll('.perm-group-' + groupSlug);
+        var anyUnchecked = Array.prototype.some.call(checkboxes, function (cb) {
+            return !cb.checked;
+        });
+        checkboxes.forEach(function (cb) {
+            cb.checked = anyUnchecked;
+        });
+    };
 </script>
 @endsection

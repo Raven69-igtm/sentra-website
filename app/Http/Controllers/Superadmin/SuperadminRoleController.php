@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Superadmin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\Role;
 use App\Models\Permission;
 use Illuminate\Http\Request;
@@ -46,6 +47,8 @@ class SuperadminRoleController extends Controller
             $role->permissions()->sync($validated['permissions']);
         }
 
+        ActivityLog::record('data', "Membuat role '{$role->display_name}' ({$role->name}).", 'role', "role-{$role->id}");
+
         return redirect()->route('superadmin.roles.index')
             ->with('success', "Role '{$role->display_name}' berhasil dibuat.");
     }
@@ -76,6 +79,8 @@ class SuperadminRoleController extends Controller
 
         $role->permissions()->sync($validated['permissions'] ?? []);
 
+        ActivityLog::record('data', "Memperbarui role '{$role->display_name}' ({$role->name}) beserta hak aksesnya.", 'role', "role-{$role->id}");
+
         return redirect()->route('superadmin.roles.index')
             ->with('success', "Role '{$role->display_name}' dan hak akses berhasil diperbarui.");
     }
@@ -92,8 +97,11 @@ class SuperadminRoleController extends Controller
             return back()->with('error', "Role tidak dapat dihapus karena masih digunakan oleh {$role->users_count} pengguna.");
         }
 
+        $roleName = $role->display_name;
         $role->permissions()->detach();
         $role->delete();
+
+        ActivityLog::record('data', "Menghapus role '{$roleName}'.", 'role', "role-{$id}");
 
         return redirect()->route('superadmin.roles.index')
             ->with('success', 'Role berhasil dihapus.');

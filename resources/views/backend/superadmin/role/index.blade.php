@@ -67,7 +67,7 @@
                                 </td>
                                 <td class="text-end">
                                     <div class="d-inline-flex align-items-center">
-                                        <a href="{{ route('superadmin.roles.edit', $role->id) }}" class="btn btn-oripio-light btn-pill" title="Edit Hak Akses" style="font-size: 0.78rem; padding: 6px 14px;">
+                                        <a href="{{ route('superadmin.roles.edit', $role->id) }}" wire:navigate class="btn btn-oripio-light btn-pill" title="Edit Hak Akses" style="font-size: 0.78rem; padding: 6px 14px;">
                                             <i class="fa fa-sliders me-1"></i> Atur Akses
                                         </a>
 
