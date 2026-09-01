@@ -6,7 +6,7 @@
     <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bolder text-dark mb-1" style="font-size: 1.75rem; letter-spacing: -0.03em;">
-                Welcome back {{ Auth::user()->nama ?? 'Sajibur Rahman' }}
+                Welcome back {{ Auth::user()->nama ?? 'Admin' }}
             </h2>
             <p class="text-muted mb-0" style="font-size: 0.92rem;">
                 Pantau dan kelola seluruh akun, wewenang instansi PPA & Dinsos, serta konfigurasi sistem hari ini.
@@ -21,8 +21,8 @@
             </div>
 
             {{-- EXPORT / ACTION PILL BUTTON --}}
-            <a href="{{ route('superadmin.laporan.index') }}" class="btn btn-oripio-dark btn-pill shadow-sm">
-                <i class="fa fa-file-lines me-2" style="font-size: 0.85rem;"></i> Lihat Laporan
+            <a href="{{ route('superadmin.audit.index') }}" wire:navigate class="btn btn-oripio-dark btn-pill shadow-sm">
+                <i class="fa fa-history me-2" style="font-size: 0.85rem;"></i> Lihat Aktivitas
             </a>
         </div>
     </div>
@@ -33,7 +33,7 @@
     {{-- ROW 1: 3 METRIC CARDS (MATCHING IMAGE #1) --}}
     <div class="row g-4 mb-4">
         {{-- CARD 1: HERO METRIC (ACCOUNT BALANCE STYLE) --}}
-        <div class="col-xl-4 col-lg-4 col-md-12">
+        <div class="col-xl-4 col-lg-4 col-md-12" data-reveal style="--d: 0ms;">
             <div class="card h-100 p-2">
                 <div class="card-body d-flex flex-column justify-content-between p-3">
                     <div>
@@ -52,7 +52,7 @@
 
                         <div class="d-flex align-items-baseline mb-2">
                             <h2 class="fw-bolder text-dark mb-0 me-3" style="font-size: 2.2rem; letter-spacing: -0.03em;">
-                                {{ number_format($totalAkun) }}
+                                <span data-countup data-target="{{ (int) $totalAkun }}">{{ number_format($totalAkun) }}</span>
                             </h2>
                             <span class="text-muted" style="font-size: 1.00rem;">Pengguna</span>
                         </div>
@@ -85,10 +85,10 @@
 
                     {{-- BOTTOM ACTION BUTTONS --}}
                     <div class="d-flex align-items-center pt-2">
-                        <a href="{{ route('superadmin.akun.create') }}" class="btn btn-oripio-primary btn-pill me-2 flex-grow-1">
+                        <a href="{{ route('superadmin.akun.create') }}" wire:navigate class="btn btn-oripio-primary btn-pill me-2 flex-grow-1">
                             <i class="fa fa-user-plus me-2"></i> Tambah Akun
                         </a>
-                        <a href="{{ route('superadmin.roles.index') }}" class="btn btn-oripio-light btn-pill flex-grow-1">
+                        <a href="{{ route('superadmin.roles.index') }}" wire:navigate class="btn btn-oripio-light btn-pill flex-grow-1">
                             <i class="fa fa-key me-2"></i> Kelola Role
                         </a>
                     </div>
@@ -97,9 +97,9 @@
         </div>
 
         {{-- CARD 2: TOTAL EXPENSES STYLE (LAPORAN PPA) --}}
-        <div class="col-xl-4 col-lg-4 col-md-6">
+        <div class="col-xl-4 col-lg-4 col-md-6" data-reveal style="--d: 60ms;">
             <div class="card h-100 p-2">
-                <div class="card-body p-3">
+                <div class="card-body p-3 d-flex flex-column">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div class="d-flex align-items-center">
                             <div class="me-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background: #E0F2FE; border-radius: 12px; color: #0284C7;">
@@ -113,7 +113,7 @@
 
                     <div class="d-flex align-items-baseline mb-2">
                         <h2 class="fw-bolder text-dark mb-0 me-3" style="font-size: 2.2rem; letter-spacing: -0.03em;">
-                            {{ number_format($totalLaporanPPA) }}
+                            <span data-countup data-target="{{ (int) $totalLaporanPPA }}">{{ number_format($totalLaporanPPA) }}</span>
                         </h2>
                         <span class="text-muted" style="font-size: 1.00rem;">Kasus</span>
                     </div>
@@ -131,14 +131,20 @@
                             <span class="fw-bold text-dark">Fisik, Psikis, Seksual, TPPO</span>
                         </div>
                     </div>
+
+                    <div class="d-flex align-items-center pt-3 mt-auto">
+                        <a href="{{ route('superadmin.audit.index', ['instansi' => 'UPTD PPA']) }}" wire:navigate class="btn btn-oripio-light btn-pill w-100">
+                            <i class="fa fa-arrow-right me-1"></i> Lihat Aktivitas PPA
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
 
         {{-- CARD 3: TOTAL SAVINGS STYLE (RUJUKAN & DINSOS) --}}
-        <div class="col-xl-4 col-lg-4 col-md-6">
+        <div class="col-xl-4 col-lg-4 col-md-6" data-reveal style="--d: 120ms;">
             <div class="card h-100 p-2">
-                <div class="card-body p-3">
+                <div class="card-body p-3 d-flex flex-column">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div class="d-flex align-items-center">
                             <div class="me-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background: #FEF3C7; border-radius: 12px; color: #D97706;">
@@ -152,7 +158,7 @@
 
                     <div class="d-flex align-items-baseline mb-2">
                         <h2 class="fw-bolder text-dark mb-0 me-3" style="font-size: 2.2rem; letter-spacing: -0.03em;">
-                            {{ number_format($totalLaporanDinsos) }}
+                            <span data-countup data-target="{{ (int) $totalLaporanDinsos }}">{{ number_format($totalLaporanDinsos) }}</span>
                         </h2>
                         <span class="text-muted" style="font-size: 1.00rem;">Kasus</span>
                     </div>
@@ -170,6 +176,12 @@
                             <span class="fw-bold text-dark">Penelantaran & Kasus Dirujuk</span>
                         </div>
                     </div>
+
+                    <div class="d-flex align-items-center pt-3 mt-auto">
+                        <a href="{{ route('superadmin.audit.index', ['instansi' => 'Dinas Sosial']) }}" wire:navigate class="btn btn-oripio-light btn-pill w-100">
+                            <i class="fa fa-arrow-right me-1"></i> Lihat Aktivitas Dinsos
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -183,7 +195,7 @@
             <div class="card mb-4 p-2">
                 <div class="card-header d-flex justify-content-between align-items-center border-0 pb-0">
                     <h5 class="fw-bold text-dark mb-0" style="font-size: 1.05rem;">Kelompok Akun</h5>
-                    <a href="{{ route('superadmin.akun.create') }}" class="btn btn-sm btn-oripio-light btn-pill">
+                    <a href="{{ route('superadmin.akun.create') }}" wire:navigate class="btn btn-sm btn-oripio-light btn-pill">
                         <i class="fa fa-plus me-1"></i> Tambah
                     </a>
                 </div>
@@ -267,10 +279,10 @@
                                 <h6 class="fw-bold text-dark mb-0" style="font-size: 0.88rem;">SLA Respon Kasus PPA</h6>
                                 <small class="text-muted">{{ $reportSla }} Hari / Maks. 7 Hari Target</small>
                             </div>
-                            <span class="fw-bold text-dark" style="font-size: 0.86rem;">85%</span>
+                            <span class="fw-bold text-dark" style="font-size: 0.86rem;">{{ $slaPercentPPA }}%</span>
                         </div>
                         <div class="progress" style="height: 6px; border-radius: 9999px; background: #F1F5F9;">
-                            <div class="progress-bar" style="width: 85%; background-color: #006039; border-radius: 9999px;"></div>
+                            <div class="progress-bar" style="width: {{ $slaPercentPPA }}%; background-color: #006039; border-radius: 9999px;"></div>
                         </div>
                     </div>
 
@@ -284,10 +296,10 @@
                                 <h6 class="fw-bold text-dark mb-0" style="font-size: 0.88rem;">Penyelesaian Rujukan Dinsos</h6>
                                 <small class="text-muted">Target 5 Hari Kerja</small>
                             </div>
-                            <span class="fw-bold text-dark" style="font-size: 0.86rem;">72%</span>
+                            <span class="fw-bold text-dark" style="font-size: 0.86rem;">{{ $slaPercentDinsos }}%</span>
                         </div>
                         <div class="progress" style="height: 6px; border-radius: 9999px; background: #F1F5F9;">
-                            <div class="progress-bar" style="width: 72%; background-color: #10B981; border-radius: 9999px;"></div>
+                            <div class="progress-bar" style="width: {{ $slaPercentDinsos }}%; background-color: #10B981; border-radius: 9999px;"></div>
                         </div>
                     </div>
 
@@ -306,6 +318,33 @@
                         <div class="progress" style="height: 6px; border-radius: 9999px; background: #F1F5F9;">
                             <div class="progress-bar" style="width: 100%; background-color: #006039; border-radius: 9999px;"></div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- WIDGET C: RINGKASAN STATUS KASUS --}}
+            <div class="card mt-4 p-2">
+                <div class="card-header d-flex justify-content-between align-items-center border-0 pb-0">
+                    <div class="d-flex align-items-center">
+                        <i class="fa fa-folder-open me-2" style="color: #006039; font-size: 1.05rem;"></i>
+                        <h5 class="fw-bold text-dark mb-0" style="font-size: 1.05rem;">Ringkasan Kasus</h5>
+                    </div>
+                    <a href="{{ route('superadmin.audit.index') }}" wire:navigate class="btn btn-sm btn-oripio-light btn-pill">
+                        <i class="fa fa-arrow-right me-1"></i> Lihat
+                    </a>
+                </div>
+                <div class="card-body pt-3">
+                    <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom: 1px solid var(--oripio-border-subtle);">
+                        <span class="text-muted" style="font-size: 0.84rem;"><i class="fa fa-file-lines me-2" style="color: #0284C7;"></i> Total Kasus</span>
+                        <strong class="text-dark" style="font-size: 0.95rem;">{{ number_format($totalLaporan) }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom: 1px solid var(--oripio-border-subtle);">
+                        <span class="text-muted" style="font-size: 0.84rem;"><i class="fa fa-check-circle me-2" style="color: #059669;"></i> Selesai</span>
+                        <strong class="text-dark" style="font-size: 0.95rem;">{{ number_format($totalLaporanSelesai) }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center py-2">
+                        <span class="text-muted" style="font-size: 0.84rem;"><i class="fa fa-share me-2" style="color: #D97706;"></i> Dirujuk</span>
+                        <strong class="text-dark" style="font-size: 0.95rem;">{{ number_format($totalLaporanDirujuk) }}</strong>
                     </div>
                 </div>
             </div>
@@ -329,38 +368,48 @@
                             <span class="text-muted">Rujukan</span>
                         </div>
 
-                        <span class="badge bg-light text-dark rounded-pill px-3 py-2 border me-2" style="font-size: 0.78rem; font-weight: 600;">
-                            Tahun {{ \Carbon\Carbon::now()->year }} <i class="fa fa-chevron-down ms-1" style="font-size: 0.62rem;"></i>
-                        </span>
+                        {{-- Filter tahun interaktif (GET ?tahun=) — otomatis diterapkan via live filter --}}
+                        <form method="GET" action="{{ route('superadmin.dashboard') }}" data-livewire-navigate class="m-0">
+                            <select name="tahun"
+                                class="bg-light text-dark rounded-pill px-3 py-2 border"
+                                style="font-size: 0.78rem; font-weight: 600; border-color: #E2E8F0; cursor: pointer; outline: none;">
+                                @foreach ($availableYears as $y)
+                                    <option value="{{ $y }}" {{ (int) $y === (int) $tahun ? 'selected' : '' }}>Tahun {{ $y }}</option>
+                                @endforeach
+                            </select>
+                        </form>
 
                     </div>
                 </div>
 
                 <div class="card-body pt-4">
-                    {{-- GORGEOUS CLEAN VERTICAL BAR CHART (ORPIO FINTECH STYLE) --}}
+                    {{-- VERTICAL BAR CHART: 2 SERI (KASUS MASUK & RUJUKAN) --}}
                     <div style="height: 240px; display: flex; align-items: flex-end; justify-content: space-between; padding: 20px 10px 0; border-bottom: 1px solid #EBECEF; position: relative;">
                         @php
-                            $maxVal = max(array_merge($chartDataTotal, [10]));
-                            if ($maxVal == 0) $maxVal = 10;
+                            $maxVal = max(array_merge($chartDataMasuk, $chartDataRujukan, [10]));
                         @endphp
 
                         @foreach ($months as $idx => $mName)
                             @php
-                                $val = $chartDataTotal[$idx] ?? 0;
-                                $heightPct = max(18, min(95, round(($val / $maxVal) * 85)));
-                                $isHighlighted = ($mName === $currentMonthName);
+                                $masuk = $chartDataMasuk[$idx] ?? 0;
+                                $rujukan = $chartDataRujukan[$idx] ?? 0;
+                                $heightMasuk = max(2, min(95, round(($masuk / $maxVal) * 85)));
+                                $heightRujukan = max(2, min(95, round(($rujukan / $maxVal) * 85)));
+                                $isHighlighted = ($mName === $highlightName);
                             @endphp
-                            <div class="d-flex flex-column align-items-center" style="flex: 1; margin: 0 4px; position: relative; height: 100%; justify-content: flex-end;">
+                            <div style="flex: 1; margin: 0 4px; position: relative; height: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 3px;">
                                 @if ($isHighlighted)
-                                    {{-- FLOATING TOOLTIP PILL ON HIGHLIGHTED BAR (MATCHING IMAGE #1) --}}
-                                    <div style="position: absolute; bottom: calc({{ $heightPct }}% + 10px); background: #0F172A; color: #FFFFFF; padding: 4px 10px; border-radius: 9999px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 5;">
-                                        Kasus: {{ $val }}
+                                    {{-- TOOLTIP PILL PADA BULAN YANG DISOROT --}}
+                                    <div style="position: absolute; bottom: calc({{ max($heightMasuk, $heightRujukan) }}% + 10px); background: #0F172A; color: #FFFFFF; padding: 4px 10px; border-radius: 9999px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 5;">
+                                        Masuk: {{ $highlightMasuk }} &bull; Rujukan: {{ $highlightRujukan }}
                                     </div>
-                                    <div style="position: absolute; bottom: {{ $heightPct }}%; width: 8px; height: 8px; background: #0F172A; border-radius: 50%; z-index: 4;"></div>
+                                    <div style="position: absolute; bottom: {{ max($heightMasuk, $heightRujukan) }}%; width: 8px; height: 8px; background: #0F172A; border-radius: 50%; z-index: 4;"></div>
                                 @endif
 
-                                {{-- VERTICAL BAR --}}
-                                <div style="width: 100%; max-width: 38px; height: {{ $heightPct }}%; background: {{ $isHighlighted ? '#006039' : '#D1FAE5' }}; border-radius: 20px 20px 8px 8px; transition: all 0.3s ease;" title="{{ $mName }}: {{ $val }} Kasus"></div>
+                                {{-- BAR KASUS MASUK --}}
+                                <div data-grow-bar style="--d: {{ $idx * 30 }}ms; width: 44%; max-width: 19px; height: {{ $heightMasuk }}%; background: #006039; border-radius: 12px 12px 4px 4px; transition: background-color 0.3s ease;" title="{{ $mName }} — Kasus Masuk: {{ $masuk }}"></div>
+                                {{-- BAR RUJUKAN --}}
+                                <div data-grow-bar style="--d: {{ $idx * 30 }}ms; width: 44%; max-width: 19px; height: {{ $heightRujukan }}%; background: #A7F3D0; border-radius: 12px 12px 4px 4px; transition: background-color 0.3s ease;" title="{{ $mName }} — Rujukan: {{ $rujukan }}"></div>
                             </div>
                         @endforeach
                     </div>
@@ -368,7 +417,7 @@
                     {{-- X-AXIS LABELS --}}
                     <div class="d-flex justify-content-between pt-2 px-2 text-muted" style="font-size: 0.76rem; font-weight: 600;">
                         @foreach ($months as $mName)
-                            <div style="flex: 1; text-align: center; color: {{ $mName === $currentMonthName ? '#006039; font-weight: 800;' : '#94A3B8;' }}">
+                            <div style="flex: 1; text-align: center; color: {{ $mName === $highlightName ? '#006039; font-weight: 800;' : '#94A3B8;' }}">
                                 {{ $mName }}
                             </div>
                         @endforeach
@@ -384,20 +433,19 @@
                         <h5 class="fw-bold text-dark mb-0" style="font-size: 1.05rem;">Aktivitas Sistem Terkini</h5>
                     </div>
 
-                    <a href="{{ route('superadmin.laporan.index') }}" class="btn btn-sm btn-oripio-light btn-pill" style="font-size: 0.8rem; padding: 4px 14px;">
+                    <a href="{{ route('superadmin.audit.index') }}" wire:navigate class="btn btn-sm btn-oripio-light btn-pill" style="font-size: 0.8rem; padding: 4px 14px;">
                         <i class="fa fa-filter me-1"></i> Filter <i class="fa fa-chevron-down ms-1" style="font-size: 0.62rem;"></i>
                     </a>
                 </div>
                 <div class="card-body pt-3 px-2">
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
+                        <table class="table table-hover align-middle mb-0 table-activity">
                             <thead>
                                 <tr>
                                     <th>Aktivitas & Subjek</th>
                                     <th>Tanggal</th>
                                     <th>Instansi / Pelaku</th>
                                     <th>Status</th>
-                                    <th class="text-end">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -437,15 +485,10 @@
                                                 </span>
                                             @endif
                                         </td>
-                                        <td class="text-end">
-                                            <a href="{{ route('superadmin.laporan.index') }}" class="btn-circle-action" title="Lihat Laporan" style="width: 34px; height: 34px;">
-                                                <i class="fa fa-eye" style="font-size: 0.8rem;"></i>
-                                            </a>
-                                        </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted py-4">Belum ada aktivitas tercatat</td>
+                                        <td colspan="4" class="text-center text-muted py-4">Belum ada aktivitas tercatat</td>
                                     </tr>
                                 @endforelse
                             </tbody>

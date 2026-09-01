@@ -7,6 +7,7 @@ use App\Models\Akun;
 use App\Models\Role;
 use App\Models\Permission;
 use App\Models\SystemSetting;
+use App\Models\ActivityLog;
 use App\Models\Laporan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,7 +15,7 @@ use Carbon\Carbon;
 
 class SuperadminDashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         // 1. Statistik Akun
         $totalAkun = Akun::count();
@@ -52,64 +53,83 @@ class SuperadminDashboardController extends Controller
         $totalLaporanSelesai = Laporan::where('status', 'selesai')->count();
         $totalLaporanDirujuk = Laporan::where('status', 'dirujuk')->count();
 
-        // 4. Data Chart 12 Bulan (Tahun Berjalan)
-        $currentYear = Carbon::now()->year;
+        // 4. Data Chart 12 Bulan (Tahun Terpilih via filter ?tahun=)
+        $now = Carbon::now();
+        $currentYear = (int) $now->year;
         $months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        $chartDataPPA = [];
-        $chartDataDinsos = [];
-        $chartDataTotal = [];
 
+        // Daftar tahun yang memiliki data laporan + tahun berjalan
+        $availableYears = Laporan::query()
+            ->selectRaw('YEAR(created_at) as tahun')
+            ->groupBy(DB::raw('YEAR(created_at)'))
+            ->pluck('tahun')
+            ->map(fn ($y) => (int) $y)
+            ->push($currentYear)
+            ->unique()
+            ->sortDesc()
+            ->values();
+
+        // Validasi tahun dari query string; fallback ke tahun berjalan
+        $requestedYear = (int) $request->query('tahun', $currentYear);
+        $tahun = $availableYears->contains($requestedYear) ? $requestedYear : $currentYear;
+
+        // Agregasi 1 query: total kasus masuk & jumlah dirujuk per bulan
+        $monthlyRows = Laporan::query()
+            ->selectRaw("MONTH(created_at) AS bulan, COUNT(*) AS total_masuk, SUM(CASE WHEN status = 'dirujuk' THEN 1 ELSE 0 END) AS total_dirujuk")
+            ->whereYear('created_at', $tahun)
+            ->groupBy(DB::raw('MONTH(created_at)'))
+            ->get()
+            ->keyBy('bulan');
+
+        $chartDataMasuk = [];
+        $chartDataRujukan = [];
         for ($m = 1; $m <= 12; $m++) {
-            $countPPA = Laporan::whereYear('created_at', $currentYear)
-                ->whereMonth('created_at', $m)
-                ->whereIn('kategori', ['Kekerasan Fisik', 'Kekerasan Psikis', 'Kekerasan Seksual', 'Eksploitasi', 'TPPO'])
-                ->count();
-
-            $countDinsos = Laporan::whereYear('created_at', $currentYear)
-                ->whereMonth('created_at', $m)
-                ->where(function ($q) {
-                    $q->whereIn('layanan_pjsrk', array_keys(Laporan::LAYANAN_PJSRK))
-                        ->orWhere('status', 'dirujuk')
-                        ->orWhere(function ($legacy) {
-                            $legacy->whereNull('layanan_pjsrk')
-                                ->whereIn('kategori', Laporan::DINSOS_CATEGORIES);
-                        });
-                })
-                ->count();
-
-            $chartDataPPA[] = $countPPA;
-            $chartDataDinsos[] = $countDinsos;
-            $chartDataTotal[] = $countPPA + $countDinsos;
+            $row = $monthlyRows->get($m);
+            $chartDataMasuk[] = $row ? (int) $row->total_masuk : 0;
+            $chartDataRujukan[] = $row ? (int) $row->total_dirujuk : 0;
         }
 
-        $currentMonthIndex = Carbon::now()->month - 1;
-        $currentMonthName = $months[$currentMonthIndex] ?? 'Aug';
-        $currentMonthTotal = $chartDataTotal[$currentMonthIndex] ?? 0;
+        // Bulan yang disorot: bulan berjalan untuk tahun berjalan,
+        // sedangkan untuk tahun lampau = bulan terakhir yang memiliki data.
+        if ($tahun === $currentYear) {
+            $highlightIndex = (int) $now->month - 1;
+        } else {
+            $highlightIndex = 0;
+            for ($m = 11; $m >= 0; $m--) {
+                if ($chartDataMasuk[$m] > 0 || $chartDataRujukan[$m] > 0) {
+                    $highlightIndex = $m;
+                    break;
+                }
+            }
+        }
+        $highlightName = $months[$highlightIndex];
+        $highlightMasuk = $chartDataMasuk[$highlightIndex];
+        $highlightRujukan = $chartDataRujukan[$highlightIndex];
 
-        // 5. Aktivitas Terkini (Kombinasi Laporan Terbaru & Akun Pendaftar)
-        $latestReports = Laporan::with('detail_pelapor')
-            ->latest('created_at')
+        // 5. Aktivitas Terkini (metadata aktivitas sistem — tanpa isi laporan / identitas pelapor)
+        $latestActivities = ActivityLog::latest('created_at')
             ->limit(4)
             ->get()
-            ->map(function ($l) {
-                $isPPA = in_array($l->kategori, ['Kekerasan Fisik', 'Kekerasan Psikis', 'Kekerasan Seksual', 'Eksploitasi', 'TPPO']);
+            ->map(function ($a) {
+                [$icon, $iconColor, $bgColor] = match ($a->activity_type) {
+                    'login', 'logout' => ['fa-sign-in', 'text-primary', 'bg-primary-light'],
+                    'laporan_status' => ['fa-exchange', 'text-warning', 'bg-warning-light'],
+                    'dokumen' => ['fa-upload', 'text-success', 'bg-success-light'],
+                    default => ['fa-edit', 'text-success', 'bg-success-light'],
+                };
+
                 return (object) [
-                    'type' => 'laporan',
-                    'icon' => $isPPA ? 'fa-shield' : 'fa-handshake-o',
-                    'icon_color' => $isPPA ? 'text-primary' : 'text-warning',
-                    'bg_color' => $isPPA ? 'bg-primary-light' : 'bg-warning-light',
-                    'title' => "Laporan: {$l->kategori}",
-                    'subtitle' => 'Pelapor: ' . ($l->detail_pelapor->nama ?? 'Anonim') . " (#{$l->id_laporan})",
-                    'date' => $l->created_at ? $l->created_at->translatedFormat('d M Y, H:i') : '-',
-                    'instansi' => $isPPA ? 'UPTD PPA' : 'Dinas Sosial',
-                    'status' => ucfirst($l->status),
-                    'status_class' => match ($l->status) {
-                        'selesai' => 'badge-success',
-                        'dirujuk' => 'badge-warning',
-                        'diproses' => 'badge-info',
-                        default => 'badge-secondary',
-                    },
-                    'created_at' => $l->created_at,
+                    'type' => 'aktivitas',
+                    'icon' => $icon,
+                    'icon_color' => $iconColor,
+                    'bg_color' => $bgColor,
+                    'title' => ActivityLog::TYPES[$a->activity_type] ?? ucfirst($a->activity_type),
+                    'subtitle' => $a->description,
+                    'date' => $a->created_at ? $a->created_at->translatedFormat('d M Y, H:i') : '-',
+                    'instansi' => $a->instansi,
+                    'status' => $a->status === 'berhasil' ? 'Berhasil' : ucfirst($a->status),
+                    'status_class' => $a->status === 'berhasil' ? 'badge-success' : 'badge-danger',
+                    'created_at' => $a->created_at,
                 ];
             });
 
@@ -137,17 +157,38 @@ class SuperadminDashboardController extends Controller
                 ];
             });
 
-        $recentActivities = $latestReports->concat($latestUsers)
+        $recentActivities = $latestActivities->concat($latestUsers)
             ->sortByDesc('created_at')
             ->values()
             ->take(5);
 
-        // 6. Ringkasan Pengaturan Sistem Utama
-        $appName = SystemSetting::get('app_name', 'SENTRA');
-        $instansi = SystemSetting::get('instansi_name', 'Dinas Pemberdayaan Perempuan dan Perlindungan Anak');
-        $hotline = SystemSetting::get('hotline_number', '0812-3456-7890');
+        // 6. Ringkasan Pengaturan Sistem Utama (ditampilkan pada widget Standar Layanan & SLA)
         $reportSla = SystemSetting::get('report_sla_days', '3');
-        $sessionLifetime = config('session.lifetime', 120);
+
+        // 7. Kalkulasi SLA dinamis
+        $slaTargetDays = (int) $reportSla;
+
+        // SLA Respon PPA: % laporan PPA yang direspons (status != dikirim) dalam target hari
+        $totalPPAForSla = Laporan::whereIn('kategori', Laporan::PPA_CATEGORIES)->count();
+        $ppaRespondedInSla = 0;
+        if ($totalPPAForSla > 0) {
+            $ppaRespondedInSla = Laporan::whereIn('kategori', Laporan::PPA_CATEGORIES)
+                ->where('status', '!=', 'dikirim')
+                ->whereRaw('DATEDIFF(updated_at, created_at) <= ?', [$slaTargetDays])
+                ->count();
+        }
+        $slaPercentPPA = $totalPPAForSla > 0 ? round(($ppaRespondedInSla / $totalPPAForSla) * 100) : 0;
+
+        // Penyelesaian Rujukan Dinsos: % laporan dirujuk yang sudah selesai
+        $totalDirujukForSla = Laporan::where('status', 'dirujuk')
+            ->orWhere(function ($q) {
+                $q->whereIn('kategori', Laporan::DINSOS_CATEGORIES)
+                    ->where('status', 'selesai');
+            })->count();
+        $dinsosSelesai = Laporan::whereIn('kategori', Laporan::DINSOS_CATEGORIES)
+            ->where('status', 'selesai')
+            ->count();
+        $slaPercentDinsos = $totalDirujukForSla > 0 ? round(($dinsosSelesai / $totalDirujukForSla) * 100) : 0;
 
         return view('backend.superadmin.dashboard', compact(
             'totalAkun',
@@ -166,17 +207,17 @@ class SuperadminDashboardController extends Controller
             'totalLaporanSelesai',
             'totalLaporanDirujuk',
             'months',
-            'chartDataPPA',
-            'chartDataDinsos',
-            'chartDataTotal',
-            'currentMonthName',
-            'currentMonthTotal',
+            'chartDataMasuk',
+            'chartDataRujukan',
+            'tahun',
+            'availableYears',
+            'highlightName',
+            'highlightMasuk',
+            'highlightRujukan',
             'recentActivities',
-            'appName',
-            'instansi',
-            'hotline',
             'reportSla',
-            'sessionLifetime'
+            'slaPercentPPA',
+            'slaPercentDinsos'
         ));
     }
 }
