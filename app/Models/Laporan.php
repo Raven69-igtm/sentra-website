@@ -70,8 +70,9 @@ class Laporan extends Model
 
     public function scopeForUser($query, $user)
     {
+        // Superadmin hanya memantau aktivitas (audit) — tidak membaca isi laporan.
         if (!$user || (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())) {
-            return $query;
+            return $query->whereRaw('1 = 0');
         }
 
         if (method_exists($user, 'isAdminPPA') && $user->isAdminPPA()) {
@@ -103,7 +104,8 @@ class Laporan extends Model
         }
 
         if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
-            return true;
+            // Superadmin hanya memantau aktivitas — tidak melihat laporan.
+            return false;
         }
 
         if (method_exists($user, 'isAdminPPA') && $user->isAdminPPA()) {

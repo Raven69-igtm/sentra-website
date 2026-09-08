@@ -129,7 +129,36 @@ class DashboardController extends Controller
             ->where('status', 'dirujuk')
             ->whereYear('created_at', $tahun_aktif)
             ->count();
-            
+
+        // KPI dashboard: total laporan masuk (semua status) dan yang sedang
+        // diproses pada tahun aktif. Kategori mengikuti 6 kategori grafik
+        // agar angka kartu selalu konsisten dengan chart di bawahnya.
+        $kategori_chart = [
+            'Kekerasan Fisik',
+            'Kekerasan Psikis',
+            'Kekerasan Seksual',
+            'Penelantaran',
+            'Eksploitasi',
+            'TPPO',
+        ];
+
+        $total_masuk = DB::table('laporan')
+            ->whereIn('kategori', $kategori_chart)
+            ->whereYear('created_at', $tahun_aktif)
+            ->count();
+
+        $total_diproses = DB::table('laporan')
+            ->whereIn('kategori', $kategori_chart)
+            ->where('status', 'diproses')
+            ->whereYear('created_at', $tahun_aktif)
+            ->count();
+
+        // Laporan terbaru yang menjadi kewenangan instansi ini (scope forUser).
+        $laporan_terbaru = \App\Models\Laporan::forUser(Auth::user())
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get();
+
         // Menghitung total semua laporan selesai untuk persentase
         $total_laporan = $total_kekerasan_fisik + $kekerasan_psikis + $kekerasan_seksual + 
                          $penelantaran + $eksploitasi + $tppo;
@@ -161,6 +190,10 @@ class DashboardController extends Controller
             'eksploitasi' => $eksploitasi,
             'tppo' => $tppo,
             'total_dirujuk' => $total_dirujuk,
+            'total_masuk' => $total_masuk,
+            'total_diproses' => $total_diproses,
+            'total_selesai' => $total_laporan,
+            'laporan_terbaru' => $laporan_terbaru,
             'persen_kekerasan_fisik' => round($persen_kekerasan_fisik, 1),
             'persen_kekerasan_psikis' => round($persen_kekerasan_psikis, 1),
             'persen_kekerasan_seksual' => round($persen_kekerasan_seksual, 1),
