@@ -1,115 +1,106 @@
 @extends('backend.layout.admin_layout')
 @section('admin')
-    @if (session('success'))
-        <div class="alert alert-custom-success alert-dismissible fade show" role="alert">
-            {{ session('success') }}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    @endif
     <div class="container-fluid">
-        <div class="row page-titles mx-0">
-            <div class="col-sm-6 p-md-0">
-                <div class="welcome-text">
-                    <h4>LAPORAN BELUM SELESAI</h4>
+        @include('backend.components.alerts')
+
+        @include('backend.components.page-header', [
+            'title' => 'Laporan Belum Selesai',
+            'subtitle' => 'Laporan yang sudah diterima dan sedang ditangani petugas',
+            'icon' => 'fa-clipboard-list',
+        ])
+
+        {{-- Filter & pencarian (kolom tabel difilter lewat DataTables) --}}
+        <div class="filter-bar mb-4">
+            <div class="filter-grid">
+                <div class="filter-field" style="flex: 2 1 280px;">
+                    <label for="searchNama">Cari Pelapor</label>
+                    <input type="text" id="searchNama" class="form-control" placeholder="Cari nama pelapor...">
+                </div>
+                <div class="filter-field">
+                    <label for="filterStatus">Status</label>
+                    <select id="filterStatus" class="form-control">
+                        <option value="">Semua Status</option>
+                        <option value="DITERIMA">Diterima</option>
+                        <option value="DIPROSES">Diproses</option>
+                    </select>
                 </div>
             </div>
-            <div class="col-sm-6 p-md-0 justify-content-sm-end mt-2 mt-sm-0 d-flex">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="javascript:void(0)">Laporan</a></li>
-                    <li class="breadcrumb-item active"><a href="{{ route('laporan_proses') }}">Diproses</a></li>
-                </ol>
-            </div>
         </div>
-        <div class="row mb-3">
-            <div class="col-md-6">
-                <input type="text" id="searchNama" class="form-control" placeholder="Cari Nama Pelapor...">
+
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="card-title mb-0">Daftar Laporan</h4>
+                <span class="text-muted" style="font-size: .8rem;">Diperbarui otomatis tiap 10 detik</span>
             </div>
-            <div class="col-md-2">
-                <select id="filterStatus" class="form-control">
-                    <option value="">Semua Status</option>
-                    <option value="DITERIMA">Diterima</option>
-                    <option value="DIPROSES">Diproses</option>
-                </select>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table id="laporanTable" class="table table-striped text-center table-responsive-sm">
-                                <thead class="custom-font-sidebar bg-ijo">
-                                    <tr>
-                                        <th>No</th>
-                                        <th>Nama Pelapor</th>
-                                        <th>Status</th>
-                                        <th>Kategori</th>
-                                        <th>Tanggal Laporan</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($laporan as $index => $data)
-                                        <tr>
-                                            <th>{{ $index + 1 }}</th>
-                                            <td>{{ $data->detail_pelapor->nama ?? '-' }}</td>
-                                            <td>
-                                                @if ($data->status == 'diterima')
-                                                    <span class="badge badge-info">DITERIMA</span>
-                                                @elseif($data->status == 'diproses')
-                                                    <span class="badge badge-warning">DIPROSES</span>
-                                                @endif
-                                            </td>
-                                            <td>{{ $data->kategori }}</td>
-                                            <td>{{ $data->created_at->format('d-m-Y') }}</td>
-                                            <td>
-                                                <!-- Form Proses - Sesuaikan dengan route -->
-                                                <form action="{{ route('laporan.proseskan', $data->id_laporan) }}"
-                                                    method="POST" style="display:inline;" class="proses-form">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table id="laporanTable" class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Nama Pelapor</th>
+                                <th>Status</th>
+                                <th>Kategori</th>
+                                <th>Tanggal Laporan</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($laporan as $index => $data)
+                                <tr>
+                                    <th>{{ $index + 1 }}</th>
+                                    <td>{{ $data->detail_pelapor->nama ?? '-' }}</td>
+                                    <td>
+                                        @include('backend.components.status-pill', ['status' => $data->status])
+                                    </td>
+                                    <td>{{ $data->kategori }}</td>
+                                    <td>{{ $data->created_at->format('d-m-Y') }}</td>
+                                    <td>
+                                        <div class="action-group">
+                                            {{-- Form Proses --}}
+                                            <form action="{{ route('laporan.proseskan', $data->id_laporan) }}"
+                                                method="POST" style="display:inline;" class="proses-form">
+                                                @csrf
+                                                @method('PUT')
+                                                <button type="submit" class="btn btn-instansi-primary btn-pill btn-sm"
+                                                    title="Proses">Proses</button>
+                                            </form>
+
+                                            @unless (Auth::user()->isAdminDinsos())
+                                                {{-- Form Rujuk --}}
+                                                <form id="rujuk-form-{{ $data->id_laporan }}"
+                                                    action="{{ route('laporan.rujuk', $data->id_laporan) }}"
+                                                    method="POST" style="display:inline;" class="rujuk-form">
                                                     @csrf
                                                     @method('PUT')
-                                                    <button type="submit" class="btn btn-warning btn-sm"
-                                                        title="Proses">Proses</button>
-                                                </form>
-
-                                                @unless (Auth::user()->isAdminDinsos())
-                                                    <!-- Form Rujuk - Perbaiki route parameter -->
-                                                    <form id="rujuk-form-{{ $data->id_laporan }}"
-                                                        action="{{ route('laporan.rujuk', $data->id_laporan) }}" method="POST"
-                                                        style="display:inline;" class="rujuk-form">
-                                                        @csrf
-                                                        @method('PUT')
-                                                        <button type="button" class="btn btn-primary btn-sm rujuk-btn"
-                                                            {{ $data->status == 'diterima' ? 'disabled title=Proses-Laporan-Dulu' : '' }}
-                                                            data-id="{{ $data->id_laporan }}"
-                                                            data-nama="{{ $data->detail_pelapor->nama ?? 'Tidak Diketahui' }}">
-                                                            Rujuk
-                                                        </button>
-                                                    </form>
-                                                @endunless
-
-                                                <!-- Form Selesai - Perbaiki route parameter -->
-                                                <form id="selesai-form-{{ $data->id_laporan }}"
-                                                    action="{{ route('laporan.selesai', $data->id_laporan) }}"
-                                                    method="POST" style="display:inline;" class="selesai-form">
-                                                    @csrf
-                                                    @method('PUT')
-                                                    <button type="button" class="btn btn-hijau btn-sm selesai-btn"
+                                                    <button type="button" class="btn btn-instansi-soft btn-pill btn-sm rujuk-btn"
                                                         {{ $data->status == 'diterima' ? 'disabled title=Proses-Laporan-Dulu' : '' }}
                                                         data-id="{{ $data->id_laporan }}"
-                                                        data-nama="{{ $data->detail_pelapor->nama ?? 'Tanpa Nama' }}">
-                                                        Selesai
+                                                        data-nama="{{ $data->detail_pelapor->nama ?? 'Tidak Diketahui' }}">
+                                                        Rujuk
                                                     </button>
                                                 </form>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                                            @endunless
+
+                                            {{-- Form Selesai --}}
+                                            <form id="selesai-form-{{ $data->id_laporan }}"
+                                                action="{{ route('laporan.selesai', $data->id_laporan) }}"
+                                                method="POST" style="display:inline;" class="selesai-form">
+                                                @csrf
+                                                @method('PUT')
+                                                <button type="button" class="btn btn-hijau btn-pill btn-sm selesai-btn"
+                                                    {{ $data->status == 'diterima' ? 'disabled title=Proses-Laporan-Dulu' : '' }}
+                                                    data-id="{{ $data->id_laporan }}"
+                                                    data-nama="{{ $data->detail_pelapor->nama ?? 'Tanpa Nama' }}">
+                                                    Selesai
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

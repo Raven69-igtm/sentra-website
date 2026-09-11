@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\ActivityLog;
 use App\Models\Laporan;
 use Illuminate\Support\Facades\Auth;
 
@@ -85,9 +86,12 @@ public function selesai($id)
             }
             
             // Update status menjadi selesai
+            $statusLama = $laporan->status;
             $laporan->status = 'selesai';
             $laporan->save();
-            
+
+            ActivityLog::record('laporan_status', "Menyelesaikan laporan #{$laporan->id_laporan} ({$statusLama} → selesai).", 'laporan', $laporan->id_laporan);
+
             // Cek apakah request AJAX
             if (request()->ajax()) {
                 return response()->json([
@@ -133,9 +137,12 @@ public function rujuk($id)
             }
             
             // Update status menjadi dirujuk
+            $statusLama = $laporan->status;
             $laporan->status = 'dirujuk';
             $laporan->save();
-            
+
+            ActivityLog::record('laporan_status', "Merujuk laporan #{$laporan->id_laporan} ({$statusLama} → dirujuk).", 'laporan', $laporan->id_laporan);
+
             // Cek apakah request AJAX
             if (request()->ajax()) {
                 return response()->json([
@@ -235,6 +242,8 @@ public function update(Request $request, $id_laporan)
             'detail_terlapor',
             'detail_kasus',
         ])->forUser(Auth::user())->findOrFail($id_laporan);
+
+        $statusLama = $laporan->status;
 
         if (Auth::user()->isAdminDinsos() && !in_array($request->kategori, Laporan::DINSOS_CATEGORIES, true)) {
             return redirect()->back()
@@ -402,6 +411,13 @@ public function update(Request $request, $id_laporan)
             }
         }
 
+        // Audit: status berubah (diterima → diproses) atau sekadar pembaruan data.
+        if ($statusLama !== $laporan->status) {
+            ActivityLog::record('laporan_status', "Memproses laporan #{$laporan->id_laporan} ({$statusLama} → {$laporan->status}).", 'laporan', $laporan->id_laporan);
+        } else {
+            ActivityLog::record('data', "Memperbarui data laporan #{$laporan->id_laporan}.", 'laporan', $laporan->id_laporan);
+        }
+
         return redirect()->route('laporan_proses')
             ->with('success', 'Laporan berhasil diproses.');
 
@@ -415,14 +431,20 @@ public function update(Request $request, $id_laporan)
 
 public function destroy($id)
 {
-    abort_unless(Auth::user()->isSuperAdmin(), 403, 'Hanya Superadmin yang dapat menghapus laporan.');
+    $user = Auth::user();
+
+    // Superadmin tidak berwenang menghapus laporan privat instansi (hanya audit aktivitas).
+    abort_if($user->isSuperAdmin(), 403, 'Superadmin tidak memiliki kewenangan menghapus laporan.');
+
+    // Hanya admin instansi, dan laporan dibatasi sesuai instansinya masing-masing.
+    abort_unless(in_array($user->role, ['admin', 'admin_ppa', 'admin_dinsos'], true), 403, 'Anda tidak memiliki kewenangan menghapus laporan.');
 
     $laporan = Laporan::with([
         'detail_pelapor',
         'detail_penerima_manfaat.informasi_anak',
         'detail_terlapor',
         'detail_kasus'
-    ])->findOrFail($id);
+    ])->forUser($user)->findOrFail($id);
 
     // Hapus informasi anak (jika ada)
     if ($laporan->detail_penerima_manfaat) {
@@ -451,6 +473,8 @@ public function destroy($id)
 
     // Hapus laporan utama
     $laporan->delete();
+
+    ActivityLog::record('data', "Menghapus laporan #{$laporan->id_laporan} beserta seluruh detailnya.", 'laporan', $laporan->id_laporan);
 
     return redirect()->route('selesai')->with('success', 'Data laporan berhasil dihapus.');
 }
