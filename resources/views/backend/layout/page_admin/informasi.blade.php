@@ -1,161 +1,152 @@
 @extends('backend.layout.admin_layout')
+
 @section('admin')
     <div class="container-fluid">
-        <div class="row page-titles mx-0">
-            <div class="col-sm-6 p-md-0">
-                <div class="welcome-text">
-                    <h4>INFORMASI</h4>
+        @include('backend.components.alerts')
+
+        @include('backend.components.page-header', [
+            'title' => 'Informasi',
+            'subtitle' => 'Kelola konten informasi yang tampil pada aplikasi masyarakat',
+            'icon' => 'fa-circle-info',
+        ])
+
+        {{-- FORMULIR --}}
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="card-title mb-1">{{ isset($informasi) ? 'Ubah Informasi' : 'Tambah Informasi' }}</h4>
+                    <p class="mb-0 text-muted" style="font-size: .82rem;">
+                        Judul, deskripsi, dan gambar pendukung konten
+                    </p>
                 </div>
+                @if (isset($informasi))
+                    <a href="{{ route('informasi.index') }}" class="btn btn-light btn-pill btn-sm">
+                        <i class="fa fa-xmark me-2"></i> Batal Edit
+                    </a>
+                @endif
             </div>
-            <div class="col-sm-6 p-md-0 justify-content-sm-end mt-2 mt-sm-0 d-flex">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ route('informasi.index') }}">Menu</a></li>
-                    <li class="breadcrumb-item active"><a href="{{ route('informasi.index') }}">Informasi</a></li>
-                </ol>
-            </div>
-        </div>
+            <div class="card-body">
+                <form
+                    action="{{ isset($informasi) ? route('informasi.update', $informasi->id_informasi) : route('informasi.store') }}"
+                    method="POST" enctype="multipart/form-data">
+                    @csrf
+                    @if (isset($informasi))
+                        @method('PUT')
+                    @endif
 
-        <!-- Pesan Sukses -->
-        @if (session('success'))
-            <div class="alert alert-custom-success alert-dismissible fade show" role="alert">
-                {{ session('success') }}
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-        @endif
-        @if (session('error'))
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                {{ session('error') }}
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-        @endif
-
-        <!-- row -->
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="basic-form">
-                            <form
-                                action="{{ isset($informasi) ? route('informasi.update', $informasi->id_informasi) : route('informasi.store') }}"
-                                method="POST" enctype="multipart/form-data">
-                                @csrf
-                                @if (isset($informasi))
-                                    @method('PUT')
-                                @endif
-
-                                <h5>JUDUL INFORMASI</h5>
-                                <div class="form-group">
-                                    <input type="text" name="judul"
-                                        class="form-control input-default @error('judul') is-invalid @enderror"
-                                        placeholder="Masukkan Judul Informasi"
-                                        value="{{ isset($informasi) ? $informasi->judul : old('judul') }}">
-                                    @error('judul')
+                    <div class="row">
+                        <div class="col-md-7">
+                            <div class="form-group">
+                                <label class="form-label" for="judulInformasi">Judul Informasi</label>
+                                <input type="text" id="judulInformasi" name="judul"
+                                    class="form-control @error('judul') is-invalid @enderror"
+                                    placeholder="Masukkan judul informasi"
+                                    value="{{ isset($informasi) ? $informasi->judul : old('judul') }}">
+                                @error('judul')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="form-group">
+                                <label class="form-label" for="customFile">Gambar Pendukung</label>
+                                <div class="custom-file">
+                                    <input type="file" name="gambar"
+                                        class="custom-file-input @error('gambar') is-invalid @enderror" id="customFile">
+                                    <label class="custom-file-label" for="customFile">
+                                        {{ isset($informasi) && $informasi->gambar ? $informasi->gambar : 'Pilih gambar' }}
+                                    </label>
+                                    @error('gambar')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-
-                                <h5>DESKRIPSI INFORMASI</h5>
-                                <div class="form-group">
-                                    <textarea name="deskripsi" class="form-control @error('deskripsi') is-invalid @enderror" rows="4"
-                                        placeholder="Masukkan Deskripsi Informasi">{{ isset($informasi) ? $informasi->deskripsi : old('deskripsi') }}</textarea>
-                                    @error('deskripsi')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-
-                                <h5>UPLOAD GAMBAR</h5>
-                                <div class="input-group mb-3">
-                                    <div class="custom-file">
-                                        <input type="file" name="gambar"
-                                            class="custom-file-input @error('gambar') is-invalid @enderror" id="customFile">
-                                        <label class="custom-file-label" for="customFile">
-                                            {{ isset($informasi) && $informasi->gambar ? $informasi->gambar : 'Pilih gambar' }}
-                                        </label>
-                                        @error('gambar')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                </div>
-
-                                <!-- Tombol Simpan/Update -->
-                                <div class="form-group">
-                                    <button type="submit" class="btn btn-hijau">
-                                        {{ isset($informasi) ? 'Update' : 'Simpan' }}
-                                    </button>
-                                    @if (isset($informasi))
-                                        <a href="{{ route('informasi.index') }}" class="btn btn-danger ml-2">Batal</a>
-                                    @endif
-                                </div>
-                            </form>
+                            </div>
                         </div>
                     </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="deskripsiInformasi">Deskripsi Informasi</label>
+                        <textarea id="deskripsiInformasi" name="deskripsi" class="form-control @error('deskripsi') is-invalid @enderror"
+                            rows="4" placeholder="Masukkan deskripsi informasi">{{ isset($informasi) ? $informasi->deskripsi : old('deskripsi') }}</textarea>
+                        @error('deskripsi')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <button type="submit" class="btn btn-instansi-primary btn-pill">
+                        <i class="fa fa-floppy-disk me-2"></i>
+                        {{ isset($informasi) ? 'Update' : 'Simpan' }}
+                    </button>
+                    @if (isset($informasi))
+                        <a href="{{ route('informasi.index') }}" class="btn btn-light btn-pill ml-2">Batal</a>
+                    @endif
+                </form>
+            </div>
+        </div>
+
+        {{-- DAFTAR INFORMASI --}}
+        <div class="card">
+            <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
+                <div>
+                    <h4 class="card-title mb-1">Daftar Informasi</h4>
+                    <p class="mb-0 text-muted" style="font-size: .82rem;">Semua konten yang sudah dipublikasikan</p>
+                </div>
+                <div style="min-width: 240px;">
+                    <input type="text" id="searchJudul" class="form-control"
+                        placeholder="Cari judul informasi...">
                 </div>
             </div>
-        </div>
-        <div class="row mb-3">
-            <div class="col-md-4">
-                <input type="text" id="searchJudul" class="form-control" placeholder="Cari judul informasi...">
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table id="InformasiTable" class="table table-striped text-center table-responsive-sm">
-                                <thead class="custom-font-sidebar bg-ijo">
-                                    <tr>
-                                        <th>No</th>
-                                        <th>Judul Informasi</th>
-                                        <th>Deskripsi</th>
-                                        <th>Gambar</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($informasiList as $index => $item)
-                                        <tr>
-                                            <td>{{ $index + 1 }}</td>
-                                            <td>{{ $item->judul }}</td>
-                                            <td>{{ Str::limit($item->deskripsi, 100) }}</td>
-                                            <td>
-                                                @if ($item->gambar)
-                                                    <img src="{{ asset('uploads/informasi/' . $item->gambar) }}"
-                                                        alt="{{ $item->judul }}"
-                                                        style="max-width: 100px; max-height: 100px;">
-                                                @else
-                                                    Tidak ada gambar
-                                                @endif
-                                            </td>
-                                            <td>
-                                                <div class="d-flex justify-content-center flex-wrap action-button-container">
-                                                    <form action="{{ route('informasi.edit', $item->id_informasi) }}"
-                                                        method="GET" class="me-2 mb-1">
-                                                        <button type="submit" class="btn btn-warning btn-sm">Edit</button>
-                                                    </form>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table id="InformasiTable" class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Judul Informasi</th>
+                                <th>Deskripsi</th>
+                                <th>Gambar</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($informasiList as $index => $item)
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+                                    <td class="fw-semibold">{{ $item->judul }}</td>
+                                    <td class="text-muted">{{ \Illuminate\Support\Str::limit($item->deskripsi, 100) }}</td>
+                                    <td>
+                                        @if ($item->gambar)
+                                            <img src="{{ asset('uploads/informasi/' . $item->gambar) }}"
+                                                alt="{{ $item->judul }}" class="info-thumb">
+                                        @else
+                                            <span class="text-muted" style="font-size: .82rem;">Tidak ada gambar</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <div class="action-group">
+                                            <form action="{{ route('informasi.edit', $item->id_informasi) }}"
+                                                method="GET">
+                                                <button type="submit" class="btn btn-instansi-soft btn-pill btn-sm">
+                                                    Edit
+                                                </button>
+                                            </form>
 
-                                                    <form method="POST"
-                                                        action="{{ route('informasi.destroy', $item->id_informasi) }}"
-                                                        id="delete-form-{{ $item->id_informasi }}" class="mb-2">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="button" class="btn btn-danger btn-sm"
-                                                            onclick="confirmDelete({{ $item->id_informasi }})">
-                                                            Hapus
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                                            <form method="POST"
+                                                action="{{ route('informasi.destroy', $item->id_informasi) }}"
+                                                id="delete-form-{{ $item->id_informasi }}">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="button" class="btn btn-danger btn-pill btn-sm"
+                                                    onclick="confirmDelete({{ $item->id_informasi }})">
+                                                    Hapus
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -179,7 +170,7 @@
                 ordering: false,
             });
 
-            // Search berdasarkan nama pelapor (kolom ke-1)
+            // Search berdasarkan judul informasi (kolom ke-1)
             $('#searchJudul').on('keyup', function() {
                 table.column(1).search(this.value).draw();
             });

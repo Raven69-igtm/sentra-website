@@ -96,6 +96,17 @@ class ChatController extends Controller
 
     public function send(Request $request)
     {
+        $enabled = (string) \App\Models\SystemSetting::get('enable_chat_consultation', '1');
+        if ($enabled === '0') {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Layanan konsultasi chat sedang dinonaktifkan sementara oleh Superadmin.'
+                ], 403);
+            }
+            return back()->with('error', 'Layanan konsultasi chat sedang dinonaktifkan sementara oleh Superadmin.');
+        }
+
         $request->validate([
             'receiver_id' => 'required|exists:akun,id_akun',
             'message' => 'required|string|max:5000',

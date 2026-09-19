@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Informasi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
@@ -44,6 +45,12 @@ class InformasiController extends Controller
 
         // Simpan informasi
         Informasi::create($data);
+
+        // Audit: unggah dokumen (jika ada gambar) atau perubahan data.
+        if (isset($data['gambar'])) {
+            ActivityLog::record('dokumen', "Mengunggah gambar informasi \"{$request->judul}\" ({$data['gambar']}).", 'informasi', $data['gambar']);
+        }
+        ActivityLog::record('data', "Menambahkan informasi publik \"{$request->judul}\".", 'informasi');
 
         return redirect()->route('informasi.index')
             ->with('success', 'Informasi berhasil ditambahkan');
@@ -94,6 +101,12 @@ class InformasiController extends Controller
         // Update informasi
         $informasi->update($data);
 
+        // Audit: unggah dokumen (jika ada gambar baru) atau perubahan data.
+        if (isset($data['gambar'])) {
+            ActivityLog::record('dokumen', "Mengunggah gambar informasi \"{$request->judul}\" ({$data['gambar']}).", 'informasi', $data['gambar']);
+        }
+        ActivityLog::record('data', "Memperbarui informasi publik \"{$request->judul}\".", 'informasi');
+
         return redirect()->route('informasi.index')
             ->with('success', 'Informasi berhasil diperbarui');
     }
@@ -128,6 +141,8 @@ class InformasiController extends Controller
 
         // Hapus data informasi
         $informasi->delete();
+
+        ActivityLog::record('data', "Menghapus informasi publik \"{$informasi->judul}\".", 'informasi');
 
         return redirect()->route('informasi.index')
             ->with('success', 'Informasi berhasil dihapus');
