@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\ActivityLog;
 use App\Models\Notifikasi;
 use App\Models\Laporan;
 use Illuminate\Support\Facades\Auth;
@@ -117,6 +118,8 @@ public function terimaLaporan(Request $request, $id_notif, $id_laporan)
         $laporan->status = 'diterima';
         $laporan->save();
         \Log::info('Laporan updated', ['id_laporan' => $id_laporan, 'status' => 'diterima']);
+
+        ActivityLog::record('laporan_status', "Menerima laporan #{$laporan->id_laporan} melalui notifikasi (→ diterima).", 'laporan', $laporan->id_laporan);
 
         if ($request->ajax()) {
             return response()->json([
