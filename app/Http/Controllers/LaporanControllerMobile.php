@@ -106,8 +106,14 @@ class LaporanControllerMobile extends Controller
             ]);
 
             // 5. Insert detail_terlapor dengan enkripsi
+            // Support both single object (from Flutter) and array of objects
             if (!empty($data['detail_terlapor'])) {
-                foreach ($data['detail_terlapor'] as $terlapor) {
+                $terlaporInput = $data['detail_terlapor'];
+                // If Flutter sends a single object (Map), wrap in array
+                if (isset($terlaporInput['nama'])) {
+                    $terlaporInput = [$terlaporInput];
+                }
+                foreach ($terlaporInput as $terlapor) {
                     if (empty($terlapor['nama'])) {
                         continue;
                     }

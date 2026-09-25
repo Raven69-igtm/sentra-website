@@ -23,8 +23,8 @@ class LoginController extends Controller
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
 
-            // Cek role dan email
-            if ($user->role !== 'admin' || $user->email !== 'sentraapplication@gmail.com') {
+            // Cek role
+            if ($user->role !== 'admin') {
                 Auth::logout(); // Logout langsung
                 return back()->withErrors([
                     'login' => 'Akses hanya khusus admin.',

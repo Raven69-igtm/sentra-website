@@ -3,7 +3,10 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "websocket": "node websocket-server.cjs",
+        "ws": "node websocket-server.cjs",
+        "start:all": "concurrently \"npm run websocket\" \"php artisan serve\" \"npm run dev\" -n \"WS,Laravel,Vite\" -c \"cyan,green,yellow\""
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",
@@ -17,6 +20,7 @@
         "@hapi/boom": "^10.0.1",
         "baileys": "^6.7.16",
         "body-parser": "^2.2.0",
+        "dotenv": "^16.6.1",
         "express": "^5.1.0",
         "firebase-admin": "^13.4.0",
         "mysql": "^2.18.1",
@@ -24,7 +28,7 @@
         "qrcode-terminal": "^0.12.0",
         "websocket": "^1.0.35",
         "whatsapp-web.js": "^1.28.0",
-        "ws": "^8.18.1"
+        "ws": "^8.21.3"
     },
     "name": "sentra",
     "version": "1.0.0",

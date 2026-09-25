@@ -34,6 +34,23 @@
                     <span class="custom-font-sidebar nav-text">Informasi</span>
                 </a>
             </li>
+
+            <li>
+                <a href="{{ route('chat.index') }}" aria-expanded="false" class="d-flex align-items-center fs-5">
+                    <i class="ti-comment-alt me-2 icon-lg"></i>
+                    <span class="custom-font-sidebar nav-text">Chat</span>
+                    @php
+                        $unreadChat = \App\Models\ChatMobile::where('receiver_id', \Illuminate\Support\Facades\Auth::id())
+                            ->where('is_read', 0)
+                            ->count();
+                    @endphp
+                    @if ($unreadChat > 0)
+                        <span class="badge bg-danger text-white rounded-pill ms-auto me-2" id="sidebar-chat-badge" style="font-size: 0.7rem;">{{ $unreadChat }}</span>
+                    @else
+                        <span class="badge bg-danger text-white rounded-pill ms-auto me-2" id="sidebar-chat-badge" style="font-size: 0.7rem; display: none;"></span>
+                    @endif
+                </a>
+            </li>
         </ul>
     </div>
 </div>

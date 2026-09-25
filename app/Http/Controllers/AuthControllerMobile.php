@@ -35,11 +35,11 @@ class AuthControllerMobile extends Controller
             'notelp' => 'required|unique:akun,notelp',
             'nama' => 'required',
             'password' => 'required|min:6',
-            'role' => 'required|in:user,admin,guest'
-            
         ]);
 
         $data['password'] = Hash::make($data['password']);
+        $data['role'] = 'user'; // Selalu set sebagai user, tidak bisa diubah dari client
+        
         $user = UserMobile::create($data);
 
         return response()->json(['message' => 'Registrasi berhasil', 'user' => $user]);

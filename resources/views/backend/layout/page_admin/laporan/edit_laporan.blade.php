@@ -141,7 +141,7 @@
                                             <input type="text" name="penerima[nik]" class="form-control penerima-input"
                                                 value="{{ optional($laporan->detail_penerima_manfaat)->nik }}"
                                                 oninvalid="this.setCustomValidity('NIK salah')"
-                                                oninput="this.setCustomValidity('')" pattern="\d{16}" inputmode="numeric"
+                                                oninput="this.setCustomValidity('')" pattern="(\d{16}|-)?" inputmode="numeric"
                                                 maxlength="16">
                                         </div>
                                         <div class="col-md-6 mb-3">
@@ -347,7 +347,7 @@
                                             <input type="text" name="terlapor[nik]" class="form-control"
                                                 value="{{ optional($laporan->detail_terlapor)->nik }}"
                                                 oninvalid="this.setCustomValidity('NIK salah')"
-                                                oninput="this.setCustomValidity('')" pattern="\d{16}" inputmode="numeric"
+                                                oninput="this.setCustomValidity('')" pattern="(\d{16}|-)?" inputmode="numeric"
                                                 maxlength="16">
                                         </div>
                                         <div class="col-md-6 mb-3">

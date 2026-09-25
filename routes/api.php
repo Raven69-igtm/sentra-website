@@ -44,9 +44,12 @@ Route::post('/laporan-cepat', [LaporanControllerMobile::class, 'quickAccess']);
 
 
 Route::post('/chats', [ChatControllerMobile::class, 'store']);
-Route::get('/conversations/{userId}', [ChatControllerMobile::class, 'getConversations']);
-Route::get('/chats/{userId}', [ChatControllerMobile::class, 'getChats']);
 Route::put('/chats/{chatId}/read', [ChatControllerMobile::class, 'markAsRead']);
+Route::put('/chat/update/{chatId}', [ChatControllerMobile::class, 'update']);
+Route::delete('/chat/delete/{chatId}', [ChatControllerMobile::class, 'destroy']);
+Route::delete('/chats/{senderId}/{receiverId}', [ChatControllerMobile::class, 'destroyConversation']);
+Route::get('/chats/{userId}', [ChatControllerMobile::class, 'getChats']);
+Route::get('/conversations/{userId}', [ChatControllerMobile::class, 'getConversations']);
 
 Route::post('/new-message', [NotificationControllerMobile::class, 'newMessage']);
 Route::post('/report-update', [NotificationControllerMobile::class, 'reportUpdate']);

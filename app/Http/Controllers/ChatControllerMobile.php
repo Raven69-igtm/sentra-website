@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Chat;
 use App\Models\ChatMobile;
-use App\Models\User;
 use App\Models\UserMobile;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ChatControllerMobile extends Controller
 {
@@ -23,24 +22,42 @@ class ChatControllerMobile extends Controller
             'receiver_id' => $request->receiver_id,
             'message' => $request->message,
         ]);
-        $notificationController = new NotificationControllerMobile();
-        $notificationRequest = new Request([
-            'sender_id' => $request->sender_id,
-            'receiver_id' => $request->receiver_id,
-            'message' => $request->message,
-        ]);
-        $notificationResponse = $notificationController->newMessage($notificationRequest);
+
+        try {
+            $notificationController = new NotificationControllerMobile();
+            $notificationRequest = new Request([
+                'sender_id' => $request->sender_id,
+                'receiver_id' => $request->receiver_id,
+                'message' => $request->message,
+            ]);
+            $notificationController->newMessage($notificationRequest);
+        } catch (\Exception $e) {
+            \Log::error('FCM notification failed: ' . $e->getMessage());
+        }
 
         return response()->json($chat, 201);
     }
 
-    // Mengambil riwayat chat antara user dan admin
-    public function getChats($userId)
+    public function getChats($userId, Request $request)
     {
         try {
-            $chats = ChatMobile::where('sender_id', $userId)
-                ->orWhere('receiver_id', $userId)
-                ->orderBy('sent_at', 'asc')
+            $query = ChatMobile::where(function ($q) use ($userId) {
+                $q->where('sender_id', $userId)
+                  ->orWhere('receiver_id', $userId);
+            });
+
+            if ($request->has('other_user_id')) {
+                $otherUserId = $request->other_user_id;
+                $query = ChatMobile::where(function ($q) use ($userId, $otherUserId) {
+                    $q->where(function ($q2) use ($userId, $otherUserId) {
+                        $q2->where('sender_id', $userId)->where('receiver_id', $otherUserId);
+                    })->orWhere(function ($q2) use ($userId, $otherUserId) {
+                        $q2->where('sender_id', $otherUserId)->where('receiver_id', $userId);
+                    });
+                });
+            }
+
+            $chats = $query->orderBy('sent_at', 'asc')
                 ->get()
                 ->map(function ($chat) {
                     return [
@@ -48,6 +65,7 @@ class ChatControllerMobile extends Controller
                         'sender_id' => $chat->sender_id,
                         'receiver_id' => $chat->receiver_id,
                         'message' => $chat->message,
+                        'replied_to_id' => $chat->replied_to_id,
                         'sent_at' => $chat->sent_at,
                         'is_read' => $chat->is_read ? 1 : 0,
                         'is_notified' => $chat->is_notified ? 1 : 0,
@@ -61,9 +79,6 @@ class ChatControllerMobile extends Controller
         }
     }
 
-
-
-    // Update status pesan telah dibaca
     public function markAsRead($chatId)
     {
         $chat = ChatMobile::where('id_chat', $chatId)->firstOrFail();
@@ -71,26 +86,73 @@ class ChatControllerMobile extends Controller
 
         return response()->json($chat);
     }
+
     public function getConversations($userId)
     {
-        $conversations = ChatMobile::where('receiver_id', $userId)
-            ->groupBy('sender_id', 'receiver_id')
-            ->selectRaw('MAX(id_chat) as latest_chat_id')
-            ->get()
-            ->map(function ($chat) use ($userId) {
-                $latestChat = ChatMobile::find($chat->latest_chat_id);
-                $otherUserId = $latestChat->sender_id == $userId ? $latestChat->receiver_id : $latestChat->sender_id;
-                $otherUser = UserMobile::select('nama')->where('id_akun', $otherUserId)->first();
+        try {
+            $uId = intval($userId);
+            $subQuery = DB::raw("(
+                SELECT 
+                    IF(sender_id = $uId, receiver_id, sender_id) AS other_user_id,
+                    id_chat
+                FROM chats
+                WHERE sender_id = $uId OR receiver_id = $uId
+            ) AS user_chats");
+
+            $latestChats = DB::table($subQuery)
+                ->select('other_user_id', DB::raw('MAX(id_chat) AS latest_chat_id'))
+                ->groupBy('other_user_id')
+                ->orderBy('latest_chat_id', 'desc')
+                ->get();
+
+            $conversations = $latestChats->map(function ($item) {
+                $latestChat = ChatMobile::find($item->latest_chat_id);
+                if (!$latestChat) return null;
+
+                $otherUser = UserMobile::select('nama')->where('id_akun', $item->other_user_id)->first();
+
                 return [
-                    'user_id' => $otherUserId,
-                    'name' => $otherUser->nama,
+                    'user_id' => $item->other_user_id,
+                    'name' => $otherUser ? $otherUser->nama : 'Unknown',
                     'last_message' => $latestChat->message,
                     'time' => $latestChat->sent_at,
                     'is_online' => false,
                 ];
-            });
+            })->filter()->values();
 
-        return response()->json($conversations);
+            return response()->json($conversations);
+        } catch (\Exception $e) {
+            \Log::error('Error in getConversations: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch conversations'], 500);
+        }
     }
 
+    public function update(Request $request, $chatId)
+    {
+        $request->validate(['message' => 'required|string']);
+
+        $chat = ChatMobile::where('id_chat', $chatId)->firstOrFail();
+        $chat->update(['message' => $request->message]);
+
+        return response()->json($chat);
+    }
+
+    public function destroy($chatId)
+    {
+        $chat = ChatMobile::where('id_chat', $chatId)->firstOrFail();
+        $chat->delete();
+
+        return response()->json(['message' => 'Chat deleted']);
+    }
+
+    public function destroyConversation($senderId, $receiverId)
+    {
+        ChatMobile::where(function ($q) use ($senderId, $receiverId) {
+            $q->where('sender_id', $senderId)->where('receiver_id', $receiverId);
+        })->orWhere(function ($q) use ($senderId, $receiverId) {
+            $q->where('sender_id', $receiverId)->where('receiver_id', $senderId);
+        })->delete();
+
+        return response()->json(['message' => 'Conversation deleted']);
+    }
 }

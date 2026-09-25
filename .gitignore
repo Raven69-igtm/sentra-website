@@ -22,3 +22,7 @@ yarn-error.log
 /.vscode
 /.zed
 .wwebjs_auth/
+check_admin.php
+fix_accounts.php
+start-websocket.bat
+start-websocket.sh

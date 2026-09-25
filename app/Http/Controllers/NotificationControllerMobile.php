@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\UserMobile;
-use App\Models\Chat;
 use App\Models\Laporan;
 use Firebase\JWT\JWT;
 use GuzzleHttp\Client;

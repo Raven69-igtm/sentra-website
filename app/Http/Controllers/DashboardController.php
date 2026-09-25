@@ -37,7 +37,7 @@ class DashboardController extends Controller
             // Kekerasan Fisik
             $data_kekerasan_fisik[$i] = DB::table('laporan')
                 ->where('kategori', 'Kekerasan Fisik')
-                ->where('status', 'selesai')
+                ->whereIn('status', ['selesai', 'dirujuk'])
                 ->whereMonth('created_at', $i + 1)
                 ->whereYear('created_at', $tahun_aktif)
                 ->count();
@@ -45,7 +45,7 @@ class DashboardController extends Controller
             // Kekerasan Psikis
             $data_kekerasan_psikis[$i] = DB::table('laporan')
                 ->where('kategori', 'Kekerasan Psikis')
-                ->where('status', 'selesai')
+                ->whereIn('status', ['selesai', 'dirujuk'])
                 ->whereMonth('created_at', $i + 1)
                 ->whereYear('created_at', $tahun_aktif)
                 ->count();
@@ -53,7 +53,7 @@ class DashboardController extends Controller
             // Kekerasan Seksual
             $data_kekerasan_seksual[$i] = DB::table('laporan')
                 ->where('kategori', 'Kekerasan Seksual')
-                ->where('status', 'selesai')
+                ->whereIn('status', ['selesai', 'dirujuk'])
                 ->whereMonth('created_at', $i + 1)
                 ->whereYear('created_at', $tahun_aktif)
                 ->count();
@@ -61,7 +61,7 @@ class DashboardController extends Controller
             // Penelantaran
             $data_penelantaran[$i] = DB::table('laporan')
                 ->where('kategori', 'Penelantaran')
-                ->where('status', 'selesai')
+                ->whereIn('status', ['selesai', 'dirujuk'])
                 ->whereMonth('created_at', $i + 1)
                 ->whereYear('created_at', $tahun_aktif)
                 ->count();
@@ -69,7 +69,7 @@ class DashboardController extends Controller
             // Eksploitasi
             $data_eksploitasi[$i] = DB::table('laporan')
                 ->where('kategori', 'Eksploitasi')
-                ->where('status', 'selesai')
+                ->whereIn('status', ['selesai', 'dirujuk'])
                 ->whereMonth('created_at', $i + 1)
                 ->whereYear('created_at', $tahun_aktif)
                 ->count();
@@ -77,7 +77,7 @@ class DashboardController extends Controller
             // TPPO
             $data_tppo[$i] = DB::table('laporan')
                 ->where('kategori', 'TPPO')
-                ->where('status', 'selesai')
+                ->whereIn('status', ['selesai', 'dirujuk'])
                 ->whereMonth('created_at', $i + 1)
                 ->whereYear('created_at', $tahun_aktif)
                 ->count();
@@ -86,37 +86,37 @@ class DashboardController extends Controller
         // Menghitung total laporan dengan status selesai untuk setiap kategori dalam tahun aktif
         $total_kekerasan_fisik = DB::table('laporan')
             ->where('kategori', 'Kekerasan Fisik')
-            ->where('status', 'selesai')
+            ->whereIn('status', ['selesai', 'dirujuk'])
             ->whereYear('created_at', $tahun_aktif)
             ->count();
             
         $kekerasan_psikis = DB::table('laporan')
             ->where('kategori', 'Kekerasan Psikis')
-            ->where('status', 'selesai')
+            ->whereIn('status', ['selesai', 'dirujuk'])
             ->whereYear('created_at', $tahun_aktif)
             ->count();
             
         $kekerasan_seksual = DB::table('laporan')
             ->where('kategori', 'Kekerasan Seksual')
-            ->where('status', 'selesai')
+            ->whereIn('status', ['selesai', 'dirujuk'])
             ->whereYear('created_at', $tahun_aktif)
             ->count();
             
         $penelantaran = DB::table('laporan')
             ->where('kategori', 'Penelantaran')
-            ->where('status', 'selesai')
+            ->whereIn('status', ['selesai', 'dirujuk'])
             ->whereYear('created_at', $tahun_aktif)
             ->count();
             
         $eksploitasi = DB::table('laporan')
             ->where('kategori', 'Eksploitasi')
-            ->where('status', 'selesai')
+            ->whereIn('status', ['selesai', 'dirujuk'])
             ->whereYear('created_at', $tahun_aktif)
             ->count();
             
         $tppo = DB::table('laporan')
             ->where('kategori', 'TPPO')
-            ->where('status', 'selesai')
+            ->whereIn('status', ['selesai', 'dirujuk'])
             ->whereYear('created_at', $tahun_aktif)
             ->count();
             

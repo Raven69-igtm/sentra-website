@@ -11,6 +11,7 @@ use App\Http\Controllers\InformasiAnakController;
 use App\Http\Controllers\GantiSandiController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\NotifikasiController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\OtpController;
 use App\Http\Controllers\LandingPageController;
@@ -93,6 +94,14 @@ Route::controller(LaporanController::class)->group(function () {
         Route::post('/reset', 'reset')->name('password.reset');
     });
     Route::post('/password/close-modal', [GantiSandiController::class, 'closeModal'])->name('password.close-modal');
+
+    // Chat Konsultasi
+    Route::controller(ChatController::class)->prefix('chat')->group(function () {
+        Route::get('/', 'index')->name('chat.index');
+        Route::post('/send', 'send')->name('chat.send');
+        Route::get('/fetch/{userId}', 'fetchMessages')->name('chat.fetch');
+        Route::get('/{userId}', 'show')->name('chat.show');
+    });
 
     // Logout
     Route::post('/logout', function () {
