@@ -1,153 +1,130 @@
+@php
+    $user = Auth::user();
+    $isDinsos = $user && $user->isAdminDinsos();
+
+    // Badge chat belum dibaca (target AJAX memakai id yang sama)
+    $unreadChat = \App\Models\ChatMobile::where('receiver_id', $user->id ?? 0)
+        ->where('is_read', 0)
+        ->count();
+@endphp
+
 <div class="quixnav">
     <div class="quixnav-scroll">
         <ul class="metismenu" id="menu">
-            @if (Auth::check() && Auth::user()->isAdminDinsos())
+            @if ($isDinsos)
                 @php
                     $layananAktif = request()->routeIs('dinsos.layanan') ? (string) request()->route('layanan') : null;
                     $laporanAktif = request()->routeIs('dinsos.laporan.*') || request()->routeIs('dinsos.layanan');
                 @endphp
 
-                <li class="nav-label first text-uppercase fs-6 fw-bold text-white">
-                    Menu Admin Dinsos
-                </li>
+                {{-- SEKSI: MENU UTAMA --}}
+                <li class="sidebar-section-label">Menu Utama</li>
 
                 <li class="{{ request()->routeIs('dinsos.dashboard') ? 'mm-active' : '' }}">
-                    <a href="{{ route('dinsos.dashboard') }}" aria-expanded="false"
-                        class="d-flex align-items-center fs-5">
-                        <i class="ti-home me-2 icon-lg"></i>
-                        <span class="custom-font-sidebar nav-text">Dashboard</span>
+                    <a href="{{ route('dinsos.dashboard') }}" aria-expanded="false" title="Dashboard">
+                        <i class="fa fa-gauge-high"></i>
+                        <span class="nav-text">Dashboard</span>
                     </a>
                 </li>
 
                 <li class="{{ $laporanAktif ? 'mm-active' : '' }}">
-                    <a class="has-arrow d-flex align-items-center fs-5" href="javascript:void()"
+                    <a class="has-arrow" href="javascript:void()" title="Laporan PJSRK"
                         aria-expanded="{{ $laporanAktif ? 'true' : 'false' }}">
-                        <i class="ti-agenda me-2 icon-lg"></i>
-                        <span class="custom-font-sidebar nav-text">Laporan PJSRK</span>
+                        <i class="fa fa-file-shield"></i>
+                        <span class="nav-text">Laporan PJSRK</span>
                     </a>
-                    <ul aria-expanded="{{ $laporanAktif ? 'true' : 'false' }}"
-                        class="{{ $laporanAktif ? 'in' : '' }}">
+                    <ul aria-expanded="{{ $laporanAktif ? 'true' : 'false' }}" class="{{ $laporanAktif ? 'in' : '' }}">
                         <li>
                             <a href="{{ route('dinsos.laporan.index') }}"
-                                class="custom-font-sidebar fs-6 {{ request()->routeIs('dinsos.laporan.index') ? 'mm-active' : '' }}">
+                                class="{{ request()->routeIs('dinsos.laporan.index') ? 'mm-active' : '' }}">
                                 Semua Laporan
                             </a>
                         </li>
                         <li>
                             <a href="{{ route('dinsos.layanan', 'rehabilitasi-sosial') }}"
-                                class="custom-font-sidebar fs-6 {{ $layananAktif === 'rehabilitasi-sosial' ? 'mm-active' : '' }}">
+                                class="{{ $layananAktif === 'rehabilitasi-sosial' ? 'mm-active' : '' }}">
                                 Rehabilitasi Sosial
                             </a>
                         </li>
                         <li>
                             <a href="{{ route('dinsos.layanan', 'pengaduan-bencana') }}"
-                                class="custom-font-sidebar fs-6 {{ $layananAktif === 'pengaduan-bencana' ? 'mm-active' : '' }}">
+                                class="{{ $layananAktif === 'pengaduan-bencana' ? 'mm-active' : '' }}">
                                 Pengaduan Bencana
                             </a>
                         </li>
                         <li>
                             <a href="{{ route('dinsos.layanan', 'permasalahan-sosial') }}"
-                                class="custom-font-sidebar fs-6 {{ $layananAktif === 'permasalahan-sosial' ? 'mm-active' : '' }}">
+                                class="{{ $layananAktif === 'permasalahan-sosial' ? 'mm-active' : '' }}">
                                 Permasalahan Sosial
                             </a>
                         </li>
                     </ul>
                 </li>
-
-                <li class="{{ request()->routeIs('rekapan') ? 'mm-active' : '' }}">
-                    <a href="{{ route('rekapan') }}" aria-expanded="false" class="d-flex align-items-center fs-5">
-                        <i class="ti-folder me-2 icon-lg"></i>
-                        <span class="custom-font-sidebar nav-text">Rekapan</span>
-                    </a>
-                </li>
-
-                <li class="{{ request()->routeIs('informasi.*') ? 'mm-active' : '' }}">
-                    <a href="{{ route('informasi.index') }}" aria-expanded="false"
-                        class="d-flex align-items-center fs-5">
-                        <i class="ti-info-alt me-2 icon-lg"></i>
-                        <span class="custom-font-sidebar nav-text">Informasi</span>
-                    </a>
-                </li>
-
-                <li class="{{ request()->routeIs('chat.*') ? 'mm-active' : '' }}">
-                    <a href="{{ route('chat.index') }}" aria-expanded="false"
-                        class="d-flex align-items-center fs-5">
-                        <i class="ti-comment-alt me-2 icon-lg"></i>
-                        <span class="custom-font-sidebar nav-text">Chat</span>
-                        @php
-                            $unreadChat = \App\Models\ChatMobile::where('receiver_id', \Illuminate\Support\Facades\Auth::id())
-                                ->where('is_read', 0)
-                                ->count();
-                        @endphp
-                        @if ($unreadChat > 0)
-                            <span class="badge bg-danger text-white rounded-pill ms-auto me-2"
-                                id="sidebar-chat-badge" style="font-size: 0.7rem;">{{ $unreadChat }}</span>
-                        @else
-                            <span class="badge bg-danger text-white rounded-pill ms-auto me-2"
-                                id="sidebar-chat-badge" style="font-size: 0.7rem; display: none;"></span>
-                        @endif
-                    </a>
-                </li>
             @else
-                <li class="nav-label first text-uppercase fs-6 fw-bold text-white">
-                    @if (Auth::check() && Auth::user()->isAdminPPA())
-                        Menu Admin PPA
-                    @else
-                        Main Menu
-                    @endif
-                </li>
+                {{-- SEKSI: MENU UTAMA (Admin PPA) --}}
+                <li class="sidebar-section-label">Menu Utama</li>
 
-                <li>
-                    <a href="{{ route('dashboard') }}" aria-expanded="false" class="d-flex align-items-center fs-5">
-                        <i class="ti-home me-2 icon-lg"></i>
-                        <span class="custom-font-sidebar nav-text">Dashboard</span>
+                <li class="{{ request()->routeIs('dashboard') ? 'mm-active' : '' }}">
+                    <a href="{{ route('dashboard') }}" aria-expanded="false" title="Dashboard">
+                        <i class="fa fa-gauge-high"></i>
+                        <span class="nav-text">Dashboard</span>
                     </a>
                 </li>
 
-                <li>
-                    <a class="has-arrow d-flex align-items-center fs-5" href="javascript:void()" aria-expanded="false">
-                        <i class="ti-agenda me-2 icon-lg"></i>
-                        <span class="custom-font-sidebar nav-text">Laporan</span>
+                @php
+                    $laporanAktif = request()->routeIs('laporan_proses') || request()->routeIs('selesai') ||
+                        request()->routeIs('laporan.show') || request()->routeIs('laporan.edit');
+                @endphp
+
+                <li class="{{ $laporanAktif ? 'mm-active' : '' }}">
+                    <a class="has-arrow" href="javascript:void()" title="Laporan"
+                        aria-expanded="{{ $laporanAktif ? 'true' : 'false' }}">
+                        <i class="fa fa-clipboard-list"></i>
+                        <span class="nav-text">Laporan</span>
                     </a>
-                    <ul aria-expanded="false">
-                        <li><a href="{{ route('laporan_proses') }}" class="custom-font-sidebar fs-6">Diproses</a></li>
-                        <li><a href="{{ route('selesai') }}" class="custom-font-sidebar fs-6">Selesai</a></li>
+                    <ul aria-expanded="{{ $laporanAktif ? 'true' : 'false' }}" class="{{ $laporanAktif ? 'in' : '' }}">
+                        <li>
+                            <a href="{{ route('laporan_proses') }}"
+                                class="{{ request()->routeIs('laporan_proses') ? 'mm-active' : '' }}">
+                                Diproses
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('selesai') }}"
+                                class="{{ request()->routeIs('selesai') ? 'mm-active' : '' }}">
+                                Selesai
+                            </a>
+                        </li>
                     </ul>
                 </li>
-
-                <li>
-                    <a href="{{ route('rekapan') }}" aria-expanded="false" class="d-flex align-items-center fs-5">
-                        <i class="ti-folder me-2 icon-lg"></i>
-                        <span class="custom-font-sidebar nav-text">Rekapan</span>
-                    </a>
-                </li>
-
-                <li>
-                    <a href="{{ route('informasi.index') }}" aria-expanded="false" class="d-flex align-items-center fs-5">
-                        <i class="ti-info-alt me-2 icon-lg"></i>
-                        <span class="custom-font-sidebar nav-text">Informasi</span>
-                    </a>
-                </li>
-
-                <li>
-                    <a href="{{ route('chat.index') }}" aria-expanded="false" class="d-flex align-items-center fs-5">
-                        <i class="ti-comment-alt me-2 icon-lg"></i>
-                        <span class="custom-font-sidebar nav-text">Chat</span>
-                        @php
-                            $unreadChat = \App\Models\ChatMobile::where('receiver_id', \Illuminate\Support\Facades\Auth::id())
-                                ->where('is_read', 0)
-                                ->count();
-                        @endphp
-                        @if ($unreadChat > 0)
-                            <span class="badge bg-danger text-white rounded-pill ms-auto me-2"
-                                id="sidebar-chat-badge" style="font-size: 0.7rem;">{{ $unreadChat }}</span>
-                        @else
-                            <span class="badge bg-danger text-white rounded-pill ms-auto me-2"
-                                id="sidebar-chat-badge" style="font-size: 0.7rem; display: none;"></span>
-                        @endif
-                    </a>
-                </li>
             @endif
+
+            {{-- SEKSI: LAYANAN (sama untuk kedua instansi) --}}
+            <li class="sidebar-section-label">Layanan</li>
+
+            <li class="{{ request()->routeIs('rekapan') ? 'mm-active' : '' }}">
+                <a href="{{ route('rekapan') }}" aria-expanded="false" title="Rekapan">
+                    <i class="fa fa-folder-open"></i>
+                    <span class="nav-text">Rekapan</span>
+                </a>
+            </li>
+
+            <li class="{{ request()->routeIs('informasi.*') ? 'mm-active' : '' }}">
+                <a href="{{ route('informasi.index') }}" aria-expanded="false" title="Informasi">
+                    <i class="fa fa-circle-info"></i>
+                    <span class="nav-text">Informasi</span>
+                </a>
+            </li>
+
+            <li class="{{ request()->routeIs('chat.*') ? 'mm-active' : '' }}">
+                <a href="{{ route('chat.index') }}" aria-expanded="false" title="Chat">
+                    <i class="fa fa-comments"></i>
+                    <span class="nav-text">Chat</span>
+                    {{-- ID dipertahankan: diperbarui oleh polling halaman chat --}}
+                    <span class="badge badge-chat" id="sidebar-chat-badge"
+                        style="{{ $unreadChat > 0 ? '' : 'display: none;' }}">{{ $unreadChat > 0 ? $unreadChat : '' }}</span>
+                </a>
+            </li>
         </ul>
     </div>
 </div>
