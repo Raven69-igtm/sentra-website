@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Laporan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -66,8 +67,11 @@ class DinsosLaporanController extends Controller
             return $this->errorResponse('Laporan ini tidak sedang menunggu verifikasi.');
         }
 
+        $statusLama = $laporan->status;
         $laporan->status = 'diproses';
         $laporan->save();
+
+        ActivityLog::record('laporan_status', "Memverifikasi laporan #{$laporan->id_laporan} ({$statusLama} → diproses).", 'laporan', $laporan->id_laporan);
 
         return $this->successResponse('Laporan berhasil diverifikasi dan masuk proses.');
     }
@@ -80,8 +84,11 @@ class DinsosLaporanController extends Controller
             return $this->errorResponse('Laporan yang sudah selesai/ditolak tidak dapat diproses.');
         }
 
+        $statusLama = $laporan->status;
         $laporan->status = 'diproses';
         $laporan->save();
+
+        ActivityLog::record('laporan_status', "Mengubah status laporan #{$laporan->id_laporan} ({$statusLama} → diproses).", 'laporan', $laporan->id_laporan);
 
         return $this->successResponse('Laporan sedang diproses.');
     }
@@ -94,8 +101,11 @@ class DinsosLaporanController extends Controller
             return $this->errorResponse('Laporan harus diverifikasi terlebih dahulu sebelum diselesaikan.');
         }
 
+        $statusLama = $laporan->status;
         $laporan->status = 'selesai';
         $laporan->save();
+
+        ActivityLog::record('laporan_status', "Menyelesaikan laporan #{$laporan->id_laporan} ({$statusLama} → selesai).", 'laporan', $laporan->id_laporan);
 
         return $this->successResponse('Laporan berhasil diselesaikan.');
     }
@@ -115,9 +125,13 @@ class DinsosLaporanController extends Controller
             return $this->errorResponse('Laporan yang sudah selesai/ditolak tidak dapat ditolak lagi.');
         }
 
+        $statusLama = $laporan->status;
         $laporan->status = 'ditolak';
         $laporan->alasan_penolakan = $validated['alasan_penolakan'];
         $laporan->save();
+
+        // Alasan penolakan tidak dicatat di audit (potensi berisi detail kasus).
+        ActivityLog::record('laporan_status', "Menolak laporan #{$laporan->id_laporan} ({$statusLama} → ditolak).", 'laporan', $laporan->id_laporan);
 
         return $this->successResponse('Laporan ditolak dengan alasan yang dicatat.');
     }
