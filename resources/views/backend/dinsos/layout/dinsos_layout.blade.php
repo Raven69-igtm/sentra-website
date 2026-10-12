@@ -6,9 +6,13 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Dashboard') &middot; SENTRA Dinsos</title>
+    <title>@yield('title', 'Dashboard') &middot; {{ \App\Models\SystemSetting::get('app_name', 'SENTRA') }} Dinsos</title>
 
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('admin/assets_2/images/logo-sentra.png') }}">
+    @if ($appLogo = \App\Models\SystemSetting::get('app_logo'))
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset($appLogo) }}">
+    @else
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('admin/assets_2/images/logo-sentra.png') }}">
+    @endif
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -36,12 +40,16 @@
         <aside class="dinsos-sidebar" id="dinsosSidebar">
             <div class="dinsos-brand">
                 <div class="dinsos-brand-logo">
-                    <img src="{{ asset('admin/assets_2/images/logo_nganjuk.png') }}"
-                        alt="Logo Kabupaten Nganjuk">
+                    @if ($appLogo = \App\Models\SystemSetting::get('app_logo'))
+                        <img src="{{ asset($appLogo) }}" alt="Logo" style="max-height: 38px; width: auto; object-fit: contain;">
+                    @else
+                        <img src="{{ asset('admin/assets_2/images/logo_nganjuk.png') }}"
+                            alt="Logo Kabupaten Nganjuk">
+                    @endif
                 </div>
                 <div>
-                    <span class="dinsos-brand-title">DINSOS PPA</span>
-                    <span class="dinsos-brand-sub">Kota Kediri</span>
+                    <span class="dinsos-brand-title">{{ \App\Models\SystemSetting::get('app_name', 'SENTRA') }} DINSOS</span>
+                    <span class="dinsos-brand-sub">{{ \App\Models\SystemSetting::get('instansi_name', 'Dinas Sosial PPPA') }}</span>
                 </div>
             </div>
 

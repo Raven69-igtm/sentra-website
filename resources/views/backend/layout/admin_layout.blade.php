@@ -1,45 +1,44 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>SENTRA</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>@yield('title', 'Panel Instansi') - {{ \App\Models\SystemSetting::get('app_name', 'SENTRA') }}</title>
     <!-- Favicon icon -->
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('admin/assets_2/images/logo-sentra.png') }}">
-    <link rel="stylesheet" href="{{ asset('admin/assets_2/vendor/owl-carousel/css/owl.carousel.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('admin/assets_2/vendor/owl-carousel/css/owl.theme.default.min.css') }}">
-    <!-- Form step -->
-    <link href="{{ asset('admin/assets_2/vendor/jquery-steps/css/jquery.steps.css') }}" rel="stylesheet">
-    <link href="{{ asset('admin/assets_2/vendor/jqvmap/css/jqvmap.min.css') }}" rel="stylesheet">
+    @if ($appLogo = \App\Models\SystemSetting::get('app_logo'))
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset($appLogo) }}">
+    @else
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('admin/assets_2/images/logo-sentra.png') }}">
+    @endif
+    {{-- Font Awesome 6 (ikon sidebar, topbar & aksi) --}}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    {{-- Google Font: Plus Jakarta Sans --}}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    {{-- Tema dasar Dlab/oripio (shell lama, ditimpa oleh instansi.css) --}}
     <link href="{{ asset('admin/assets_2/css/style.css') }}" rel="stylesheet">
-    <!-- Datatable -->
-    <link href="{{ asset('admin/assets_2/vendor/datatables/css/jquery.dataTables.min.css') }}" rel="stylesheet">
-    <!-- DataTables + Bootstrap 5 -->
+    {{-- DataTables 1.13.6 + integrasi Bootstrap 5 --}}
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
-    <!-- Styles -->
-    <link href="{{ asset('admin/assets/css/lib/themify-icons.css') }}" rel="stylesheet">
-    {{-- Font Awesome --}}
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    {{-- link font --}}
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-    {{-- Link DataTables --}}
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     {{-- SweetAlert2 --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.3/sweetalert2.min.css">
     <link href="{{ asset('admin/assets_2/css/preview-model.css') }}" rel="stylesheet">
     {{-- CSS reset password --}}
     @include('backend.layout.page_admin.reset_password.styles')
-    @if (Auth::check() && Auth::user()->isAdminDinsos())
-        {{-- Tema orange untuk Admin Dinsos, struktur sama dengan Admin PPA --}}
-        <link href="{{ asset('admin/assets_dinsos/css/dinsos_admin.css') }}" rel="stylesheet">
-    @endif
+    {{-- DESIGN SYSTEM INSTANSI — dimuat terakhir agar menang atas tema.
+         Satu sistem untuk Admin PPA & Admin Dinsos; aksen dibedakan lewat
+         body.dinsos-admin (lihat token --i-*). --}}
+    <link href="{{ asset('admin/assets_instansi/css/instansi.css') }}" rel="stylesheet">
     @stack('styles')
 </head>
 
-<body class="{{ Auth::check() && Auth::user()->isAdminDinsos() ? 'dinsos-admin' : '' }}">
+<body class="{{ Auth::check() && Auth::user()->isAdminDinsos() ? 'dinsos-admin' : 'instansi-admin' }}">
     <div id="preloader">
         <div class="sk-three-bounce">
             <div class="sk-child sk-bounce1"></div>
@@ -47,13 +46,15 @@
             <div class="sk-child sk-bounce3"></div>
         </div>
     </div>
+
     <div id="main-wrapper">
-        <div class="header"></div>
         @include('backend.components.navbar')
         @include('backend.components.sidebar')
+
         <div class="content-body">
             @yield('admin')
         </div>
+
         @include('backend.components.footer')
     </div>
 
@@ -119,11 +120,118 @@
     <!-- Datatable -->
     <script src="{{ asset('admin/assets_2/vendor/datatables/js/jquery.dataTables.min.js') }}"></script>
     <script src="{{ asset('admin/assets_2/js/plugins-init/datatables.init.js') }}"></script>
+    <script>
+        // Bahasa DataTables untuk seluruh tabel panel instansi.
+        // Ditaruh setelah datatables dimuat terakhir agar default-nya tidak tertimpa.
+        // Kunci gaya lama (sEmptyTable) dan baru (emptyTable) diisi sekaligus
+        // karena tema masih memuat DataTables 1.10 di samping versi CDN.
+        if (window.jQuery && jQuery.fn && jQuery.fn.dataTable && jQuery.fn.dataTable.defaults) {
+            jQuery.fn.dataTable.defaults.oLanguage = jQuery.extend(true, jQuery.fn.dataTable.defaults.oLanguage || {}, {
+                emptyTable: 'Belum ada data untuk ditampilkan',
+                zeroRecords: 'Data tidak ditemukan',
+                info: 'Menampilkan _START_–_END_ dari _TOTAL_ data',
+                infoEmpty: 'Tidak ada data',
+                infoFiltered: '(difilter dari _MAX_ data)',
+                lengthMenu: '_MENU_ data per halaman',
+                search: 'Cari:',
+                sEmptyTable: 'Belum ada data untuk ditampilkan',
+                sZeroRecords: 'Data tidak ditemukan',
+                sInfo: 'Menampilkan _START_–_END_ dari _TOTAL_ data',
+                sInfoEmpty: 'Tidak ada data',
+                sInfoFiltered: '(difilter dari _MAX_ data)',
+                sLengthMenu: '_MENU_ data per halaman',
+                sSearch: 'Cari:',
+                sInfoThousands: '.',
+                paginate: {
+                    first: 'Awal',
+                    last: 'Akhir',
+                    next: 'Berikutnya',
+                    previous: 'Sebelumnya'
+                },
+                oPaginate: {
+                    sFirst: 'Awal',
+                    sLast: 'Akhir',
+                    sNext: 'Berikutnya',
+                    sPrevious: 'Sebelumnya'
+                }
+            });
+        }
+    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     @hasSection('chart')
         @yield('chart')
     @endif
+
+    {{-- ============ TOGGLE SIDEBAR ============
+         custom.min.js sudah memasang handler sendiri pada .nav-control.
+         Agar satu klik tidak men-toggle dua kali (sidebar jadi tidak bisa
+         ditutup), hanya listener fase-capture di document yang menentukan,
+         lalu propagasi dihentikan sebelum handler tema berjalan. --}}
+    <script>
+        (function() {
+            'use strict';
+
+            document.addEventListener('click', function(event) {
+                if (!event.target || typeof event.target.closest !== 'function') return;
+
+                var control = event.target.closest('.nav-control');
+                if (!control) return;
+
+                var wrapper = document.getElementById('main-wrapper');
+                if (!wrapper) return;
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                wrapper.classList.toggle('menu-toggle');
+                syncHamburger();
+            }, true);
+
+            // Ikon X hanya untuk drawer mobile (menandakan "tutup").
+            // Di desktop sidebar mengecil menjadi rail, jadi ikon tetap
+            // hamburger agar tidak terbaca sebagai tombol tutup.
+            function syncHamburger() {
+                var wrapper = document.getElementById('main-wrapper');
+                var isDrawer = window.innerWidth < 992;
+                var opened = !!wrapper && wrapper.classList.contains('menu-toggle');
+
+                document.querySelectorAll('.hamburger').forEach(function(el) {
+                    el.classList.toggle('is-active', isDrawer && opened);
+                });
+            }
+
+            // Di layar kecil sidebar adalah drawer: tutup setelah pindah halaman
+            // agar konten tidak tertutup saat halaman baru dimuat.
+            if (window.innerWidth < 992) {
+                var wrapper = document.getElementById('main-wrapper');
+                if (wrapper) wrapper.classList.remove('menu-toggle');
+            }
+
+            // quixnav.min.js memaksa data-sidebar-style="mini" pada 768–1199px.
+            // Gaya "mini" itu menyembunyikan teks menu, sedangkan geometri
+            // sidebar instansi hanya punya dua keadaan: penuh 260px (teks tampil)
+            // atau rail manual lewat #main-wrapper.menu-toggle.
+            //  • < 992px  → "overlay": drawer, teks tetap tampil
+            //  • 992–1199 → "full": sidebar penuh 260px + teks
+            // Tanpa normalisasi ini sidebar 768–1199px tampil 260px tetapi
+            // teksnya tersembunyi (kondisi tidak konsisten).
+            function normalizeSidebarStyle() {
+                var width = window.innerWidth;
+                var body = document.body;
+                if (!body) return;
+
+                var desired = width < 992 ? 'overlay' : (width < 1200 ? 'full' : null);
+                if (desired && body.getAttribute('data-sidebar-style') !== desired) {
+                    body.setAttribute('data-sidebar-style', desired);
+                }
+                syncHamburger();
+            }
+
+            normalizeSidebarStyle();
+            window.addEventListener('resize', normalizeSidebarStyle, { passive: true });
+        })();
+    </script>
 </body>
 
 <script>
@@ -175,7 +283,7 @@
                                     '';
                                 listContent += `
                                 <div class="media dropdown-item align-items-start py-2 px-3 border-bottom">
-                                    <span class="success mr-2"><i class="ti-user"></i></span>
+                                    <span class="success mr-2"><i class="fa fa-user"></i></span>
                                     <div class="media-body" style="width: 100%;">
                                         <p class="mb-1 font-weight-bold" style="font-size: 0.9rem;">${notif.judul}</p>
                                         <p class="mb-2 text-muted" style="font-size: 0.85rem;">${notif.pesan}</p>
