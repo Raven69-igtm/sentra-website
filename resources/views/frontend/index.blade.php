@@ -7,8 +7,11 @@
         <header id="header" class="header d-flex align-items-center fixed-top">
             <div class="container-fluid container-xl position-relative d-flex align-items-center justify-content-between">
 
-                <a href="index.html" class="logo d-flex align-items-center">
-                    <h1 class="sitename">SENTRA</h1>
+                <a href="{{ url('/') }}" class="logo d-flex align-items-center">
+                    @if ($appLogo = \App\Models\SystemSetting::get('app_logo'))
+                        <img src="{{ asset($appLogo) }}" alt="Logo" style="max-height: 38px; margin-right: 10px; border-radius: 6px;">
+                    @endif
+                    <h1 class="sitename">{{ \App\Models\SystemSetting::get('app_name', 'SENTRA') }}</h1>
                 </a>
 
                 <nav id="navmenu" class="navmenu">
@@ -39,11 +42,16 @@
 
             <div class="container d-flex flex-column align-items-center justify-content-center text-center"
                 style="min-height: 100vh;">
-                <img src="{{ asset('landingpage/assets/img/logo_nganjuk.png') }}" class="img-fluid animated mb-4"
-                    alt="" style="max-width: 250px; height: auto;">
+                @if ($appLogo = \App\Models\SystemSetting::get('app_logo'))
+                    <img src="{{ asset($appLogo) }}" class="img-fluid animated mb-4"
+                        alt="Logo" style="max-width: 180px; max-height: 140px; object-fit: contain;">
+                @else
+                    <img src="{{ asset('landingpage/assets/img/logo_nganjuk.png') }}" class="img-fluid animated mb-4"
+                        alt="" style="max-width: 250px; height: auto;">
+                @endif
 
-                <h1 class="text-white"><span>Dinas Sosial Pemberdayaan Perempuan dan Perlindungan Anak</span></h1>
-                <p>Pusat informasi dan layanan digital untuk mewujudkan perlindungan dan pemberdayaan yang berkeadilan.</p>
+                <h1 class="text-white"><span>{{ \App\Models\SystemSetting::get('instansi_name', 'Dinas Sosial Pemberdayaan Perempuan dan Perlindungan Anak') }}</span></h1>
+                <p>{{ \App\Models\SystemSetting::get('app_description', 'Pusat informasi dan layanan digital untuk mewujudkan perlindungan dan pemberdayaan yang berkeadilan.') }}</p>
             </div>
 
             <svg class="hero-waves" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -529,8 +537,7 @@
             <!-- Section Title -->
             <div class="container section-title text-center" data-aos="fade-up">
                 <h2 class="section-main-title">CEK KONTAK KAMI</h2>
-                <p class="section-description">Informasi terkait Kontak Dinas Sosial Pemberdayaan Perempuan dan
-                    Perlindungan Anak</p>
+                <p class="section-description">Informasi terkait Kontak {{ \App\Models\SystemSetting::get('instansi_name', 'Dinas Sosial Pemberdayaan Perempuan dan Perlindungan Anak') }}</p>
             </div><!-- End Section Title -->
 
             <div class="container" data-aos="fade" data-aos-delay="100">
@@ -541,16 +548,18 @@
                         <i class="bi bi-geo-alt"></i>
                         <div>
                             <h3>Alamat</h3>
-                            <p>Jl Supriyadi No 7, Kauman, Mangundikaran, Mangun Dikaran</p>
-                            <p>Kec. Nganjuk, Kabupaten Nganjuk, Jawa Timur 64412</p>
+                            <p>{{ \App\Models\SystemSetting::get('office_address', 'Jl Supriyadi No 7, Kauman, Mangundikaran, Mangun Dikaran, Kec. Nganjuk, Kabupaten Nganjuk, Jawa Timur 64412') }}</p>
                         </div>
                     </div><!-- End Info Item -->
 
                     <div class="info-item text-center" data-aos="fade-up" data-aos-delay="300">
                         <i class="bi bi-telephone"></i>
                         <div>
-                            <h3>Telepon</h3>
-                            <p>(0358) 3550722</p>
+                            <h3>Hotline & Telepon</h3>
+                            <p>{{ \App\Models\SystemSetting::get('hotline_number', '(0358) 3550722') }}</p>
+                            @if ($emergencyCall = \App\Models\SystemSetting::get('emergency_call'))
+                                <p><small class="text-danger fw-bold"><i class="bi bi-exclamation-octagon me-1"></i>Darurat: {{ $emergencyCall }}</small></p>
+                            @endif
                         </div>
                     </div><!-- End Info Item -->
 
@@ -558,7 +567,7 @@
                         <i class="bi bi-envelope"></i>
                         <div>
                             <h3>Email</h3>
-                            <p>dinsospppa@nganjukkab.go.id</p>
+                            <p>{{ \App\Models\SystemSetting::get('office_email', 'dinsospppa@nganjukkab.go.id') }}</p>
                         </div>
                     </div><!-- End Info Item -->
 
@@ -592,10 +601,13 @@
             <div class="container footer-top">
                 <div class="row gy-4">
                     <div class="col-lg-4 col-md-6 footer-about">
-                        <a href="index.html" class="logo d-flex align-items-center">
-                            <span class="sitename">SENTRA</span>
+                        <a href="{{ url('/') }}" class="logo d-flex align-items-center">
+                            @if ($appLogo = \App\Models\SystemSetting::get('app_logo'))
+                                <img src="{{ asset($appLogo) }}" alt="Logo" style="max-height: 35px; margin-right: 10px; border-radius: 4px;">
+                            @endif
+                            <span class="sitename">{{ \App\Models\SystemSetting::get('app_name', 'SENTRA') }}</span>
                         </a>
-                        <p> Sistem Entitas Pelaporan dan Respons Tanggap Aksi</p>
+                        <p>{{ \App\Models\SystemSetting::get('app_description', 'Sistem Entitas Pelaporan dan Respons Tanggap Aksi') }}</p>
                     </div>
 
                     <div class="col-lg-2 col-md-3 footer-links">
@@ -634,8 +646,7 @@
                 </div>
 
                 <div class="container copyright text-center mt-4">
-                    <p>© <span>Copyright</span> <strong class="px-1 sitename">SENTRA</strong> <span>All Rights
-                            Reserved</span></p>
+                    <p>{{ \App\Models\SystemSetting::get('footer_copyright', '© Copyright SENTRA All Rights Reserved') }}</p>
                     <div class="credits">
                     </div>
                 </div>

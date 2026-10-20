@@ -4,14 +4,19 @@
 <head>
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>SENTRA</title>
+    <title>{{ \App\Models\SystemSetting::get('app_name', 'SENTRA') }} - {{ \App\Models\SystemSetting::get('instansi_name', 'Dinas Sosial PPPA') }}</title>
     <meta name="description"
-        content="Website resmi Dinas Sosial PPPA Kabupaten Nganjuk. Informasi layanan, pengaduan, dan edukasi sosial.">
+        content="{{ \App\Models\SystemSetting::get('app_description', 'Website resmi Dinas Sosial PPPA Kabupaten Nganjuk. Informasi layanan, pengaduan, dan edukasi sosial.') }}">
     <meta name="keywords" content="Dinas Sosial, PPPA, Kabupaten Nganjuk, perlindungan anak, pemberdayaan perempuan">
 
     <!-- Favicons -->
-    <link href="{{ asset('landingpage/assets/img/logo-sentra.png') }}" rel="icon">
-    <link href="{{ asset('landingpage/assets/img/logo-sentr.png') }}" rel="apple-touch-icon">
+    @if ($appLogo = \App\Models\SystemSetting::get('app_logo'))
+        <link href="{{ asset($appLogo) }}" rel="icon">
+        <link href="{{ asset($appLogo) }}" rel="apple-touch-icon">
+    @else
+        <link href="{{ asset('landingpage/assets/img/logo-sentra.png') }}" rel="icon">
+        <link href="{{ asset('landingpage/assets/img/logo-sentr.png') }}" rel="apple-touch-icon">
+    @endif
 
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com" rel="preconnect">
