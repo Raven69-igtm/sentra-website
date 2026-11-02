@@ -119,6 +119,11 @@ class DashboardController extends Controller
             ->whereIn('status', ['selesai', 'dirujuk'])
             ->whereYear('created_at', $tahun_aktif)
             ->count();
+
+        $total_dirujuk = DB::table('laporan')
+            ->where('status', 'dirujuk')
+            ->whereYear('created_at', $tahun_aktif)
+            ->count();
             
         // Menghitung total semua laporan selesai untuk persentase
         $total_laporan = $total_kekerasan_fisik + $kekerasan_psikis + $kekerasan_seksual + 
@@ -150,6 +155,7 @@ class DashboardController extends Controller
             'penelantaran' => $penelantaran,
             'eksploitasi' => $eksploitasi,
             'tppo' => $tppo,
+            'total_dirujuk' => $total_dirujuk,
             'persen_kekerasan_fisik' => round($persen_kekerasan_fisik, 1),
             'persen_kekerasan_psikis' => round($persen_kekerasan_psikis, 1),
             'persen_kekerasan_seksual' => round($persen_kekerasan_seksual, 1),

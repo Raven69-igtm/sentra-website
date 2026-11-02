@@ -1,7 +1,15 @@
 <div class="quixnav">
     <div class="quixnav-scroll">
         <ul class="metismenu" id="menu">
-            <li class="nav-label first text-uppercase fs-6 fw-bold text-white">Main Menu</li>
+            <li class="nav-label first text-uppercase fs-6 fw-bold text-white">
+                @if (Auth::check() && Auth::user()->isAdminDinsos())
+                    Menu Admin Dinsos
+                @elseif (Auth::check() && Auth::user()->isAdminPPA())
+                    Menu Admin PPA
+                @else
+                    Main Menu
+                @endif
+            </li>
 
             <li>
                 <a href="{{ route('dashboard') }}" aria-expanded="false" class="d-flex align-items-center fs-5">

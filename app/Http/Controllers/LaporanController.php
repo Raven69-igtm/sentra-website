@@ -4,14 +4,18 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Laporan;
+use Illuminate\Support\Facades\Auth;
 
 class LaporanController extends Controller
-{  
+{
     public function laporan_selesai()
     {
-        $laporan = Laporan::with('detail_pelapor')->whereIn('status', ['selesai', 'dirujuk'])->get();
+        $laporan = Laporan::with('detail_pelapor')
+            ->forUser(Auth::user())
+            ->whereIn('status', ['selesai', 'dirujuk'])
+            ->get();
         return view('backend.layout.page_admin.laporan.selesai_laporan', compact('laporan'));
-    } 
+    }
 
 // Method untuk menampilkan preview laporan dalam modal
 public function laporan_preview($id)
@@ -22,8 +26,8 @@ public function laporan_preview($id)
         'detail_penerima_manfaat.informasi_anak',
         'detail_terlapor',
         'detail_kasus'
-    ])->where('id_laporan', $id)->firstOrFail();
-    
+    ])->forUser(Auth::user())->where('id_laporan', $id)->firstOrFail();
+
     // Return hanya content untuk modal (tanpa layout)
     return view('backend.layout.page_admin.laporan.preview_content', compact('laporan'));
 }
@@ -37,14 +41,17 @@ public function laporan_show($id)
         'detail_penerima_manfaat.informasi_anak',
         'detail_terlapor',
         'detail_kasus'
-    ])->where('id_laporan', $id)->firstOrFail();
-    
+    ])->forUser(Auth::user())->where('id_laporan', $id)->firstOrFail();
+
     return view('backend.layout.page_admin.laporan.preview_laporan', compact('laporan'));
 }
 
     public function proses()
     {
-        $laporan = Laporan::with('detail_pelapor')->whereIn('status', ['diproses', 'diterima'])->get();
+        $laporan = Laporan::with('detail_pelapor')
+            ->forUser(Auth::user())
+            ->whereIn('status', ['diproses', 'diterima'])
+            ->get();
         return view('backend.layout.page_admin.laporan.proses_laporan', compact('laporan'));
     }    
 
@@ -167,11 +174,11 @@ public function proseskan($id)
     {
         try {
             $laporan = Laporan::with([
-                'detail_pelapor', 
-                'detail_penerima_manfaat.informasi_anak', 
-                'detail_terlapor', 
+                'detail_pelapor',
+                'detail_penerima_manfaat.informasi_anak',
+                'detail_terlapor',
                 'detail_kasus'
-            ])->where('id_laporan', $id)->firstOrFail();
+            ])->forUser(Auth::user())->where('id_laporan', $id)->firstOrFail();
 
             return view('backend.layout.page_admin.laporan.edit_laporan', compact('laporan'));
             

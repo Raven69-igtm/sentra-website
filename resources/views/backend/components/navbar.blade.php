@@ -49,8 +49,21 @@
                             <li class="nav-item dropdown header-profile">
                                 <a class="nav-link d-flex align-items-center" href="#" role="button"
                                     data-toggle="dropdown">
-                                    <i class="fas fa-user-circle fa-lg"></i>
-                                    <span class="custom-font">Admin</span>
+                                    <i class="fas fa-user-circle fa-lg me-1"></i>
+                                    <span class="custom-font">
+                                        @if (Auth::check())
+                                            {{ Auth::user()->nama }}
+                                            @if (Auth::user()->isSuperAdmin())
+                                                <span class="badge badge-danger ml-1" style="font-size: 0.7rem;">Superadmin</span>
+                                            @elseif (Auth::user()->isAdminDinsos())
+                                                <span class="badge badge-warning text-white ml-1" style="font-size: 0.7rem;">Admin Dinsos</span>
+                                            @elseif (Auth::user()->isAdminPPA())
+                                                <span class="badge badge-primary ml-1" style="font-size: 0.7rem;">Admin PPA</span>
+                                            @endif
+                                        @else
+                                            Admin
+                                        @endif
+                                    </span>
                                 </a>
                                 <div class="dropdown-menu dropdown-menu-right">
                                     <a href="#confirmPasswordModal" class="dropdown-item">

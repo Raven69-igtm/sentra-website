@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Laporan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
@@ -21,6 +22,7 @@ class RekapanController extends Controller
             'detail_penerima_manfaat.informasi_anak',
             'detail_kasus'
         ])
+        ->forUser(Auth::user())
         ->whereIn('status', ['selesai', 'dirujuk'])
         ->orderBy('created_at', 'desc')
         ->get();
@@ -103,6 +105,7 @@ class RekapanController extends Controller
         'detail_kasus',
         'detail_penerima_manfaat.informasi_anak'
     ])
+    ->forUser(Auth::user())
     ->when($request->filled('status'), fn($q) =>
         $q->where('status', $request->status)
     )

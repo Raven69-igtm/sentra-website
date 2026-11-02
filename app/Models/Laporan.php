@@ -45,6 +45,33 @@ class Laporan extends Model
         return $this->hasOne(DetailKasus::class, 'id_laporan', 'id_laporan');
     }
 
+    public function scopeForUser($query, $user)
+    {
+        if (!$user || (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())) {
+            return $query;
+        }
+
+        if (method_exists($user, 'isAdminPPA') && $user->isAdminPPA()) {
+            return $query->whereIn('kategori', [
+                'Kekerasan Fisik',
+                'Kekerasan Psikis',
+                'Kekerasan Seksual',
+                'Eksploitasi',
+                'TPPO'
+            ]);
+        }
+
+        if (method_exists($user, 'isAdminDinsos') && $user->isAdminDinsos()) {
+            return $query->where(function ($q) {
+                $q->whereIn('kategori', ['Penelantaran', 'Lainnya'])
+                  ->orWhere('status', 'dirujuk');
+            });
+        }
+
+        // Default untuk user pelapor: laporan miliknya sendiri
+        return $query->where('id_akun', $user->id_akun ?? 0);
+    }
+
 }
 
 

@@ -15,6 +15,11 @@ use App\Http\Controllers\ChatController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\OtpController;
 use App\Http\Controllers\LandingPageController;
+use App\Http\Controllers\Superadmin\SuperadminDashboardController;
+use App\Http\Controllers\Superadmin\SuperadminAkunController;
+use App\Http\Controllers\Superadmin\SuperadminRoleController;
+use App\Http\Controllers\Superadmin\SuperadminSettingController;
+use App\Http\Controllers\Superadmin\SuperadminLaporanController;
 
 // =======================
 // ROUTE GUEST (BELUM LOGIN)
@@ -101,6 +106,29 @@ Route::controller(LaporanController::class)->group(function () {
         Route::post('/send', 'send')->name('chat.send');
         Route::get('/fetch/{userId}', 'fetchMessages')->name('chat.fetch');
         Route::get('/{userId}', 'show')->name('chat.show');
+    });
+
+    // =======================
+    // ROUTE SUPERADMIN
+    // =======================
+    Route::middleware(['role:superadmin'])->prefix('superadmin')->name('superadmin.')->group(function () {
+        Route::get('/dashboard', [SuperadminDashboardController::class, 'index'])->name('dashboard');
+
+        // Akun
+        Route::post('/akun/{id}/reset-password', [SuperadminAkunController::class, 'resetPassword'])->name('akun.reset-password');
+        Route::post('/akun/{id}/toggle-status', [SuperadminAkunController::class, 'toggleStatus'])->name('akun.toggle-status');
+        Route::resource('akun', SuperadminAkunController::class);
+
+        // Role & Permission
+        Route::resource('roles', SuperadminRoleController::class);
+
+        // Konfigurasi Sistem
+        Route::get('/settings', [SuperadminSettingController::class, 'index'])->name('settings.index');
+        Route::post('/settings', [SuperadminSettingController::class, 'update'])->name('settings.update');
+
+        // Monitoring & Audit Laporan Global
+        Route::get('/laporan', [SuperadminLaporanController::class, 'index'])->name('laporan.index');
+        Route::get('/laporan/{id}', [SuperadminLaporanController::class, 'show'])->name('laporan.show');
     });
 
     // Logout

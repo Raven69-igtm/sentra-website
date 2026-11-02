@@ -23,15 +23,28 @@ class LoginController extends Controller
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
 
-            // Cek role
-            if ($user->role !== 'admin') {
+            // Cek status aktif
+            if (isset($user->is_active) && !$user->is_active) {
+                Auth::logout();
+                return back()->withErrors([
+                    'login' => 'Akun Anda dinonaktifkan. Silakan hubungi Superadmin.',
+                ]);
+            }
+
+            // Cek role: hanya admin (admin, admin_ppa, admin_dinsos) dan superadmin yang boleh masuk web panel
+            if (!in_array($user->role, ['admin', 'admin_ppa', 'admin_dinsos', 'superadmin'], true)) {
                 Auth::logout(); // Logout langsung
                 return back()->withErrors([
-                    'login' => 'Akses hanya khusus admin.',
+                    'login' => 'Akses hanya khusus staf dan admin.',
                 ]);
             }
 
             $request->session()->regenerate();
+
+            if ($user->role === 'superadmin') {
+                return redirect()->route('superadmin.dashboard');
+            }
+
             return redirect()->route('dashboard');
         }
 
