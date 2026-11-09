@@ -1,0 +1,1053 @@
+:root {
+    --dinsos-orange: #e07a2e;
+    --dinsos-orange-dark: #c9661f;
+    --dinsos-orange-soft: #fff3e8;
+    --dinsos-bg: #f4f6f9;
+    --dinsos-text: #2d3748;
+    --dinsos-muted: #8a94a6;
+    --dinsos-border: #edf0f4;
+    --dinsos-shadow: 0 10px 30px rgba(31, 41, 55, .06);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body.dinsos-body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background: var(--dinsos-bg);
+    color: var(--dinsos-text);
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+button {
+    font-family: inherit;
+}
+
+.dinsos-app {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ===================== SIDEBAR ===================== */
+.dinsos-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 250px;
+    padding: 28px 18px 24px;
+    background: linear-gradient(180deg, #e58131 0%, #d86f1e 100%);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    z-index: 40;
+    transition: transform .25s ease;
+}
+
+.dinsos-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 12px 26px;
+}
+
+.dinsos-brand-logo {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid rgba(255, 255, 255, .85);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.dinsos-brand-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 3px;
+    display: block;
+}
+
+.dinsos-brand-title {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: .4px;
+    line-height: 1.2;
+}
+
+.dinsos-brand-sub {
+    display: block;
+    font-size: 10px;
+    opacity: .8;
+    margin-top: 2px;
+    letter-spacing: .6px;
+}
+
+.dinsos-menu-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, .65);
+    padding: 18px 12px 8px;
+}
+
+.dinsos-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 11px 14px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .18s ease, color .18s ease;
+    text-align: left;
+}
+
+.dinsos-menu-item i:first-child {
+    width: 18px;
+    text-align: center;
+    font-size: 15px;
+    opacity: .95;
+}
+
+.dinsos-menu-item:hover {
+    background: rgba(255, 255, 255, .13);
+}
+
+.dinsos-menu-item.active {
+    background: #fff;
+    color: var(--dinsos-orange);
+    font-weight: 600;
+    box-shadow: 0 6px 16px rgba(120, 53, 15, .18);
+}
+
+.dinsos-menu-item .menu-chevron {
+    margin-left: auto;
+    font-size: 10px;
+    transition: transform .2s ease;
+}
+
+.dinsos-menu-group.is-open .menu-chevron {
+    transform: rotate(180deg);
+}
+
+.dinsos-submenu {
+    display: none;
+    margin: 4px 0 6px 18px;
+    padding-left: 10px;
+    border-left: 1px solid rgba(255, 255, 255, .3);
+}
+
+.dinsos-menu-group.is-open .dinsos-submenu {
+    display: block;
+}
+
+.dinsos-submenu a {
+    display: block;
+    padding: 8px 10px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, .85);
+    border-radius: 8px;
+}
+
+.dinsos-submenu a:hover,
+.dinsos-submenu a.active {
+    background: rgba(255, 255, 255, .14);
+    color: #fff;
+}
+
+/* ===================== MAIN ===================== */
+.dinsos-main {
+    margin-left: 250px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    width: calc(100% - 250px);
+}
+
+.dinsos-topbar {
+    height: 72px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 30px;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    box-shadow: 0 1px 0 var(--dinsos-border);
+}
+
+.dinsos-hamburger {
+    border: 0;
+    background: transparent;
+    color: var(--dinsos-orange);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 6px;
+    display: inline-block;
+}
+
+.dinsos-app.sidebar-collapsed .dinsos-sidebar {
+    transform: translateX(-100%);
+}
+
+.dinsos-app.sidebar-collapsed .dinsos-main {
+    margin-left: 0;
+    width: 100%;
+}
+
+.dinsos-topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-left: auto;
+}
+
+.dinsos-icon-btn {
+    position: relative;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--dinsos-border);
+    background: #fff;
+    color: #5b6474;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+}
+
+.dinsos-icon-btn:hover {
+    border-color: var(--dinsos-orange);
+    color: var(--dinsos-orange);
+}
+
+.dinsos-notif-dot {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    min-width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    background: var(--dinsos-orange);
+    color: #fff;
+    font-size: 8px;
+    font-weight: 700;
+    display: grid;
+    place-items: center;
+    padding: 0 3px;
+    border: 2px solid #fff;
+}
+
+.dinsos-profile {
+    position: relative;
+}
+
+.dinsos-profile-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    color: var(--dinsos-text);
+    padding: 4px;
+}
+
+.dinsos-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--dinsos-orange);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.dinsos-profile-name {
+    font-size: 12px;
+    font-weight: 600;
+    max-width: 130px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dinsos-dropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 10px);
+    width: 210px;
+    background: #fff;
+    border: 1px solid var(--dinsos-border);
+    border-radius: 12px;
+    box-shadow: var(--dinsos-shadow);
+    padding: 8px;
+    display: none;
+    z-index: 50;
+}
+
+.dinsos-dropdown.is-open {
+    display: block;
+}
+
+.dinsos-dropdown a,
+.dinsos-dropdown button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 10px;
+    border: 0;
+    background: transparent;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #4a5568;
+    text-align: left;
+    cursor: pointer;
+}
+
+.dinsos-dropdown a:hover,
+.dinsos-dropdown button:hover {
+    background: var(--dinsos-orange-soft);
+    color: var(--dinsos-orange-dark);
+}
+
+.dinsos-notif-panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 10px);
+    width: 320px;
+    max-height: 360px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid var(--dinsos-border);
+    border-radius: 12px;
+    box-shadow: var(--dinsos-shadow);
+    padding: 10px;
+    display: none;
+    z-index: 50;
+}
+
+.dinsos-notif-panel.is-open {
+    display: block;
+}
+
+.dinsos-notif-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px 10px;
+    border-bottom: 1px solid var(--dinsos-border);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.dinsos-notif-item {
+    padding: 9px 8px;
+    border-bottom: 1px solid #f7f8fa;
+}
+
+.dinsos-notif-item:last-child {
+    border-bottom: 0;
+}
+
+.dinsos-notif-item strong {
+    display: block;
+    font-size: 11px;
+    color: var(--dinsos-text);
+    margin-bottom: 2px;
+}
+
+.dinsos-notif-item span {
+    display: block;
+    font-size: 10px;
+    color: var(--dinsos-muted);
+    line-height: 1.45;
+}
+
+.dinsos-content {
+    padding: 28px 30px 20px;
+    flex: 1;
+}
+
+/* ===================== PAGE HEAD ===================== */
+.dinsos-page-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.dinsos-page-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -.2px;
+    color: #1f2937;
+}
+
+.dinsos-page-sub {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: var(--dinsos-muted);
+}
+
+.dinsos-breadcrumb {
+    font-size: 11px;
+    color: var(--dinsos-muted);
+    padding-top: 4px;
+    white-space: nowrap;
+}
+
+.dinsos-breadcrumb a {
+    color: var(--dinsos-orange);
+}
+
+.dinsos-breadcrumb span {
+    margin: 0 6px;
+    color: #c7ced8;
+}
+
+/* ===================== CARDS ===================== */
+.dinsos-card {
+    background: #fff;
+    border: 1px solid rgba(237, 240, 244, .9);
+    border-radius: 16px;
+    box-shadow: var(--dinsos-shadow);
+}
+
+.dinsos-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--dinsos-border);
+}
+
+.dinsos-card-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.dinsos-card-body {
+    padding: 20px;
+}
+
+/* ===================== STATS ===================== */
+.dinsos-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.dinsos-stat {
+    background: #fff;
+    border: 1px solid rgba(237, 240, 244, .9);
+    border-radius: 14px;
+    box-shadow: var(--dinsos-shadow);
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.dinsos-stat-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.dinsos-stat-icon.is-total {
+    background: #e8f5ee;
+    color: #15965a;
+}
+
+.dinsos-stat-icon.is-waiting {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.dinsos-stat-icon.is-process {
+    background: #e0e7ff;
+    color: #4f46e5;
+}
+
+.dinsos-stat-icon.is-done {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.dinsos-stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: #1f2937;
+}
+
+.dinsos-stat-label {
+    font-size: 11px;
+    color: var(--dinsos-muted);
+    margin-top: 3px;
+}
+
+/* ===================== BARS ===================== */
+.dinsos-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.dinsos-bar-row {
+    display: grid;
+    grid-template-columns: 155px minmax(0, 1fr) 42px;
+    align-items: center;
+    gap: 14px;
+}
+
+.dinsos-bar-label {
+    font-size: 11.5px;
+    color: #4a5568;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dinsos-bar-track {
+    height: 8px;
+    border-radius: 999px;
+    background: #f0f2f5;
+    overflow: hidden;
+}
+
+.dinsos-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #f29a57 0%, #e07a2e 100%);
+    transition: width .5s ease;
+}
+
+.dinsos-bar-value {
+    text-align: right;
+    font-size: 12px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+/* ===================== TABLE ===================== */
+.dinsos-table-wrap {
+    overflow-x: auto;
+}
+
+.dinsos-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.5px;
+}
+
+.dinsos-table thead th {
+    background: var(--dinsos-orange);
+    color: #fff;
+    font-size: 10px;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 12px 14px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.dinsos-table thead th:first-child {
+    border-radius: 10px 0 0 10px;
+}
+
+.dinsos-table thead th:last-child {
+    border-radius: 0 10px 10px 0;
+}
+
+.dinsos-table tbody td {
+    padding: 13px 14px;
+    border-bottom: 1px solid #f2f4f7;
+    color: #4a5568;
+    vertical-align: middle;
+}
+
+.dinsos-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.dinsos-table tbody tr:hover td {
+    background: #fcfdff;
+}
+
+.dinsos-ticket {
+    font-weight: 600;
+    color: var(--dinsos-orange-dark);
+    white-space: nowrap;
+}
+
+.dinsos-title-cell {
+    max-width: 280px;
+    color: #3c4657;
+    font-weight: 500;
+}
+
+.dinsos-muted {
+    color: var(--dinsos-muted);
+}
+
+.dinsos-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--dinsos-muted);
+    font-size: 12px;
+}
+
+/* ===================== BADGES ===================== */
+.dinsos-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 9px;
+    border-radius: 999px;
+    font-size: 9.5px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.dinsos-badge.is-waiting {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.dinsos-badge.is-process {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.dinsos-badge.is-done {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.dinsos-badge.is-rejected {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.dinsos-badge.is-referred {
+    background: #ede9fe;
+    color: #6d28d9;
+}
+
+.dinsos-badge.is-neutral {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+/* ===================== BUTTONS ===================== */
+.dinsos-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    font-size: 10.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .18s ease;
+    white-space: nowrap;
+}
+
+.dinsos-btn-primary {
+    background: var(--dinsos-orange);
+    color: #fff;
+}
+
+.dinsos-btn-primary:hover {
+    background: var(--dinsos-orange-dark);
+    color: #fff;
+}
+
+.dinsos-btn-outline {
+    background: #fff;
+    border-color: #e2e8f0;
+    color: #4a5568;
+}
+
+.dinsos-btn-outline:hover {
+    border-color: var(--dinsos-orange);
+    color: var(--dinsos-orange);
+}
+
+.dinsos-btn-soft {
+    background: var(--dinsos-orange-soft);
+    color: var(--dinsos-orange-dark);
+}
+
+.dinsos-btn-soft:hover {
+    background: #ffe6d1;
+}
+
+.dinsos-btn-danger {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.dinsos-btn-danger:hover {
+    background: #fecaca;
+}
+
+.dinsos-btn-success {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.dinsos-btn-success:hover {
+    background: #bbf7d0;
+}
+
+.dinsos-btn-sm {
+    padding: 5px 9px;
+    font-size: 9.5px;
+}
+
+.dinsos-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+/* ===================== FILTER ===================== */
+.dinsos-filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.dinsos-input,
+.dinsos-select {
+    height: 38px;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    background: #fff;
+    padding: 0 12px;
+    font-size: 11.5px;
+    color: #4a5568;
+    outline: none;
+}
+
+.dinsos-input:focus,
+.dinsos-select:focus {
+    border-color: var(--dinsos-orange);
+    box-shadow: 0 0 0 3px rgba(224, 122, 46, .12);
+}
+
+.dinsos-input {
+    min-width: 240px;
+}
+
+/* ===================== ALERTS ===================== */
+.dinsos-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 11.5px;
+    margin-bottom: 16px;
+    border: 1px solid transparent;
+}
+
+.dinsos-alert.is-success {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+    color: #047857;
+}
+
+.dinsos-alert.is-error {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #b91c1c;
+}
+
+.dinsos-alert ul {
+    margin: 0;
+    padding-left: 18px;
+}
+
+/* ===================== PAGINATION ===================== */
+.dinsos-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 14px 20px;
+    border-top: 1px solid var(--dinsos-border);
+}
+
+.dinsos-pagination nav {
+    font-size: 11px;
+}
+
+.dinsos-pagination svg {
+    width: 14px;
+    height: 14px;
+    display: inline-block;
+}
+
+.dinsos-pagination .relative {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.dinsos-pagination a,
+.dinsos-pagination span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 8px;
+    border-radius: 7px;
+    border: 1px solid #e2e8f0;
+    color: #4a5568;
+    background: #fff;
+    margin: 0 2px;
+}
+
+.dinsos-pagination .active span,
+.dinsos-pagination [aria-current="page"] span {
+    background: var(--dinsos-orange);
+    border-color: var(--dinsos-orange);
+    color: #fff;
+}
+
+/* ===================== DETAIL ===================== */
+.dinsos-detail-grid {
+    display: grid;
+    grid-template-columns: 1.25fr .75fr;
+    gap: 18px;
+}
+
+.dinsos-detail-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 20px;
+}
+
+.dinsos-detail-item {
+    min-width: 0;
+}
+
+.dinsos-detail-label {
+    display: block;
+    font-size: 9.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: var(--dinsos-muted);
+    margin-bottom: 3px;
+}
+
+.dinsos-detail-value {
+    display: block;
+    font-size: 12px;
+    color: #344054;
+    line-height: 1.5;
+    word-break: break-word;
+    white-space: pre-line;
+}
+
+.dinsos-detail-section + .dinsos-detail-section {
+    margin-top: 22px;
+    padding-top: 20px;
+    border-top: 1px solid var(--dinsos-border);
+}
+
+.dinsos-detail-section h4 {
+    margin: 0 0 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.dinsos-reject-note {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 11.5px;
+    line-height: 1.6;
+    white-space: pre-line;
+}
+
+/* ===================== MODAL ===================== */
+.dinsos-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.dinsos-modal.is-open {
+    display: flex;
+}
+
+.dinsos-modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(17, 24, 39, .45);
+}
+
+.dinsos-modal-box {
+    position: relative;
+    width: 100%;
+    max-width: 440px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 25px 60px rgba(15, 23, 42, .2);
+    padding: 22px;
+    z-index: 1;
+}
+
+.dinsos-modal-box h3 {
+    margin: 0 0 4px;
+    font-size: 15px;
+    color: #1f2937;
+}
+
+.dinsos-modal-box p {
+    margin: 0 0 14px;
+    font-size: 11.5px;
+    color: var(--dinsos-muted);
+}
+
+.dinsos-modal-box textarea {
+    width: 100%;
+    min-height: 110px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 11.5px;
+    color: #344054;
+    resize: vertical;
+    outline: none;
+}
+
+.dinsos-modal-box textarea:focus {
+    border-color: var(--dinsos-orange);
+    box-shadow: 0 0 0 3px rgba(224, 122, 46, .12);
+}
+
+.dinsos-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+/* ===================== FOOTER ===================== */
+.dinsos-footer {
+    text-align: center;
+    font-size: 10px;
+    color: #a0a8b6;
+    padding: 18px 30px 24px;
+}
+
+/* ===================== RESPONSIVE ===================== */
+@media (max-width: 1100px) {
+    .dinsos-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dinsos-detail-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 900px) {
+    .dinsos-sidebar {
+        transform: translateX(-100%);
+    }
+
+    .dinsos-app.sidebar-open .dinsos-sidebar {
+        transform: translateX(0);
+    }
+
+    .dinsos-main {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .dinsos-hamburger {
+        display: inline-block;
+    }
+
+    .dinsos-content {
+        padding: 20px 16px;
+    }
+
+    .dinsos-topbar {
+        padding: 0 16px;
+    }
+
+    .dinsos-page-head {
+        flex-direction: column;
+    }
+
+    .dinsos-breadcrumb {
+        padding-top: 0;
+    }
+}
+
+@media (max-width: 560px) {
+    .dinsos-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .dinsos-bar-row {
+        grid-template-columns: 115px minmax(0, 1fr) 34px;
+        gap: 10px;
+    }
+
+    .dinsos-detail-list {
+        grid-template-columns: 1fr;
+    }
+}

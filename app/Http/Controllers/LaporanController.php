@@ -10,6 +10,10 @@ class LaporanController extends Controller
 {
     public function laporan_selesai()
     {
+        if (Auth::user()->isAdminDinsos()) {
+            return redirect()->route('dinsos.laporan.index', ['status' => 'selesai']);
+        }
+
         $laporan = Laporan::with('detail_pelapor')
             ->forUser(Auth::user())
             ->whereIn('status', ['selesai', 'dirujuk'])
@@ -35,6 +39,10 @@ public function laporan_preview($id)
 // Method lama tetap ada untuk keperluan lain jika diperlukan
 public function laporan_show($id)
 {
+    if (Auth::user()->isAdminDinsos()) {
+        return redirect()->route('dinsos.laporan.show', $id);
+    }
+
     $laporan = Laporan::with([
         'detail_pelapor',
         'detail_penerima_manfaat',
@@ -48,6 +56,10 @@ public function laporan_show($id)
 
     public function proses()
     {
+        if (Auth::user()->isAdminDinsos()) {
+            return redirect()->route('dinsos.laporan.index');
+        }
+
         $laporan = Laporan::with('detail_pelapor')
             ->forUser(Auth::user())
             ->whereIn('status', ['diproses', 'diterima'])
@@ -58,7 +70,7 @@ public function laporan_show($id)
 public function selesai($id)
     {
         try {
-            $laporan = Laporan::where('id_laporan', $id)->firstOrFail();
+            $laporan = Laporan::forUser(Auth::user())->where('id_laporan', $id)->firstOrFail();
             
             // Pastikan laporan sudah diproses dulu
             if ($laporan->status !== 'diproses') {
@@ -101,8 +113,12 @@ public function selesai($id)
 
 public function rujuk($id)
     {
+        if (Auth::user()->isAdminDinsos()) {
+            abort(403, 'Admin Dinsos tidak memiliki kewenangan merujuk laporan.');
+        }
+
         try {
-            $laporan = Laporan::where('id_laporan', $id)->firstOrFail();
+            $laporan = Laporan::forUser(Auth::user())->where('id_laporan', $id)->firstOrFail();
             
             // Pastikan laporan sudah diproses dulu
             if ($laporan->status !== 'diproses') {
@@ -144,7 +160,7 @@ public function rujuk($id)
 public function proseskan($id)
     {
         try {
-            $laporan = Laporan::where('id_laporan', $id)->firstOrFail();
+            $laporan = Laporan::forUser(Auth::user())->where('id_laporan', $id)->firstOrFail();
             
             
             if (request()->ajax()) {
@@ -172,6 +188,10 @@ public function proseskan($id)
     
     public function edit($id)
     {
+        if (Auth::user()->isAdminDinsos()) {
+            return redirect()->route('dinsos.laporan.show', $id);
+        }
+
         try {
             $laporan = Laporan::with([
                 'detail_pelapor',
@@ -192,6 +212,9 @@ public function update(Request $request, $id_laporan)
     try {
         $validatedData = $request->validate([
             'kategori' => 'required',
+            'judul' => 'nullable|string|max:150',
+            'kecamatan' => 'nullable|string|max:100',
+            'layanan_pjsrk' => 'nullable|in:rehabilitasi_sosial,pengaduan_bencana,permasalahan_sosial',
             'pelapor.nama' => 'required',
             'pelapor.nik' => 'required',
             'pelapor.telepon' => 'required',
@@ -211,9 +234,28 @@ public function update(Request $request, $id_laporan)
             'detail_penerima_manfaat.informasi_anak',
             'detail_terlapor',
             'detail_kasus',
-        ])->findOrFail($id_laporan);
+        ])->forUser(Auth::user())->findOrFail($id_laporan);
+
+        if (Auth::user()->isAdminDinsos() && !in_array($request->kategori, Laporan::DINSOS_CATEGORIES, true)) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Admin Dinsos hanya dapat memproses kategori Penelantaran atau Lainnya.');
+        }
 
         $laporan->kategori = $request->kategori;
+
+        if ($request->filled('judul')) {
+            $laporan->judul = $request->judul;
+        }
+
+        if ($request->filled('kecamatan')) {
+            $laporan->kecamatan = $request->kecamatan;
+        }
+
+        if ($request->filled('layanan_pjsrk') && array_key_exists($request->layanan_pjsrk, Laporan::LAYANAN_PJSRK)) {
+            $laporan->layanan_pjsrk = $request->layanan_pjsrk;
+        }
+
         if ($laporan->status === 'diterima') {
             $laporan->status = 'diproses';
         }
@@ -373,6 +415,8 @@ public function update(Request $request, $id_laporan)
 
 public function destroy($id)
 {
+    abort_unless(Auth::user()->isSuperAdmin(), 403, 'Hanya Superadmin yang dapat menghapus laporan.');
+
     $laporan = Laporan::with([
         'detail_pelapor',
         'detail_penerima_manfaat.informasi_anak',

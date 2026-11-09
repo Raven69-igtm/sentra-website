@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -11,6 +12,10 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
+        if (Auth::check() && Auth::user()->isAdminDinsos()) {
+            return redirect()->route('dinsos.dashboard');
+        }
+
         // Mendapatkan tahun dari request atau menggunakan tahun saat ini
         $tahun_aktif = $request->input('tahun', Carbon::now()->year);
         

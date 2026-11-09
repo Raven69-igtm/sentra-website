@@ -16,6 +16,10 @@ class RekapanController extends Controller
 {
     public function index(Request $request)
     {
+        $statuses = Auth::user()->isAdminDinsos()
+            ? ['selesai', 'dirujuk', 'ditolak']
+            : ['selesai', 'dirujuk'];
+
         $dataLaporan = Laporan::with([
             'detail_pelapor',
             'detail_terlapor',
@@ -23,7 +27,7 @@ class RekapanController extends Controller
             'detail_kasus'
         ])
         ->forUser(Auth::user())
-        ->whereIn('status', ['selesai', 'dirujuk'])
+        ->whereIn('status', $statuses)
         ->orderBy('created_at', 'desc')
         ->get();
 
@@ -109,10 +113,14 @@ class RekapanController extends Controller
     ->when($request->filled('status'), fn($q) =>
         $q->where('status', $request->status)
     )
-    // Default jika status tidak diisi → tampilkan "selesai" & "dirujuk"
-    ->when(!$request->filled('status'), fn($q) =>
-        $q->whereIn('status', ['selesai', 'dirujuk'])
-    )
+    // Default jika status tidak diisi → tampilkan status akhir sesuai role
+    ->when(!$request->filled('status'), function ($q) {
+        $statuses = Auth::user()->isAdminDinsos()
+            ? ['selesai', 'dirujuk', 'ditolak']
+            : ['selesai', 'dirujuk'];
+
+        return $q->whereIn('status', $statuses);
+    })
     ->when($request->filled('search'), fn($q) =>
         $q->whereHas('detail_pelapor', fn($sub) =>
             $sub->where('nama', 'like', "%{$request->search}%")

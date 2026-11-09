@@ -45,6 +45,10 @@ class LoginController extends Controller
                 return redirect()->route('superadmin.dashboard');
             }
 
+            if ($user->role === 'admin_dinsos') {
+                return redirect()->route('dinsos.dashboard');
+            }
+
             return redirect()->route('dashboard');
         }
 

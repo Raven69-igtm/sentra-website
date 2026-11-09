@@ -1,64 +1,82 @@
-<div class="quixnav superadmin-sidebar" style="background: #0f172a !important;">
-    <div class="quixnav-scroll">
+<div class="quixnav superadmin-sidebar" style="background: #FFFFFF !important; border-right: 1px solid #EBECEF !important;">
+    <div class="quixnav-scroll" style="padding-bottom: 20px;">
         <ul class="metismenu" id="menu">
-            {{-- SEKSI UTAMA --}}
-            <li class="nav-label text-uppercase fs-6 fw-bold text-slate" style="color: #94a3b8 !important; padding: 15px 20px 5px;">
-                Utama
-            </li>
+            {{-- SEKSI 1: MAIN MENU --}}
+            <li class="sidebar-section-label">Main Menu</li>
             <li class="{{ request()->routeIs('superadmin.dashboard') ? 'mm-active' : '' }}">
-                <a href="{{ route('superadmin.dashboard') }}" aria-expanded="false" class="d-flex align-items-center fs-5">
-                    <i class="fa fa-dashboard me-2 icon-lg text-primary"></i>
-                    <span class="custom-font-sidebar nav-text text-white">Dashboard</span>
+                <a href="{{ route('superadmin.dashboard') }}" aria-expanded="false">
+                    <i class="fa fa-th-large"></i>
+                    <span class="nav-text">Dashboard</span>
                 </a>
             </li>
-
-            {{-- SEKSI PENGELOLAAN AKSES --}}
-            <li class="nav-label text-uppercase fs-6 fw-bold" style="color: #94a3b8 !important; padding: 15px 20px 5px;">
-                Akses & Identitas
+            <li class="{{ request()->routeIs('superadmin.laporan.*') ? 'mm-active' : '' }}">
+                <a href="{{ route('superadmin.laporan.index') }}" aria-expanded="false" class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <i class="fa fa-line-chart"></i>
+                        <span class="nav-text">Audit Laporan</span>
+                    </div>
+                    @php
+                        $laporanCount = \App\Models\Laporan::count();
+                    @endphp
+                    @if ($laporanCount > 0)
+                        <span class="badge bg-light text-muted rounded-pill px-2 py-1" style="font-size: 0.72rem; font-weight: 600;">{{ $laporanCount }}</span>
+                    @endif
+                </a>
             </li>
             <li class="{{ request()->routeIs('superadmin.akun.*') ? 'mm-active' : '' }}">
-                <a href="{{ route('superadmin.akun.index') }}" aria-expanded="false" class="d-flex align-items-center fs-5">
-                    <i class="fa fa-users me-2 icon-lg text-info"></i>
-                    <span class="custom-font-sidebar nav-text text-white">Kelola Akun</span>
+                <a href="{{ route('superadmin.akun.index') }}" aria-expanded="false" class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <i class="fa fa-users"></i>
+                        <span class="nav-text">Kelola Akun</span>
+                    </div>
+                    @php
+                        $akunCount = \App\Models\Akun::count();
+                    @endphp
+                    @if ($akunCount > 0)
+                        <span class="badge bg-light text-muted rounded-pill px-2 py-1" style="font-size: 0.72rem; font-weight: 600;">{{ $akunCount }}</span>
+                    @endif
                 </a>
             </li>
             <li class="{{ request()->routeIs('superadmin.roles.*') ? 'mm-active' : '' }}">
-                <a href="{{ route('superadmin.roles.index') }}" aria-expanded="false" class="d-flex align-items-center fs-5">
-                    <i class="fa fa-key me-2 icon-lg text-warning"></i>
-                    <span class="custom-font-sidebar nav-text text-white">Role & Permission</span>
+                <a href="{{ route('superadmin.roles.index') }}" aria-expanded="false">
+                    <i class="fa fa-shield"></i>
+                    <span class="nav-text">Role & Permission</span>
                 </a>
             </li>
 
-            {{-- SEKSI PENGAWASAN LAPORAN --}}
-            <li class="nav-label text-uppercase fs-6 fw-bold" style="color: #94a3b8 !important; padding: 15px 20px 5px;">
-                Audit Sistem
-            </li>
-            <li class="{{ request()->routeIs('superadmin.laporan.*') ? 'mm-active' : '' }}">
-                <a href="{{ route('superadmin.laporan.index') }}" aria-expanded="false" class="d-flex align-items-center fs-5">
-                    <i class="fa fa-file-text-o me-2 icon-lg text-success"></i>
-                    <span class="custom-font-sidebar nav-text text-white">Audit Laporan</span>
+            {{-- SEKSI 2: PENGAWASAN INSTANSI --}}
+            <li class="sidebar-section-label">Pengawasan Instansi</li>
+            <li>
+                <a href="{{ route('superadmin.laporan.index') }}?kategori=ppa" aria-expanded="false">
+                    <i class="fa fa-female"></i>
+                    <span class="nav-text">Kasus UPTD PPA</span>
                 </a>
-            </li>
-
-            {{-- SEKSI KONFIGURASI --}}
-            <li class="nav-label text-uppercase fs-6 fw-bold" style="color: #94a3b8 !important; padding: 15px 20px 5px;">
-                Sistem
-            </li>
-            <li class="{{ request()->routeIs('superadmin.settings.*') ? 'mm-active' : '' }}">
-                <a href="{{ route('superadmin.settings.index') }}" aria-expanded="false" class="d-flex align-items-center fs-5">
-                    <i class="fa fa-cogs me-2 icon-lg text-secondary"></i>
-                    <span class="custom-font-sidebar nav-text text-white">Konfigurasi Sistem</span>
-                </a>
-            </li>
-
-            {{-- SEKSI SWITCH PORTAL --}}
-            <li class="nav-label text-uppercase fs-6 fw-bold" style="color: #94a3b8 !important; padding: 15px 20px 5px;">
-                Pintasan
             </li>
             <li>
-                <a href="{{ route('dashboard') }}" aria-expanded="false" class="d-flex align-items-center fs-5">
-                    <i class="fa fa-external-link me-2 icon-lg text-light"></i>
-                    <span class="custom-font-sidebar nav-text text-white-50">Portal Operasional</span>
+                <a href="{{ route('superadmin.laporan.index') }}?kategori=dinsos" aria-expanded="false">
+                    <i class="fa fa-handshake"></i>
+                    <span class="nav-text">Rujukan Dinas Sosial</span>
+                </a>
+            </li>
+
+            {{-- SEKSI 3: GENERAL / PENGATURAN --}}
+            <li class="sidebar-section-label">General</li>
+            <li class="{{ request()->routeIs('superadmin.settings.*') ? 'mm-active' : '' }}">
+                <a href="{{ route('superadmin.settings.index') }}" aria-expanded="false">
+                    <i class="fa fa-cog"></i>
+                    <span class="nav-text">Settings</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('dashboard') }}" aria-expanded="false" target="_blank">
+                    <i class="fa fa-external-link"></i>
+                    <span class="nav-text">Portal Operasional</span>
+                </a>
+            </li>
+            <li>
+                <a href="javascript:void(0)" onclick="confirmSuperadminLogout()" aria-expanded="false" class="text-danger">
+                    <i class="fa fa-sign-out text-danger"></i>
+                    <span class="nav-text text-danger">Log out</span>
                 </a>
             </li>
         </ul>

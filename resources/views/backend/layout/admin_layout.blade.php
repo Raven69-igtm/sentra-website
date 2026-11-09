@@ -32,9 +32,14 @@
     <link href="{{ asset('admin/assets_2/css/preview-model.css') }}" rel="stylesheet">
     {{-- CSS reset password --}}
     @include('backend.layout.page_admin.reset_password.styles')
+    @if (Auth::check() && Auth::user()->isAdminDinsos())
+        {{-- Tema orange untuk Admin Dinsos, struktur sama dengan Admin PPA --}}
+        <link href="{{ asset('admin/assets_dinsos/css/dinsos_admin.css') }}" rel="stylesheet">
+    @endif
+    @stack('styles')
 </head>
 
-<body>
+<body class="{{ Auth::check() && Auth::user()->isAdminDinsos() ? 'dinsos-admin' : '' }}">
     <div id="preloader">
         <div class="sk-three-bounce">
             <div class="sk-child sk-bounce1"></div>

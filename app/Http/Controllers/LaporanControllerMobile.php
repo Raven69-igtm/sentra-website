@@ -50,6 +50,9 @@ class LaporanControllerMobile extends Controller
             'id_akun' => 'required|exists:akun,id_akun',
             'kategori' => 'required|string',
             'status' => 'required|in:dikirim,diterima,diproses,selesai',
+            'judul' => 'nullable|string|max:150',
+            'kecamatan' => 'nullable|string|max:100',
+            'layanan_pjsrk' => 'nullable|in:rehabilitasi_sosial,pengaduan_bencana,permasalahan_sosial',
             'detail_pelapor' => 'required|array',
             'detail_terlapor' => 'sometimes|array',
             'detail_penerima_manfaat' => 'required|array',
@@ -57,13 +60,25 @@ class LaporanControllerMobile extends Controller
             'informasi_anak' => 'sometimes|array'
         ]);
 
+        $layananPjsrk = $data['layanan_pjsrk'] ?? match ($data['kategori']) {
+            'Penelantaran' => 'rehabilitasi_sosial',
+            'Lainnya' => 'permasalahan_sosial',
+            default => null,
+        };
+
+        $judul = $data['judul'] ?? null;
+        $kecamatan = $data['kecamatan'] ?? ($data['detail_kasus']['tempat_kejadian'] ?? null);
+
         DB::beginTransaction();
 
         try {
             // 1. Insert laporan utama
             DB::table('laporan')->insert([
                 'id_akun' => $data['id_akun'],
+                'judul' => $judul,
+                'kecamatan' => $kecamatan,
                 'kategori' => $data['kategori'],
+                'layanan_pjsrk' => $layananPjsrk,
                 'status' => $data['status'],
                 'created_at' => now(),
                 'updated_at' => now(),

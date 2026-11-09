@@ -70,10 +70,44 @@
                                                         {{ $laporan->kategori == 'TPPO' ? 'selected' : '' }}>
                                                         TPPO
                                                     </option>
+                                                    <option value="Lainnya"
+                                                        {{ $laporan->kategori == 'Lainnya' ? 'selected' : '' }}>
+                                                        Lainnya
+                                                    </option>
                                                     <option value="unset"
                                                         {{ $laporan->kategori == 'unset' ? 'selected' : '' }}>
                                                         -</option>
                                                 </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6 mb-10">
+                                            <div class="form-group">
+                                                <label>Layanan PJSRK</label>
+                                                <select name="layanan_pjsrk" class="form-control form-control-lg">
+                                                    <option value="">- Pilih Layanan -</option>
+                                                    @foreach (\App\Models\Laporan::LAYANAN_PJSRK as $value => $label)
+                                                        <option value="{{ $value }}"
+                                                            {{ $laporan->layanan_pjsrk == $value ? 'selected' : '' }}>
+                                                            {{ $label }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6 mb-10">
+                                            <div class="form-group">
+                                                <label>Kecamatan</label>
+                                                <input type="text" name="kecamatan" class="form-control form-control-lg"
+                                                    value="{{ $laporan->kecamatan }}" maxlength="100"
+                                                    placeholder="Nama kecamatan">
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-12 mb-10">
+                                            <div class="form-group">
+                                                <label>Judul Laporan</label>
+                                                <input type="text" name="judul" class="form-control form-control-lg"
+                                                    value="{{ $laporan->judul }}" maxlength="150"
+                                                    placeholder="Ringkasan singkat laporan">
                                             </div>
                                         </div>
                                         <div class="col-lg-12 mb-10">

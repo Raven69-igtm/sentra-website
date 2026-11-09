@@ -76,16 +76,18 @@
                                                     Preview
                                                 </button>
 
-                                                <form id="delete-form-{{ $data->id_laporan }}"
-                                                    action="{{ route('laporan.destroy', $data->id_laporan) }}"
-                                                    method="POST" style="display:inline;">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="button" class="btn btn-danger btn-sm" title="Hapus"
-                                                        onclick="confirmDelete('{{ $data->id_laporan }}', '{{ $data->detail_pelapor->nama ?? 'Tanpa Nama' }}')">
-                                                        Hapus
-                                                    </button>
-                                                </form>
+                                                @if (Auth::user()->isSuperAdmin())
+                                                    <form id="delete-form-{{ $data->id_laporan }}"
+                                                        action="{{ route('laporan.destroy', $data->id_laporan) }}"
+                                                        method="POST" style="display:inline;">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="button" class="btn btn-danger btn-sm" title="Hapus"
+                                                            onclick="confirmDelete('{{ $data->id_laporan }}', '{{ $data->detail_pelapor->nama ?? 'Tanpa Nama' }}')">
+                                                            Hapus
+                                                        </button>
+                                                    </form>
+                                                @endif
                                             </td>
                                         </tr>
                                     @endforeach

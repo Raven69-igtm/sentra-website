@@ -243,5 +243,4 @@
     @if (session('success'))
         showSuccessNotification('{{ session('success') }}');
     @endif
-    });
 </script>

@@ -18,6 +18,10 @@ class AdminInstansiSeeder extends Seeder
             ['name' => 'laporan.rujuk_dinsos', 'display_name' => 'Merujuk Laporan ke Dinas Sosial', 'group' => 'Laporan PPA'],
             ['name' => 'laporan.view_dinsos', 'display_name' => 'Melihat Laporan Dinsos & Kasus Dirujuk', 'group' => 'Laporan Dinsos'],
             ['name' => 'laporan.process_dinsos', 'display_name' => 'Memproses Laporan Dinsos & Kasus Dirujuk', 'group' => 'Laporan Dinsos'],
+            ['name' => 'dinsos.dashboard.view', 'display_name' => 'Melihat Dashboard Dinsos', 'group' => 'Dinsos PJSRK'],
+            ['name' => 'dinsos.laporan.verify', 'display_name' => 'Memverifikasi Laporan Dinsos', 'group' => 'Dinsos PJSRK'],
+            ['name' => 'dinsos.laporan.finish', 'display_name' => 'Menyelesaikan Laporan Dinsos', 'group' => 'Dinsos PJSRK'],
+            ['name' => 'dinsos.laporan.reject', 'display_name' => 'Menolak Laporan Dinsos', 'group' => 'Dinsos PJSRK'],
         ];
 
         foreach ($permissions as $p) {
@@ -61,6 +65,7 @@ class AdminInstansiSeeder extends Seeder
         // Permissions untuk Admin Dinsos
         $dinsosPerms = Permission::whereIn('name', [
             'laporan.view', 'laporan.process', 'laporan.view_dinsos', 'laporan.process_dinsos',
+            'dinsos.dashboard.view', 'dinsos.laporan.verify', 'dinsos.laporan.finish', 'dinsos.laporan.reject',
             'chat.manage', 'informasi.manage', 'rekapan.export'
         ])->pluck('id')->toArray();
         $roleDinsos->permissions()->sync($dinsosPerms);

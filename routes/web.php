@@ -20,6 +20,8 @@ use App\Http\Controllers\Superadmin\SuperadminAkunController;
 use App\Http\Controllers\Superadmin\SuperadminRoleController;
 use App\Http\Controllers\Superadmin\SuperadminSettingController;
 use App\Http\Controllers\Superadmin\SuperadminLaporanController;
+use App\Http\Controllers\DinsosDashboardController;
+use App\Http\Controllers\DinsosLaporanController;
 
 // =======================
 // ROUTE GUEST (BELUM LOGIN)
@@ -107,6 +109,24 @@ Route::controller(LaporanController::class)->group(function () {
         Route::get('/fetch/{userId}', 'fetchMessages')->name('chat.fetch');
         Route::get('/{userId}', 'show')->name('chat.show');
     });
+
+    // =======================
+    // ROUTE ADMIN DINSOS (PJSRK)
+    // =======================
+    Route::middleware(['role:admin_dinsos'])
+        ->prefix('dinsos')
+        ->name('dinsos.')
+        ->group(function () {
+            Route::get('/dashboard', [DinsosDashboardController::class, 'index'])->name('dashboard');
+
+            Route::get('/laporan', [DinsosLaporanController::class, 'index'])->name('laporan.index');
+            Route::get('/layanan/{layanan}', [DinsosLaporanController::class, 'layanan'])->name('layanan');
+            Route::get('/laporan/{id}', [DinsosLaporanController::class, 'show'])->name('laporan.show');
+            Route::put('/laporan/{id}/verifikasi', [DinsosLaporanController::class, 'verifikasi'])->name('laporan.verifikasi');
+            Route::put('/laporan/{id}/proses', [DinsosLaporanController::class, 'proses'])->name('laporan.proses');
+            Route::put('/laporan/{id}/selesai', [DinsosLaporanController::class, 'selesai'])->name('laporan.selesai');
+            Route::put('/laporan/{id}/tolak', [DinsosLaporanController::class, 'tolak'])->name('laporan.tolak');
+        });
 
     // =======================
     // ROUTE SUPERADMIN

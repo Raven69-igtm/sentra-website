@@ -3,7 +3,11 @@
             <a class="brand-logo">
                 <img class="logo-abbr" src="{{ asset('admin/assets_2/images/logo_nganjuk.png') }}" alt="">
                 <img class="logo-compact" src="{{ asset('admin/assets_2/images/dinsos.png') }}" alt="">
-                <img class="brand-title" src="{{ asset('admin/assets_2/images/dinsos.png') }}" alt="">
+                @if (Auth::check() && Auth::user()->isAdminDinsos())
+                    <span class="brand-title brand-title-text">DINAS SOSIAL</span>
+                @else
+                    <img class="brand-title" src="{{ asset('admin/assets_2/images/dinsos.png') }}" alt="">
+                @endif
             </a>
 
             <div class="nav-control">

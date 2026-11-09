@@ -14,7 +14,7 @@ class LaporanMobile extends Model
     protected $table = 'laporan';
     protected $keyType = 'string';
     public $incrementing = false;
-    protected $fillable = ['id_akun', 'kategori', 'status'];
+    protected $fillable = ['id_akun', 'judul', 'kecamatan', 'kategori', 'layanan_pjsrk', 'status', 'alasan_penolakan'];
 
     public function scopeSearch(Builder $query, $keyword, $idAkun)
     {

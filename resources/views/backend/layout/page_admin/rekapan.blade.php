@@ -35,6 +35,9 @@
                     <option value="">Semua Status</option>
                     <option value="selesai">Selesai</option>
                     <option value="dirujuk">Dirujuk</option>
+                    @if (Auth::user()->isAdminDinsos())
+                        <option value="ditolak">Ditolak</option>
+                    @endif
                 </select>
             </div>
         </div>
@@ -84,7 +87,7 @@
                                     <tr>
                                         <td>{{ $p->id_laporan }}</td>
                                         <td>{{ $p->kategori }}</td>
-                                        <td>{{ $p->status }}</td>
+                                        <td>{{ $p->status_label }}</td>
                                         <td>{{ optional($p->created_at)->format('Y-m-d') }}</td>
 
                                         <td>{{ $p->detail_pelapor->nik ?? '-' }}</td>

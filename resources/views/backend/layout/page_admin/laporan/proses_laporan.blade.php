@@ -74,19 +74,21 @@
                                                         title="Proses">Proses</button>
                                                 </form>
 
-                                                <!-- Form Rujuk - Perbaiki route parameter -->
-                                                <form id="rujuk-form-{{ $data->id_laporan }}"
-                                                    action="{{ route('laporan.rujuk', $data->id_laporan) }}" method="POST"
-                                                    style="display:inline;" class="rujuk-form">
-                                                    @csrf
-                                                    @method('PUT')
-                                                    <button type="button" class="btn btn-primary btn-sm rujuk-btn"
-                                                        {{ $data->status == 'diterima' ? 'disabled title=Proses-Laporan-Dulu' : '' }}
-                                                        data-id="{{ $data->id_laporan }}"
-                                                        data-nama="{{ $data->detail_pelapor->nama ?? 'Tanpa Nama' }}">
-                                                        Rujuk
-                                                    </button>
-                                                </form>
+                                                @unless (Auth::user()->isAdminDinsos())
+                                                    <!-- Form Rujuk - Perbaiki route parameter -->
+                                                    <form id="rujuk-form-{{ $data->id_laporan }}"
+                                                        action="{{ route('laporan.rujuk', $data->id_laporan) }}" method="POST"
+                                                        style="display:inline;" class="rujuk-form">
+                                                        @csrf
+                                                        @method('PUT')
+                                                        <button type="button" class="btn btn-primary btn-sm rujuk-btn"
+                                                            {{ $data->status == 'diterima' ? 'disabled title=Proses-Laporan-Dulu' : '' }}
+                                                            data-id="{{ $data->id_laporan }}"
+                                                            data-nama="{{ $data->detail_pelapor->nama ?? 'Tidak Diketahui' }}">
+                                                            Rujuk
+                                                        </button>
+                                                    </form>
+                                                @endunless
 
                                                 <!-- Form Selesai - Perbaiki route parameter -->
                                                 <form id="selesai-form-{{ $data->id_laporan }}"
