@@ -48,38 +48,49 @@ class LaporanControllerMobile extends Controller
     {
         $data = $request->validate([
             'id_akun' => 'required|exists:akun,id_akun',
-            'kategori' => 'required|string',
-            'status' => 'required|in:dikirim,diterima,diproses,selesai',
+            'kategori' => 'nullable|string|max:50',
+            'status' => 'nullable|in:dikirim,diterima,diproses,selesai,dirujuk,ditolak',
             'judul' => 'nullable|string|max:150',
             'kecamatan' => 'nullable|string|max:100',
             'layanan_pjsrk' => 'nullable|in:rehabilitasi_sosial,pengaduan_bencana,permasalahan_sosial',
-            'detail_pelapor' => 'required|array',
-            'detail_terlapor' => 'sometimes|array',
-            'detail_penerima_manfaat' => 'required|array',
+            'detail_pelapor' => 'nullable|array',
+            'detail_terlapor' => 'nullable|array',
+            'detail_penerima_manfaat' => 'nullable|array',
             'detail_kasus' => 'required|array',
-            'informasi_anak' => 'sometimes|array'
+            'detail_kasus.tanggal' => 'nullable|date',
+            'detail_kasus.waktu_kejadian' => 'required|date',
+            'detail_kasus.tempat_kejadian' => 'required|string|max:150',
+            'detail_kasus.kronologi' => 'required|string',
+            'informasi_anak' => 'nullable|array'
         ]);
 
-        $layananPjsrk = $data['layanan_pjsrk'] ?? match ($data['kategori']) {
+        $kategori = $data['kategori'] ?? 'unset';
+
+        $layananPjsrk = $data['layanan_pjsrk'] ?? match ($kategori) {
             'Penelantaran' => 'rehabilitasi_sosial',
             'Lainnya' => 'permasalahan_sosial',
             default => null,
         };
 
+        // Normalisasi ISO-8601 tanpa menggeser tanggal/waktu karena timezone.
+        $kejadian = new \DateTimeImmutable($data['detail_kasus']['waktu_kejadian']);
+        $tanggalKejadian = $data['detail_kasus']['tanggal'] ?? $kejadian->format('Y-m-d');
+        $waktuKejadian = $kejadian->format('H:i:s');
+
         $judul = $data['judul'] ?? null;
-        $kecamatan = $data['kecamatan'] ?? ($data['detail_kasus']['tempat_kejadian'] ?? null);
+        $kecamatan = $data['kecamatan'] ?? $data['detail_kasus']['tempat_kejadian'];
 
         DB::beginTransaction();
 
         try {
-            // 1. Insert laporan utama
+            // 1. Insert laporan utama (status dikelola server)
             DB::table('laporan')->insert([
                 'id_akun' => $data['id_akun'],
                 'judul' => $judul,
                 'kecamatan' => $kecamatan,
-                'kategori' => $data['kategori'],
+                'kategori' => $kategori,
                 'layanan_pjsrk' => $layananPjsrk,
-                'status' => $data['status'],
+                'status' => 'dikirim',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -92,33 +103,40 @@ class LaporanControllerMobile extends Controller
 
             $id_laporan = $laporanTerbaru->id_laporan;
 
-            // 3. Insert detail_pelapor dengan enkripsi
-            DB::table('detail_pelapor')->insert([
-                'id_laporan' => $id_laporan,
-                'nik' => Crypt::encryptString($data['detail_pelapor']['nik']),
-                'nama' => $data['detail_pelapor']['nama'],
-                'alamat' => $data['detail_pelapor']['alamat'],
-                'no_telp' => Crypt::encryptString($data['detail_pelapor']['no_telp']),
-                'hubungan_dengan_korban' => $data['detail_pelapor']['hubungan_dengan_korban']
-            ]);
+            // 3. Insert detail_pelapor hanya jika dikirim
+            if (!empty($data['detail_pelapor'])) {
+                $pelapor = $data['detail_pelapor'];
+                DB::table('detail_pelapor')->insert([
+                    'id_laporan' => $id_laporan,
+                    'nik' => !empty($pelapor['nik']) ? Crypt::encryptString($pelapor['nik']) : null,
+                    'nama' => $pelapor['nama'] ?? null,
+                    'alamat' => $pelapor['alamat'] ?? null,
+                    'no_telp' => !empty($pelapor['no_telp']) ? Crypt::encryptString($pelapor['no_telp']) : null,
+                    'hubungan_dengan_korban' => $pelapor['hubungan_dengan_korban'] ?? null,
+                ]);
+            }
 
-            // 4. Insert detail_penerima_manfaat dengan enkripsi
-            $id_penerima = DB::table('detail_penerima_manfaat')->insertGetId([
-                'id_laporan' => $id_laporan,
-                'nik' => Crypt::encryptString($data['detail_penerima_manfaat']['nik']),
-                'nama' => $data['detail_penerima_manfaat']['nama'],
-                'Tempat_lahir' => $data['detail_penerima_manfaat']['Tempat_lahir'],
-                'tanggal_lahir' => $data['detail_penerima_manfaat']['tanggal_lahir'],
-                'umur' => $data['detail_penerima_manfaat']['umur'],
-                'jenis_kelamin' => $data['detail_penerima_manfaat']['jenis_kelamin'],
-                'pekerjaan' => $data['detail_penerima_manfaat']['pekerjaan'],
-                'agama' => $data['detail_penerima_manfaat']['agama'],
-                'alamat' => $data['detail_penerima_manfaat']['alamat'],
-                'pendidikan' => $data['detail_penerima_manfaat']['pendidikan'],
-                'hubungan_dengan_terlapor' => $data['detail_penerima_manfaat']['hubungan_dengan_terlapor'],
-                'notelp' => Crypt::encryptString($data['detail_penerima_manfaat']['notelp']),
-                'informasi_tambahan' => $data['detail_penerima_manfaat']['informasi_tambahan']
-            ]);
+            // 4. Insert detail_penerima_manfaat hanya jika dikirim
+            $id_penerima = null;
+            if (!empty($data['detail_penerima_manfaat'])) {
+                $penerima = $data['detail_penerima_manfaat'];
+                $id_penerima = DB::table('detail_penerima_manfaat')->insertGetId([
+                    'id_laporan' => $id_laporan,
+                    'nik' => !empty($penerima['nik']) ? Crypt::encryptString($penerima['nik']) : null,
+                    'nama' => $penerima['nama'] ?? null,
+                    'tempat_lahir' => $penerima['tempat_lahir'] ?? $penerima['Tempat_lahir'] ?? null,
+                    'tanggal_lahir' => $penerima['tanggal_lahir'] ?? null,
+                    'umur' => $penerima['umur'] ?? null,
+                    'jenis_kelamin' => $penerima['jenis_kelamin'] ?? null,
+                    'pekerjaan' => $penerima['pekerjaan'] ?? null,
+                    'agama' => $penerima['agama'] ?? null,
+                    'alamat' => $penerima['alamat'] ?? null,
+                    'pendidikan' => $penerima['pendidikan'] ?? null,
+                    'hubungan_dengan_terlapor' => $penerima['hubungan_dengan_terlapor'] ?? null,
+                    'notelp' => !empty($penerima['notelp']) ? Crypt::encryptString($penerima['notelp']) : null,
+                    'informasi_tambahan' => $penerima['informasi_tambahan'] ?? null,
+                ]);
+            }
 
             // 5. Insert detail_terlapor dengan enkripsi
             // Support both single object (from Flutter) and array of objects
@@ -145,16 +163,17 @@ class LaporanControllerMobile extends Controller
                 }
             }
 
-            // 6. Insert detail_kasus
+            // 6. Insert detail_kasus (sumber utama form PPA mobile)
             DB::table('detail_kasus')->insert([
                 'id_laporan' => $id_laporan,
-                'tanggal' => $data['detail_kasus']['tanggal'],
+                'tanggal' => $tanggalKejadian,
+                'waktu_kejadian' => $waktuKejadian,
                 'tempat_kejadian' => $data['detail_kasus']['tempat_kejadian'],
-                'kronologi' => $data['detail_kasus']['kronologi']
+                'kronologi' => $data['detail_kasus']['kronologi'],
             ]);
 
-            // 7. Insert informasi_anak
-            if (!empty($data['informasi_anak'])) {
+            // 7. Insert informasi_anak hanya jika penerima manfaat tersedia
+            if ($id_penerima && !empty($data['informasi_anak'])) {
                 foreach ($data['informasi_anak'] as $anak) {
                     if (empty($anak['nama'])) {
                         continue;
@@ -179,8 +198,13 @@ class LaporanControllerMobile extends Controller
                 'message' => 'Laporan berhasil dikirim',
                 'data' => [
                     'laporan' => $laporanTerbaru,
-                    'detail_penerima' => DB::table('detail_penerima_manfaat')->where('id_penerima', $id_penerima)->first(),
-                    'informasi_anak' => DB::table('informasi_anak')->where('id_penerima', $id_penerima)->get()
+                    'detail_kasus' => DB::table('detail_kasus')->where('id_laporan', $id_laporan)->first(),
+                    'detail_penerima' => $id_penerima
+                        ? DB::table('detail_penerima_manfaat')->where('id_penerima', $id_penerima)->first()
+                        : null,
+                    'informasi_anak' => $id_penerima
+                        ? DB::table('informasi_anak')->where('id_penerima', $id_penerima)->get()
+                        : [],
                 ]
             ]);
 

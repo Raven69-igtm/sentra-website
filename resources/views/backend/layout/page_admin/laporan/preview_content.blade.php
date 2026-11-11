@@ -318,6 +318,12 @@
                 </div>
                 <div class="col-md-6">
                     <div class="info-item">
+                        <label class="info-label">Waktu Kejadian</label>
+                        <div class="info-value">{{ optional($laporan->detail_kasus)->waktu_kejadian ? \Illuminate\Support\Carbon::parse($laporan->detail_kasus->waktu_kejadian)->format('H:i') : '-' }}</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="info-item">
                         <label class="info-label">Tempat Kejadian</label>
                         <div class="info-value">{{ optional($laporan->detail_kasus)->tempat_kejadian }}</div>
                     </div>

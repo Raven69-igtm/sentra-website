@@ -63,7 +63,7 @@ public function laporan_show($id)
 
         $laporan = Laporan::with('detail_pelapor')
             ->forUser(Auth::user())
-            ->whereIn('status', ['diproses', 'diterima'])
+            ->whereIn('status', ['dikirim', 'diterima', 'diproses'])
             ->get();
         return view('backend.layout.page_admin.laporan.proses_laporan', compact('laporan'));
     }    
@@ -217,15 +217,27 @@ public function proseskan($id)
 public function update(Request $request, $id_laporan)
 {
     try {
+        $laporan = Laporan::with([
+            'detail_pelapor',
+            'detail_penerima_manfaat.informasi_anak',
+            'detail_terlapor',
+            'detail_kasus',
+        ])->forUser(Auth::user())->findOrFail($id_laporan);
+
+        // Laporan mobile 3-field tidak memiliki data pelapor; jangan wajibkan
+        // pengisian fiktif. Laporan kategori normal tetap mengikuti aturan lama.
+        $isMobileReport = $laporan->kategori === 'unset' && empty($laporan->layanan_pjsrk);
+        $pelaporRule = $isMobileReport ? 'nullable' : 'required';
+
         $validatedData = $request->validate([
             'kategori' => 'required',
             'judul' => 'nullable|string|max:150',
             'kecamatan' => 'nullable|string|max:100',
             'layanan_pjsrk' => 'nullable|in:rehabilitasi_sosial,pengaduan_bencana,permasalahan_sosial',
-            'pelapor.nama' => 'required',
-            'pelapor.nik' => 'required',
-            'pelapor.telepon' => 'required',
-            'pelapor.alamat' => 'required',
+            'pelapor.nama' => $pelaporRule,
+            'pelapor.nik' => $pelaporRule,
+            'pelapor.telepon' => $pelaporRule,
+            'pelapor.alamat' => $pelaporRule,
             'kasus.kronologi' => 'required',
         ], [
             'kategori.required' => 'Kategori laporan harus diisi',
@@ -235,13 +247,6 @@ public function update(Request $request, $id_laporan)
             'pelapor.alamat.required' => 'Alamat pelapor harus diisi',
             'kasus.kronologi.required' => 'Kronologi kejadian harus diisi',
         ]);
-
-        $laporan = Laporan::with([
-            'detail_pelapor',
-            'detail_penerima_manfaat.informasi_anak',
-            'detail_terlapor',
-            'detail_kasus',
-        ])->forUser(Auth::user())->findOrFail($id_laporan);
 
         $statusLama = $laporan->status;
 
@@ -265,27 +270,28 @@ public function update(Request $request, $id_laporan)
             $laporan->layanan_pjsrk = $request->layanan_pjsrk;
         }
 
-        if ($laporan->status === 'diterima') {
+        if (in_array($laporan->status, ['dikirim', 'diterima'], true)) {
             $laporan->status = 'diproses';
         }
         $laporan->save();
 
-        if ($laporan->detail_pelapor) {
-            $laporan->detail_pelapor->update([
-                'nik' => $request->pelapor['nik'],
-                'nama' => $request->pelapor['nama'],
-                'alamat' => $request->pelapor['alamat'],
-                'hubungan_dengan_korban' => $request->pelapor['hubungan'],
-                'no_telp' => $request->pelapor['telepon']
-            ]);
-        } else {
-            $laporan->detail_pelapor()->create([
-                'nik' => $request->pelapor['nik'],
-                'nama' => $request->pelapor['nama'],
-                'alamat' => $request->pelapor['alamat'],
-                'hubungan_dengan_korban' => $request->pelapor['hubungan'],
-                'no_telp' => $request->pelapor['telepon']
-            ]);
+        $pelaporInput = $request->input('pelapor', []);
+        $hasPelaporData = collect($pelaporInput)->contains(fn ($value) => filled($value));
+
+        if ($hasPelaporData) {
+            $pelaporData = [
+                'nik' => $pelaporInput['nik'] ?? null,
+                'nama' => $pelaporInput['nama'] ?? null,
+                'alamat' => $pelaporInput['alamat'] ?? null,
+                'hubungan_dengan_korban' => $pelaporInput['hubungan'] ?? null,
+                'no_telp' => $pelaporInput['telepon'] ?? null,
+            ];
+
+            if ($laporan->detail_pelapor) {
+                $laporan->detail_pelapor->update($pelaporData);
+            } else {
+                $laporan->detail_pelapor()->create($pelaporData);
+            }
         }
 
         $penerima = null;

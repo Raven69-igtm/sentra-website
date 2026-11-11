@@ -153,7 +153,7 @@ class DetailKasus extends Model
     use HasFactory;
     protected $table = 'detail_kasus';
     public $timestamps = false;
-    protected $fillable = ['id_laporan', 'tanggal', 'tempat_kejadian', 'kronologi'];
+    protected $fillable = ['id_laporan', 'tanggal', 'waktu_kejadian', 'tempat_kejadian', 'kronologi'];
 }
 
 class InformasiAnak extends Model

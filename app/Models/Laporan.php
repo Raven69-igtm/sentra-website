@@ -76,7 +76,13 @@ class Laporan extends Model
         }
 
         if (method_exists($user, 'isAdminPPA') && $user->isAdminPPA()) {
-            return $query->whereIn('kategori', self::PPA_CATEGORIES);
+            return $query->where(function ($scope) {
+                $scope->whereIn('kategori', self::PPA_CATEGORIES)
+                    ->orWhere(function ($mobile) {
+                        $mobile->where('kategori', 'unset')
+                            ->whereNull('layanan_pjsrk');
+                    });
+            });
         }
 
         if (method_exists($user, 'isAdminDinsos') && $user->isAdminDinsos()) {
@@ -109,7 +115,8 @@ class Laporan extends Model
         }
 
         if (method_exists($user, 'isAdminPPA') && $user->isAdminPPA()) {
-            return in_array($this->kategori, self::PPA_CATEGORIES, true);
+            return in_array($this->kategori, self::PPA_CATEGORIES, true)
+                || ($this->kategori === 'unset' && empty($this->layanan_pjsrk));
         }
 
         if (method_exists($user, 'isAdminDinsos') && $user->isAdminDinsos()) {

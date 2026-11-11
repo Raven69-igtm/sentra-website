@@ -115,14 +115,20 @@
                             </div>
 
                             {{-- PELAPOR --}}
+                            @php($pelaporOpsional = $laporan->kategori === 'unset' && empty($laporan->layanan_pjsrk))
                             <div class="form-section">
                                 <h5 class="form-section-title">Identitas Pelapor</h5>
+                                @if ($pelaporOpsional)
+                                    <small class="text-muted d-block mb-3">
+                                        Laporan mobile tidak menyertakan data pelapor. Kosongkan jika tidak ada data.
+                                    </small>
+                                @endif
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label class="form-label" for="pelapor_nik">NIK Pelapor</label>
                                             <input type="text" id="pelapor_nik" name="pelapor[nik]" class="form-control"
-                                                value="{{ optional($laporan->detail_pelapor)->nik }}" required
+                                                value="{{ optional($laporan->detail_pelapor)->nik }}" {{ $pelaporOpsional ? '' : 'required' }}
                                                 oninvalid="this.setCustomValidity('NIK salah')"
                                                 oninput="this.setCustomValidity('')" pattern="\d{16}" inputmode="numeric"
                                                 maxlength="16">
@@ -132,7 +138,7 @@
                                         <div class="form-group">
                                             <label class="form-label" for="pelapor_nama">Nama Pelapor</label>
                                             <input type="text" id="pelapor_nama" name="pelapor[nama]" class="form-control"
-                                                value="{{ optional($laporan->detail_pelapor)->nama }}" required
+                                                value="{{ optional($laporan->detail_pelapor)->nama }}" {{ $pelaporOpsional ? '' : 'required' }}
                                                 oninvalid="this.setCustomValidity('Data pelapor wajib  diisi')"
                                                 oninput="this.setCustomValidity('')">
                                         </div>
@@ -142,7 +148,7 @@
                                             <label class="form-label" for="pelapor_alamat">Alamat Pelapor</label>
                                             <input type="text" id="pelapor_alamat" name="pelapor[alamat]"
                                                 class="form-control"
-                                                value="{{ optional($laporan->detail_pelapor)->alamat }}" required
+                                                value="{{ optional($laporan->detail_pelapor)->alamat }}" {{ $pelaporOpsional ? '' : 'required' }}
                                                 oninvalid="this.setCustomValidity('Data pelapor wajib diisi')"
                                                 oninput="this.setCustomValidity('')">
                                         </div>
@@ -153,7 +159,7 @@
                                             <input type="text" id="pelapor_hubungan" name="pelapor[hubungan]"
                                                 class="form-control"
                                                 value="{{ optional($laporan->detail_pelapor)->hubungan_dengan_korban }}"
-                                                required oninvalid="this.setCustomValidity('Data pelapor wajib diisi')"
+                                                {{ $pelaporOpsional ? '' : 'required' }} oninvalid="this.setCustomValidity('Data pelapor wajib diisi')"
                                                 oninput="this.setCustomValidity('')">
                                         </div>
                                     </div>
@@ -162,7 +168,7 @@
                                             <label class="form-label" for="pelapor_telepon">Nomor Telepon Pelapor</label>
                                             <input type="text" id="pelapor_telepon" name="pelapor[telepon]"
                                                 class="form-control"
-                                                value="{{ optional($laporan->detail_pelapor)->no_telp }}" required
+                                                value="{{ optional($laporan->detail_pelapor)->no_telp }}" {{ $pelaporOpsional ? '' : 'required' }}
                                                 oninvalid="this.setCustomValidity('Nomor telepon salah')"
                                                 oninput="this.setCustomValidity('')" pattern="\d{11,15}"
                                                 inputmode="numeric" maxlength="15">

@@ -15,6 +15,7 @@ class DetailKasus extends Model
 
     protected $fillable = [
         'tanggal',
+        'waktu_kejadian',
         'tempat_kejadian',
         'kronologi',
         'bukti',

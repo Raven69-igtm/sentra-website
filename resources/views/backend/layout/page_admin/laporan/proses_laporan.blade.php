@@ -74,7 +74,7 @@
                                                     @csrf
                                                     @method('PUT')
                                                     <button type="button" class="btn btn-instansi-soft btn-pill btn-sm rujuk-btn"
-                                                        {{ $data->status == 'diterima' ? 'disabled title=Proses-Laporan-Dulu' : '' }}
+                                                        {{ in_array($data->status, ['dikirim', 'diterima'], true) ? 'disabled title=Proses-Laporan-Dulu' : '' }}
                                                         data-id="{{ $data->id_laporan }}"
                                                         data-nama="{{ $data->detail_pelapor->nama ?? 'Tidak Diketahui' }}">
                                                         Rujuk
@@ -89,7 +89,7 @@
                                                 @csrf
                                                 @method('PUT')
                                                 <button type="button" class="btn btn-hijau btn-pill btn-sm selesai-btn"
-                                                    {{ $data->status == 'diterima' ? 'disabled title=Proses-Laporan-Dulu' : '' }}
+                                                    {{ in_array($data->status, ['dikirim', 'diterima'], true) ? 'disabled title=Proses-Laporan-Dulu' : '' }}
                                                     data-id="{{ $data->id_laporan }}"
                                                     data-nama="{{ $data->detail_pelapor->nama ?? 'Tanpa Nama' }}">
                                                     Selesai
