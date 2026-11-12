@@ -38,6 +38,18 @@
                             @endforeach
                         </select>
                     </div>
+                    <div class="filter-field">
+                        <label for="filterKecamatan">Kecamatan</label>
+                        <select id="filterKecamatan" name="kecamatan" class="form-control">
+                            <option value="">Semua Kecamatan</option>
+                            @foreach ($kecamatanList as $kecamatan)
+                                <option value="{{ $kecamatan }}"
+                                    {{ request('kecamatan') === $kecamatan ? 'selected' : '' }}>
+                                    {{ $kecamatan }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                     @unless ($activeLayanan)
                         <div class="filter-field">
                             <label for="filterLayanan">Layanan</label>
@@ -58,7 +70,7 @@
                             <button type="submit" class="btn btn-instansi-primary btn-pill">
                                 <i class="fa fa-filter"></i> Filter
                             </button>
-                            @if (request()->hasAny(['search', 'status', 'layanan']))
+                            @if (request()->hasAny(['search', 'status', 'layanan', 'kecamatan']))
                                 <a href="{{ $filterRoute }}" class="btn btn-light btn-pill">Reset</a>
                             @endif
                         </div>
@@ -86,7 +98,7 @@
                                 <th>No. Tiket</th>
                                 <th>Judul</th>
                                 <th>Layanan</th>
-                                <th>Kecamatan</th>
+                                <th>Lokasi</th>
                                 <th>Tanggal</th>
                                 <th>Status</th>
                                 <th>Aksi</th>
@@ -94,6 +106,29 @@
                         </thead>
                         <tbody>
                             @forelse ($laporan as $index => $item)
+                                @php
+                                    $pj = $item->detail_pjsrk;
+                                    $kasus = $item->detail_kasus;
+                                    $dampak = $pj->tingkat_dampak ?? null;
+                                    $dampakClass = match ($dampak) {
+                                        'Berat' => 'badge-danger',
+                                        'Sedang' => 'badge-warning',
+                                        'Ringan' => 'badge-success',
+                                        default => 'badge-light',
+                                    };
+                                    $jumlahFoto = $pj ? count($pj->foto_urls ?? []) : 0;
+                                    $adaBadge = $dampak || ($pj && $pj->rahasia) || $jumlahFoto > 0;
+
+                                    $tanggalKasus = $kasus && !empty($kasus->tanggal)
+                                        ? \Illuminate\Support\Carbon::parse($kasus->tanggal)
+                                        : null;
+                                    $adaJam = $tanggalKasus && !empty($kasus->waktu_kejadian);
+                                    if ($adaJam) {
+                                        $jam = \Illuminate\Support\Carbon::parse($kasus->waktu_kejadian);
+                                        $tanggalKasus->setTime((int) $jam->format('H'), (int) $jam->format('i'));
+                                    }
+                                    $tanggalTampil = $tanggalKasus ?? $item->created_at;
+                                @endphp
                                 <tr>
                                     <td class="text-muted">{{ $laporan->firstItem() + $index }}</td>
                                     <td>
@@ -102,10 +137,49 @@
                                             {{ $item->id_laporan }}
                                         </a>
                                     </td>
-                                    <td>{{ $item->judul_tampil }}</td>
+                                    <td>
+                                        <div>{{ $item->judul_tampil }}</div>
+                                        @if ($adaBadge)
+                                            <div class="d-flex flex-wrap align-items-center"
+                                                style="gap: 4px; margin-top: 4px;">
+                                                @if ($dampak)
+                                                    <span class="badge {{ $dampakClass }}"
+                                                        title="Tingkat dampak bencana">{{ $dampak }}</span>
+                                                @endif
+                                                @if ($pj && $pj->rahasia)
+                                                    <span class="badge badge-warning"
+                                                        title="Pelapor meminta identitas dirahasiakan">
+                                                        <i class="fa fa-lock"></i> Rahasia
+                                                    </span>
+                                                @endif
+                                                @if ($jumlahFoto > 0)
+                                                    <span class="badge badge-light"
+                                                        title="{{ $jumlahFoto }} foto dilampirkan">
+                                                        <i class="fa fa-image"></i> {{ $jumlahFoto }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        @endif
+                                    </td>
                                     <td>{{ $item->layanan_label !== '-' ? $item->layanan_label : '-' }}</td>
-                                    <td>{{ $item->kecamatan_tampil }}</td>
-                                    <td class="text-muted">{{ optional($item->created_at)->format('d-m-Y') }}</td>
+                                    <td>
+                                        @php
+                                            $alamatLengkap = trim((string) optional($item->detail_pjsrk)->alamat);
+                                        @endphp
+                                        <div>{{ $item->kecamatan_tampil }}</div>
+                                        @if ($alamatLengkap !== '' && $alamatLengkap !== $item->kecamatan_tampil)
+                                            <small class="text-muted" title="{{ $alamatLengkap }}">
+                                                {{ \Illuminate\Support\Str::limit($alamatLengkap, 40) }}
+                                            </small>
+                                        @endif
+                                    </td>
+                                    <td class="text-muted">
+                                        <div>{{ optional($tanggalTampil)->format('d-m-Y') ?? '-' }}</div>
+                                        <small
+                                            title="{{ $adaJam ? 'Waktu kejadian' : 'Tanggal laporan masuk' }}">
+                                            {{ $adaJam ? optional($tanggalTampil)->format('H:i') . ' WIB' : 'Masuk' }}
+                                        </small>
+                                    </td>
                                     <td>
                                         @include('backend.components.status-pill', ['status' => $item->status])
                                     </td>

@@ -52,6 +52,7 @@ class DinsosLaporanController extends Controller
                 'detail_penerima_manfaat.informasi_anak',
                 'detail_terlapor',
                 'detail_kasus',
+                'detail_pjsrk',
             ])
             ->where('id_laporan', $id)
             ->firstOrFail();
@@ -139,15 +140,35 @@ class DinsosLaporanController extends Controller
     private function baseQuery(Request $request)
     {
         $query = $this->scopedQuery()
-            ->with(['detail_pelapor', 'detail_kasus']);
+            ->with(['detail_pelapor', 'detail_kasus', 'detail_pjsrk']);
 
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('id_laporan', 'like', "%{$search}%")
                     ->orWhere('judul', 'like', "%{$search}%")
+                    ->orWhere('kecamatan', 'like', "%{$search}%")
                     ->orWhereHas('detail_pelapor', function ($pelapor) use ($search) {
                         $pelapor->where('nama', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('detail_kasus', function ($kasus) use ($search) {
+                        $kasus->where('tempat_kejadian', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('detail_pjsrk', function ($pjsrk) use ($search) {
+                        $pjsrk->where('alamat', 'like', "%{$search}%")
+                            ->orWhere('kelurahan', 'like', "%{$search}%")
+                            ->orWhere('kecamatan', 'like', "%{$search}%")
+                            ->orWhere('patokan_lokasi', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if ($request->filled('kecamatan')) {
+            $kecamatan = $request->kecamatan;
+            $query->where(function ($q) use ($kecamatan) {
+                $q->where('kecamatan', $kecamatan)
+                    ->orWhereHas('detail_pjsrk', function ($pjsrk) use ($kecamatan) {
+                        $pjsrk->where('kecamatan', $kecamatan);
                     });
             });
         }
@@ -192,6 +213,39 @@ class DinsosLaporanController extends Controller
         return Laporan::query()->forUser(Auth::user());
     }
 
+    /**
+     * Daftar kecamatan yang benar-benar ada pada laporan dalam lingkup user,
+     * dipakai sebagai pilihan filter. Laporan bencana PJSRK menyimpan
+     * kecamatan di kolom laporan sekaligus di detail_pjsrk.
+     */
+    private function kecamatanOptions(?string $activeLayanan): array
+    {
+        $query = $this->scopedQuery();
+
+        if ($activeLayanan) {
+            $this->filterByLayanan($query, $activeLayanan);
+        }
+
+        $dariLaporan = (clone $query)
+            ->whereNotNull('kecamatan')
+            ->where('kecamatan', '<>', '')
+            ->distinct()
+            ->pluck('kecamatan');
+
+        $dariDetail = \App\Models\DetailPjsrk::query()
+            ->whereIn('id_laporan', (clone $query)->select('laporan.id_laporan'))
+            ->whereNotNull('kecamatan')
+            ->where('kecamatan', '<>', '')
+            ->distinct()
+            ->pluck('kecamatan');
+
+        return $dariLaporan->merge($dariDetail)
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+    }
+
     private function renderList($query, string $title, string $description, Request $request, ?string $activeLayanan = null)
     {
         $laporan = $query->paginate(10)->withQueryString();
@@ -202,6 +256,7 @@ class DinsosLaporanController extends Controller
             'description' => $description,
             'activeLayanan' => $activeLayanan,
             'layananList' => Laporan::LAYANAN_PJSRK,
+            'kecamatanList' => $this->kecamatanOptions($activeLayanan),
             'statusList' => [
                 'dikirim' => 'Menunggu',
                 'diterima' => 'Menunggu Verifikasi',
