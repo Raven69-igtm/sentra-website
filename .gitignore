@@ -26,3 +26,8 @@ check_admin.php
 fix_accounts.php
 start-websocket.bat
 start-websocket.sh
+
+# Artefak lokal / data runtime (tidak perlu masuk commit)
+/.qoder
+/public/uploads/pjsrk
+/storage/framework/lsp-*.php

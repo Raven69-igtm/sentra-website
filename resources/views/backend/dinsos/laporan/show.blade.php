@@ -147,6 +147,41 @@
                                 </div>
                             @endif
 
+                            {{-- DATA PERMASALAHAN SOSIAL (PJSRK) --}}
+                            @if ($laporan->layanan_pjsrk === 'permasalahan_sosial')
+                                <div class="form-section">
+                                    <h5 class="form-section-title">
+                                        Data Permasalahan Sosial
+                                        @if ($pj->rahasia)
+                                            <span class="badge badge-warning ms-2"><i class="fa fa-lock me-1"></i>
+                                                Rahasia</span>
+                                        @endif
+                                    </h5>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="detail-item">
+                                                <span class="detail-label">Jenis Permasalahan</span>
+                                                <span class="detail-value">{{ $pj->jenis_permasalahan ?: '-' }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="detail-item">
+                                                <span class="detail-label">Judul Laporan</span>
+                                                <span class="detail-value">{{ $laporan->judul_tampil }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="detail-item mb-0">
+                                                <span class="detail-label">Uraian Kejadian</span>
+                                                <div class="detail-text">
+                                                    {!! nl2br(e(optional($laporan->detail_kasus)->kronologi ?: '-')) !!}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+
                             {{-- LOKASI & KONTAK (PJSRK) --}}
                             <div class="form-section">
                                 <h5 class="form-section-title">Lokasi & Kontak</h5>
@@ -560,6 +595,13 @@
                                 <span class="summary-key">Kategori</span>
                                 <span class="summary-value">{{ $laporan->kategori ?: '-' }}</span>
                             </div>
+                            @if (optional($laporan->detail_pjsrk)->jenis_permasalahan)
+                                <div class="summary-row">
+                                    <span class="summary-key">Jenis</span>
+                                    <span
+                                        class="summary-value">{{ $laporan->detail_pjsrk->jenis_permasalahan }}</span>
+                                </div>
+                            @endif
                             <div class="summary-row">
                                 <span class="summary-key">Kecamatan</span>
                                 <span class="summary-value">{{ $laporan->kecamatan_tampil }}</span>

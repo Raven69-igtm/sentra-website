@@ -109,7 +109,7 @@
                                 @php
                                     $pj = $item->detail_pjsrk;
                                     $kasus = $item->detail_kasus;
-                                    $dampak = $pj->tingkat_dampak ?? null;
+                                    $dampak = optional($pj)->tingkat_dampak;
                                     $dampakClass = match ($dampak) {
                                         'Berat' => 'badge-danger',
                                         'Sedang' => 'badge-warning',
@@ -117,7 +117,8 @@
                                         default => 'badge-light',
                                     };
                                     $jumlahFoto = $pj ? count($pj->foto_urls ?? []) : 0;
-                                    $adaBadge = $dampak || ($pj && $pj->rahasia) || $jumlahFoto > 0;
+                                    $jenisPermasalahan = optional($pj)->jenis_permasalahan;
+                                    $adaBadge = $dampak || $jenisPermasalahan || ($pj && $pj->rahasia) || $jumlahFoto > 0;
 
                                     $tanggalKasus = $kasus && !empty($kasus->tanggal)
                                         ? \Illuminate\Support\Carbon::parse($kasus->tanggal)
@@ -145,6 +146,10 @@
                                                 @if ($dampak)
                                                     <span class="badge {{ $dampakClass }}"
                                                         title="Tingkat dampak bencana">{{ $dampak }}</span>
+                                                @endif
+                                                @if ($jenisPermasalahan)
+                                                    <span class="badge badge-info"
+                                                        title="Jenis permasalahan sosial">{{ $jenisPermasalahan }}</span>
                                                 @endif
                                                 @if ($pj && $pj->rahasia)
                                                     <span class="badge badge-warning"

@@ -115,8 +115,8 @@ class PjsrkControllerMobile extends Controller
             'ciri_ciri' => ['required', 'string'],
             'rahasia' => ['boolean'],
             'alamat' => ['required', 'string', 'max:255'],
-            'latitude' => ['required', 'numeric', 'between:-90,90'],
-            'longitude' => ['required', 'numeric', 'between:-180,180'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'kontak' => ['required', 'string', 'max:30'],
             'foto' => ['nullable', 'array', 'max:4'],
             'foto.*' => ['image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
@@ -152,8 +152,8 @@ class PjsrkControllerMobile extends Controller
                 'ciri_ciri' => $data['ciri_ciri'],
                 'rahasia' => $rahasia,
                 'alamat' => $data['alamat'],
-                'latitude' => $data['latitude'],
-                'longitude' => $data['longitude'],
+                'latitude' => $data['latitude'] ?? null,
+                'longitude' => $data['longitude'] ?? null,
                 'foto' => $this->simpanFoto($request, $idLaporan),
                 'kontak' => $data['kontak'],
             ]);
@@ -173,6 +173,86 @@ class PjsrkControllerMobile extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menyimpan laporan rehabilitasi sosial.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Terima laporan permasalahan sosial dari aplikasi mobile PJSRK.
+     *
+     * Mobile mengirim jenis permasalahan, judul, uraian kejadian, lokasi,
+     * dan foto bukti. Uraian disimpan sebagai kronologi detail kasus agar
+     * tampil sama pada daftar & detail laporan admin Dinsos.
+     */
+    public function storePermasalahanSosial(Request $request)
+    {
+        $data = $request->validate([
+            'id_akun' => ['required', 'exists:akun,id_akun'],
+            'jenis_permasalahan' => ['required', 'string', 'max:100'],
+            'judul' => ['required', 'string', 'max:150'],
+            'uraian' => ['required', 'string'],
+            'alamat' => ['required', 'string', 'max:255'],
+            'kelurahan' => ['nullable', 'string', 'max:100'],
+            'kecamatan' => ['nullable', 'string', 'max:100'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'rahasia' => ['boolean'],
+            'kontak' => ['nullable', 'string', 'max:30'],
+            'foto' => ['nullable', 'array', 'max:4'],
+            'foto.*' => ['image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
+        ]);
+
+        $rahasia = filter_var($request->input('rahasia', false), FILTER_VALIDATE_BOOLEAN);
+
+        DB::beginTransaction();
+
+        try {
+            $idLaporan = $this->insertLaporan([
+                'id_akun' => $data['id_akun'],
+                'judul' => Str::limit($data['judul'], 150),
+                'kecamatan' => $data['kecamatan'] ?? null,
+                'kategori' => 'Lainnya',
+                'layanan_pjsrk' => 'permasalahan_sosial',
+            ]);
+
+            $sekarang = now();
+
+            $this->insertDetailKasus($idLaporan, [
+                'tanggal' => $sekarang->format('Y-m-d'),
+                'waktu_kejadian' => $sekarang->format('H:i:s'),
+                'tempat_kejadian' => $data['alamat'],
+                'kronologi' => $data['uraian'],
+            ]);
+
+            DetailPjsrk::create([
+                'id_laporan' => $idLaporan,
+                'jenis_permasalahan' => $data['jenis_permasalahan'],
+                'rahasia' => $rahasia,
+                'alamat' => $data['alamat'],
+                'kelurahan' => $data['kelurahan'] ?? null,
+                'kecamatan' => $data['kecamatan'] ?? null,
+                'latitude' => $data['latitude'] ?? null,
+                'longitude' => $data['longitude'] ?? null,
+                'foto' => $this->simpanFoto($request, $idLaporan),
+                'kontak' => $data['kontak'] ?? null,
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Laporan permasalahan sosial berhasil dikirim.',
+                'data' => [
+                    'id_laporan' => $idLaporan,
+                ],
+            ], 201);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan laporan permasalahan sosial.',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -308,7 +388,10 @@ class PjsrkControllerMobile extends Controller
         $tersimpan = [];
 
         foreach ($request->file('foto') as $index => $file) {
-            $nama = 'pjsrk-' . time() . '-' . $index . '.' . strtolower($file->getClientOriginalExtension());
+            // Ekstensi diambil dari tipe berkas yang terdeteksi agar nama file
+            // tetap valid walau aplikasi mengirim nama tanpa ekstensi.
+            $ekstensi = strtolower($file->extension() ?: $file->getClientOriginalExtension() ?: 'jpg');
+            $nama = 'pjsrk-' . time() . '-' . $index . '.' . $ekstensi;
             $file->move($directory, $nama);
             $tersimpan[] = $nama;
         }

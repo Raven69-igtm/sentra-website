@@ -156,6 +156,9 @@ class DinsosLaporanController extends Controller
                     })
                     ->orWhereHas('detail_pjsrk', function ($pjsrk) use ($search) {
                         $pjsrk->where('alamat', 'like', "%{$search}%")
+                            ->orWhere('jenis_permasalahan', 'like', "%{$search}%")
+                            ->orWhere('jenis_rehabilitasi', 'like', "%{$search}%")
+                            ->orWhere('jenis_bencana', 'like', "%{$search}%")
                             ->orWhere('kelurahan', 'like', "%{$search}%")
                             ->orWhere('kecamatan', 'like', "%{$search}%")
                             ->orWhere('patokan_lokasi', 'like', "%{$search}%");
