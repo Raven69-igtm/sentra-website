@@ -7,6 +7,7 @@ use App\Http\Controllers\LaporanControllerMobile;
 use App\Http\Controllers\ChatControllerMobile;
 use App\Http\Controllers\NotificationControllerMobile;
 use App\Http\Controllers\InformasiController;
+use App\Http\Controllers\PjsrkControllerMobile;
 
 
 
@@ -41,6 +42,11 @@ Route::get('/report-statistics', [LaporanControllerMobile::class, 'reportStatist
 Route::get('/user-reports/{id_akun}', [LaporanControllerMobile::class, 'getUserReports']);
 Route::get('/user-reports-by-category/{id_akun}/{status}', [LaporanControllerMobile::class, 'getUserReportsByCategory']);
 Route::post('/laporan-cepat', [LaporanControllerMobile::class, 'quickAccess']);
+
+Route::post('/pjsrk/bencana', [PjsrkControllerMobile::class, 'storeBencana']);
+Route::post('/pjsrk/rehabilitasi', [PjsrkControllerMobile::class, 'storeRehabilitasi']);
+Route::post('/pjsrk/permasalahan-sosial', [PjsrkControllerMobile::class, 'storePermasalahanSosial']);
+Route::post('/pjsrk/cepat', [PjsrkControllerMobile::class, 'storeCepat']);
 
 
 Route::post('/chats', [ChatControllerMobile::class, 'store']);

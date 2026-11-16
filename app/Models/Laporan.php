@@ -68,6 +68,11 @@ class Laporan extends Model
         return $this->hasOne(DetailKasus::class, 'id_laporan', 'id_laporan');
     }
 
+    public function detail_pjsrk()
+    {
+        return $this->hasOne(DetailPjsrk::class, 'id_laporan', 'id_laporan');
+    }
+
     public function scopeForUser($query, $user)
     {
         // Superadmin hanya memantau aktivitas (audit) — tidak membaca isi laporan.
