@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\LaporanCepatController;
 use App\Http\Controllers\RekapanController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InformasiController;
@@ -66,6 +67,15 @@ Route::controller(LaporanController::class)->middleware('role:admin')->group(fun
     Route::put('/laporan/proseskan/{id}', 'proseskan')->name('laporan.proseskan');
     Route::put('/laporan/{id}/selesai', 'selesai')->name('laporan.selesai');
     Route::put('/laporan/{id}/rujuk', 'rujuk')->name('laporan.rujuk');
+});
+
+// Laporan Cepat (laporan dari fitur "Laporan Cepat" mobile — khusus Admin PPA).
+// Sengaja berupa route halaman sendiri, bukan filter/tab di /laporan.
+// Middleware role:admin sama seperti modul operasional lain; Admin Dinsos
+// dialihkan oleh controller, superadmin ditolak middleware.
+Route::controller(LaporanCepatController::class)->middleware('role:admin')->group(function () {
+    Route::get('/laporan-cepat', 'index')->name('laporan_cepat');
+    Route::get('/laporan-cepat/{id}', 'show')->name('laporan_cepat.show');
 });
 
     // Informasi (pengelolaan konten publik oleh admin instansi)

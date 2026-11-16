@@ -97,6 +97,15 @@
                         </li>
                     </ul>
                 </li>
+
+                {{-- Menu terpisah (bukan submenu Laporan) khusus laporan dari
+                     fitur Laporan Cepat mobile; hanya tampil untuk Admin PPA. --}}
+                <li class="{{ request()->routeIs('laporan_cepat*') ? 'mm-active' : '' }}">
+                    <a href="{{ route('laporan_cepat') }}" aria-expanded="false" title="Laporan Cepat">
+                        <i class="fa fa-bolt"></i>
+                        <span class="nav-text">Laporan Cepat</span>
+                    </a>
+                </li>
             @endif
 
             {{-- SEKSI: LAYANAN (sama untuk kedua instansi) --}}

@@ -3,9 +3,10 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\{LaporanMobile, DetailPelapor, DetailTerlapor, DetailPenerimaManfaat, DetailKasus, InformasiAnak};
+use App\Models\{Akun, LaporanMobile, DetailPelapor, DetailTerlapor, DetailPenerimaManfaat, DetailKasus, InformasiAnak};
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Log;
 use Illuminate\Support\Facades\Crypt;
 
@@ -280,28 +281,48 @@ class LaporanControllerMobile extends Controller
     {
         // Validasi input
         $validated = $request->validate([
-            'id_akun' => 'required|int',
+            'id_akun' => 'nullable|integer|exists:akun,id_akun',
             'nik' => 'required|string|max:100',
             'nama' => 'required|string|max:150',
             'no_telp' => 'required|string|max:15',
             'alamat' => 'required|string|max:255',
             'deskripsi' => 'required|string',
+        ], [
+            'id_akun.exists' => 'Akun pelapor tidak ditemukan. Silakan login ulang.',
         ]);
 
+        // Laporan Cepat boleh dikirim tanpa login: laporan tanpa akun
+        // diatribusikan ke akun penampung ber-role guest.
+        $idAkun = $validated['id_akun'] ?? $this->akunAnonim()->id_akun;
+
+        // Satu timestamp dipakai untuk insert dan pembacaan ulang, supaya
+        // pencarian id_laporan tidak meleset saat detik berganti.
+        $now = now();
+
+        // ketiga insert (laporan + detail_pelapor + detail_kasus) harus utuh.
         DB::beginTransaction();
 
         try {
-            DB::table('laporan')->insertGetId([
-                'id_akun' => $validated['id_akun'],
+            DB::table('laporan')->insert([
+                'id_akun' => $idAkun,
                 'kategori' => 'unset',
                 'status' => 'dikirim',
-                'created_at' => now(),
-                'updated_at' => now(),
+                'created_at' => $now,
+                'updated_at' => $now,
             ]);
-            $id_laporan = DB::table('laporan')
-                ->where('id_akun', $validated['id_akun'])
-                ->where('created_at', now())
-                ->value('id_laporan');
+
+            // id_laporan dibuat oleh trigger BEFORE INSERT, jadi dibaca ulang.
+            // Filter detail_pelapor kosong menjaga laporan yang baru dibuat
+            // tidak tertukar bila akun penampung menerima kiriman bersamaan.
+            $id_laporan = DB::table('laporan as l')
+                ->where('l.id_akun', $idAkun)
+                ->where('l.created_at', $now)
+                ->whereNotExists(function ($q) {
+                    $q->select(DB::raw(1))
+                        ->from('detail_pelapor')
+                        ->whereColumn('detail_pelapor.id_laporan', 'l.id_laporan');
+                })
+                ->value('l.id_laporan');
 
             // Insert ke tabel detail_pelapor
             DB::table('detail_pelapor')->insert([
@@ -341,6 +362,28 @@ class LaporanControllerMobile extends Controller
             ], 500);
         }
     }
+    /**
+     * Akun penampung untuk laporan cepat tanpa login.
+     *
+     * Tabel laporan mewajibkan id_akun (foreign key laporan_id_akun_foreign),
+     * sehingga kiriman anonim diatribusikan ke satu akun guest yang tidak bisa
+     * dipakai login (is_active = false). Dibuat sekali saat kiriman anonim
+     * pertama; idempoten karena email-nya unik.
+     */
+    private function akunAnonim(): Akun
+    {
+        return Akun::firstOrCreate(
+            ['email' => 'anonim@sentra.local'],
+            [
+                'nama' => 'Pelapor Anonim',
+                'notelp' => '0000000000',
+                'password' => Str::random(40),
+                'role' => 'guest',
+                'is_active' => false,
+            ]
+        );
+    }
+
     public function Search(Request $request)
     {
         $keyword = $request->query('keyword');
