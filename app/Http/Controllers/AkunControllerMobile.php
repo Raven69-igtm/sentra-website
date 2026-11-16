@@ -37,7 +37,11 @@ class AkunControllerMobile extends Controller
 
         }
 
-        return response()->json(['message' => 'Login berhasil', 'user' => $user]);
+        return response()->json([
+            'message' => 'Login berhasil',
+            'user' => $user,
+            'token' => $user->createToken('mobile')->plainTextToken,
+        ]);
     }
     public function emergencyCheck(Request $request)
     {
@@ -95,7 +99,8 @@ class AkunControllerMobile extends Controller
         Log::info('User found:', ['user' => $user]);
         return response()->json([
             'message' => 'Login dengan email berhasil',
-            'user' => $user
+            'user' => $user,
+            'token' => $user->createToken('mobile')->plainTextToken,
         ], 200);
     }
     //Login Biometric
@@ -118,7 +123,8 @@ class AkunControllerMobile extends Controller
 
         return response()->json([
             'message' => 'Login biometrik berhasil',
-            'user' => $user
+            'user' => $user,
+            'token' => $user->createToken('mobile')->plainTextToken,
         ], 200);
     }
 

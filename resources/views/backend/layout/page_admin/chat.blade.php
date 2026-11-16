@@ -219,9 +219,13 @@
             @if (isset($activeUser))
                 $('#chat-form').on('submit', function(e) {
                     e.preventDefault();
+                    var form = $(this);
                     var input = $('#chat-input');
                     var message = input.val().trim();
                     if (!message) return;
+
+                    // Serialize dulu: jQuery melewati field yang disabled.
+                    var payload = form.serialize();
 
                     input.prop('disabled', true);
 
@@ -235,11 +239,12 @@
                         input.val('').prop('disabled', false).focus();
                     } else {
                         $.ajax({
-                            url: $(this).attr('action'),
+                            url: form.attr('action'),
                             method: 'POST',
-                            data: $(this).serialize(),
+                            data: payload,
                             headers: {
-                                'X-Requested-With': 'XMLHttpRequest'
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                             },
                             success: function(response) {
                                 if (response.success) {
@@ -252,7 +257,25 @@
                                     input.val('');
                                 }
                             },
-                            error: function() {
+                            error: function(xhr) {
+                                if (xhr.status === 401 || xhr.status === 419) {
+                                    alert('Sesi login Anda sudah berakhir. Halaman akan dimuat ulang, silakan login kembali lalu kirim pesan.');
+                                    window.location.reload();
+                                    return;
+                                }
+
+                                var serverMessage = xhr.responseJSON && xhr.responseJSON.message;
+
+                                if (xhr.status === 403) {
+                                    alert(serverMessage || 'Layanan konsultasi chat sedang dinonaktifkan.');
+                                    return;
+                                }
+
+                                if (xhr.status === 422) {
+                                    alert(serverMessage || 'Pesan tidak valid.');
+                                    return;
+                                }
+
                                 alert('Gagal mengirim pesan');
                             },
                             complete: function() {

@@ -122,8 +122,9 @@ class Laporan extends Model
         }
 
         if (method_exists($user, 'isAdminPPA') && $user->isAdminPPA()) {
-            return $query->where(function ($scope) {
-                $scope->whereIn('kategori', self::PPA_CATEGORIES)
+            return $query->where(function ($q) {
+                $q->whereIn('kategori', self::PPA_CATEGORIES)
+                    // Laporan dari form PPA mobile belum memilih kategori.
                     ->orWhere(function ($mobile) {
                         $mobile->where('kategori', 'unset')
                             ->whereNull('layanan_pjsrk');

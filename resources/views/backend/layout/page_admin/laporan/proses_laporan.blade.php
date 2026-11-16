@@ -53,7 +53,7 @@
                                     <td>
                                         @include('backend.components.status-pill', ['status' => $data->status])
                                     </td>
-                                    <td>{{ $data->kategori }}</td>
+                                    <td>{{ $data->kategori != 'unset' ? $data->kategori : '-' }}</td>
                                     <td>{{ $data->created_at->format('d-m-Y') }}</td>
                                     <td>
                                         <div class="action-group">
@@ -74,7 +74,7 @@
                                                     @csrf
                                                     @method('PUT')
                                                     <button type="button" class="btn btn-instansi-soft btn-pill btn-sm rujuk-btn"
-                                                        {{ in_array($data->status, ['dikirim', 'diterima'], true) ? 'disabled title=Proses-Laporan-Dulu' : '' }}
+                                                        {{ $data->status == 'diterima' ? 'disabled title=Proses-Laporan-Dulu' : '' }}
                                                         data-id="{{ $data->id_laporan }}"
                                                         data-nama="{{ $data->detail_pelapor->nama ?? 'Tidak Diketahui' }}">
                                                         Rujuk
@@ -89,7 +89,7 @@
                                                 @csrf
                                                 @method('PUT')
                                                 <button type="button" class="btn btn-hijau btn-pill btn-sm selesai-btn"
-                                                    {{ in_array($data->status, ['dikirim', 'diterima'], true) ? 'disabled title=Proses-Laporan-Dulu' : '' }}
+                                                    {{ $data->status == 'diterima' ? 'disabled title=Proses-Laporan-Dulu' : '' }}
                                                     data-id="{{ $data->id_laporan }}"
                                                     data-nama="{{ $data->detail_pelapor->nama ?? 'Tanpa Nama' }}">
                                                     Selesai

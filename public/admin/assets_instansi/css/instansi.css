@@ -1793,6 +1793,13 @@ body .btn-pill:active {
     font-size: 0.88rem;
 }
 
+/* .content-body punya z-index: 0 (style.css) dan sebagai flex item membentuk
+   stacking context, sehingga modal di dalamnya terjebak di bawah backdrop
+   (z-index 10) dan sidebar. Netralkan hanya saat modal terbuka. */
+body.modal-open #main-wrapper .content-body {
+    z-index: auto;
+}
+
 #main-wrapper .modal-content {
     border: 0;
     border-radius: 20px;

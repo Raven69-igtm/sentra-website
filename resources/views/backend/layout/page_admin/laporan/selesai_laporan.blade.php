@@ -58,7 +58,7 @@
                                     <td>
                                         @include('backend.components.status-pill', ['status' => $data->status])
                                     </td>
-                                    <td>{{ $data->kategori }}</td>
+                                    <td>{{ $data->kategori != 'unset' ? $data->kategori : '-' }}</td>
                                     <td>{{ $data->created_at->format('d-m-Y') }}</td>
                                     <td>
                                         <div class="action-group">

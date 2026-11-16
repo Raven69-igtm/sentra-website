@@ -11,24 +11,38 @@ class ChatControllerMobile extends Controller
 {
     public function store(Request $request)
     {
-        $request->validate([
-            'sender_id' => 'required|exists:akun,id_akun',
+        $validated = $request->validate([
             'receiver_id' => 'required|exists:akun,id_akun',
             'message' => 'required|string',
+            'replied_to_id' => 'nullable|exists:chats,id_chat',
+            'sender_id' => 'nullable|exists:akun,id_akun',
         ]);
 
+        // Aplikasi mobile mengirim pesan dengan Bearer token, bukan sender_id.
+        // Identitas token dipakai lebih dulu; sender_id hanya fallback untuk
+        // klien lama agar pesan tidak tercatat atas akun yang salah.
+        $senderId = $request->user('sanctum')?->id_akun ?? ($validated['sender_id'] ?? null);
+
+        if (!$senderId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pengirim tidak teridentifikasi. Silakan login ulang.',
+            ], 401);
+        }
+
         $chat = ChatMobile::create([
-            'sender_id' => $request->sender_id,
-            'receiver_id' => $request->receiver_id,
-            'message' => $request->message,
+            'sender_id' => $senderId,
+            'receiver_id' => $validated['receiver_id'],
+            'message' => $validated['message'],
+            'replied_to_id' => $validated['replied_to_id'] ?? null,
         ]);
 
         try {
             $notificationController = new NotificationControllerMobile();
             $notificationRequest = new Request([
-                'sender_id' => $request->sender_id,
-                'receiver_id' => $request->receiver_id,
-                'message' => $request->message,
+                'sender_id' => $senderId,
+                'receiver_id' => $validated['receiver_id'],
+                'message' => $validated['message'],
             ]);
             $notificationController->newMessage($notificationRequest);
         } catch (\Exception $e) {

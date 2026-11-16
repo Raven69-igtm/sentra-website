@@ -310,19 +310,21 @@
         </div>
         <div class="section-body">
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="info-item">
                         <label class="info-label">Tanggal Kejadian</label>
                         <div class="info-value">{{ optional($laporan->detail_kasus)->tanggal }}</div>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="info-item">
                         <label class="info-label">Waktu Kejadian</label>
-                        <div class="info-value">{{ optional($laporan->detail_kasus)->waktu_kejadian ? \Illuminate\Support\Carbon::parse($laporan->detail_kasus->waktu_kejadian)->format('H:i') : '-' }}</div>
+                        <div class="info-value">
+                            {{ optional($laporan->detail_kasus)->waktu_kejadian ? \Illuminate\Support\Carbon::parse(optional($laporan->detail_kasus)->waktu_kejadian)->format('H:i') : '-' }}
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="info-item">
                         <label class="info-label">Tempat Kejadian</label>
                         <div class="info-value">{{ optional($laporan->detail_kasus)->tempat_kejadian }}</div>

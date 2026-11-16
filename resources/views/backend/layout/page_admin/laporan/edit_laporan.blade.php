@@ -81,54 +81,18 @@
                                                 value="{{ $laporan->created_at->format('Y-m-d') }}" readonly>
                                         </div>
                                     </div>
-                                    <div class="col-lg-6">
-                                        <div class="form-group">
-                                            <label class="form-label" for="layanan_pjsrk">Layanan PJSRK</label>
-                                            <select id="layanan_pjsrk" name="layanan_pjsrk" class="form-control">
-                                                <option value="">- Pilih Layanan -</option>
-                                                @foreach (\App\Models\Laporan::LAYANAN_PJSRK as $value => $label)
-                                                    <option value="{{ $value }}"
-                                                        {{ $laporan->layanan_pjsrk == $value ? 'selected' : '' }}>
-                                                        {{ $label }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-lg-6">
-                                        <div class="form-group">
-                                            <label class="form-label" for="kecamatan">Kecamatan</label>
-                                            <input type="text" id="kecamatan" name="kecamatan" class="form-control"
-                                                value="{{ $laporan->kecamatan }}" maxlength="100"
-                                                placeholder="Nama kecamatan">
-                                        </div>
-                                    </div>
-                                    <div class="col-12">
-                                        <div class="form-group mb-0">
-                                            <label class="form-label" for="judul">Judul Laporan</label>
-                                            <input type="text" id="judul" name="judul" class="form-control"
-                                                value="{{ $laporan->judul }}" maxlength="150"
-                                                placeholder="Ringkasan singkat laporan">
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
 
                             {{-- PELAPOR --}}
-                            @php($pelaporOpsional = $laporan->kategori === 'unset' && empty($laporan->layanan_pjsrk))
                             <div class="form-section">
                                 <h5 class="form-section-title">Identitas Pelapor</h5>
-                                @if ($pelaporOpsional)
-                                    <small class="text-muted d-block mb-3">
-                                        Laporan mobile tidak menyertakan data pelapor. Kosongkan jika tidak ada data.
-                                    </small>
-                                @endif
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label class="form-label" for="pelapor_nik">NIK Pelapor</label>
                                             <input type="text" id="pelapor_nik" name="pelapor[nik]" class="form-control"
-                                                value="{{ optional($laporan->detail_pelapor)->nik }}" {{ $pelaporOpsional ? '' : 'required' }}
+                                                value="{{ optional($laporan->detail_pelapor)->nik }}" required
                                                 oninvalid="this.setCustomValidity('NIK salah')"
                                                 oninput="this.setCustomValidity('')" pattern="\d{16}" inputmode="numeric"
                                                 maxlength="16">
@@ -138,7 +102,7 @@
                                         <div class="form-group">
                                             <label class="form-label" for="pelapor_nama">Nama Pelapor</label>
                                             <input type="text" id="pelapor_nama" name="pelapor[nama]" class="form-control"
-                                                value="{{ optional($laporan->detail_pelapor)->nama }}" {{ $pelaporOpsional ? '' : 'required' }}
+                                                value="{{ optional($laporan->detail_pelapor)->nama }}" required
                                                 oninvalid="this.setCustomValidity('Data pelapor wajib  diisi')"
                                                 oninput="this.setCustomValidity('')">
                                         </div>
@@ -148,7 +112,7 @@
                                             <label class="form-label" for="pelapor_alamat">Alamat Pelapor</label>
                                             <input type="text" id="pelapor_alamat" name="pelapor[alamat]"
                                                 class="form-control"
-                                                value="{{ optional($laporan->detail_pelapor)->alamat }}" {{ $pelaporOpsional ? '' : 'required' }}
+                                                value="{{ optional($laporan->detail_pelapor)->alamat }}" required
                                                 oninvalid="this.setCustomValidity('Data pelapor wajib diisi')"
                                                 oninput="this.setCustomValidity('')">
                                         </div>
@@ -159,7 +123,7 @@
                                             <input type="text" id="pelapor_hubungan" name="pelapor[hubungan]"
                                                 class="form-control"
                                                 value="{{ optional($laporan->detail_pelapor)->hubungan_dengan_korban }}"
-                                                {{ $pelaporOpsional ? '' : 'required' }} oninvalid="this.setCustomValidity('Data pelapor wajib diisi')"
+                                                required oninvalid="this.setCustomValidity('Data pelapor wajib diisi')"
                                                 oninput="this.setCustomValidity('')">
                                         </div>
                                     </div>
@@ -168,7 +132,7 @@
                                             <label class="form-label" for="pelapor_telepon">Nomor Telepon Pelapor</label>
                                             <input type="text" id="pelapor_telepon" name="pelapor[telepon]"
                                                 class="form-control"
-                                                value="{{ optional($laporan->detail_pelapor)->no_telp }}" {{ $pelaporOpsional ? '' : 'required' }}
+                                                value="{{ optional($laporan->detail_pelapor)->no_telp }}" required
                                                 oninvalid="this.setCustomValidity('Nomor telepon salah')"
                                                 oninput="this.setCustomValidity('')" pattern="\d{11,15}"
                                                 inputmode="numeric" maxlength="15">
@@ -500,7 +464,7 @@
                             <div class="form-section">
                                 <h5 class="form-section-title">Detail Kasus</h5>
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <div class="form-group">
                                             <label class="form-label">Tanggal Kejadian</label>
                                             <input type="date" name="kasus[tanggal]" class="form-control"
@@ -509,7 +473,14 @@
                                                 oninput="this.setCustomValidity('')">
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label class="form-label">Waktu Kejadian</label>
+                                            <input type="time" name="kasus[waktu]" class="form-control"
+                                                value="{{ optional($laporan->detail_kasus)->waktu_kejadian ? \Illuminate\Support\Carbon::parse(optional($laporan->detail_kasus)->waktu_kejadian)->format('H:i') : '' }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
                                         <div class="form-group">
                                             <label class="form-label">Tempat Kejadian</label>
                                             <input type="text" name="kasus[tempat]" class="form-control"

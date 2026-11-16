@@ -25,7 +25,11 @@ class AuthControllerMobile extends Controller
             return response()->json(['message' => 'No Telp atau password salah'], 401);
         }
 
-        return response()->json(['message' => 'Login berhasil', 'user' => $user]);
+        return response()->json([
+            'message' => 'Login berhasil',
+            'user' => $user,
+            'token' => $user->createToken('mobile')->plainTextToken,
+        ]);
     }
 
     //REGISTER

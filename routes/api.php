@@ -57,6 +57,11 @@ Route::delete('/chats/{senderId}/{receiverId}', [ChatControllerMobile::class, 'd
 Route::get('/chats/{userId}', [ChatControllerMobile::class, 'getChats']);
 Route::get('/conversations/{userId}', [ChatControllerMobile::class, 'getConversations']);
 
+Route::get('/notifications', [NotificationControllerMobile::class, 'index']);
+Route::patch('/notifications/{id}/read', [NotificationControllerMobile::class, 'markRead']);
+Route::delete('/notifications/{id}', [NotificationControllerMobile::class, 'destroy']);
+Route::post('/notifications/restore', [NotificationControllerMobile::class, 'restore']);
+
 Route::post('/new-message', [NotificationControllerMobile::class, 'newMessage']);
 Route::post('/report-update', [NotificationControllerMobile::class, 'reportUpdate']);
 Route::post('/update-fcm-token', [NotificationControllerMobile::class, 'updateFCMToken']);

@@ -327,21 +327,21 @@
                         <div class="form-section">
                             <h5 class="form-section-title">Detail Kasus</h5>
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="detail-item">
                                         <span class="detail-label">Tanggal Kejadian</span>
                                         <span
                                             class="detail-value">{{ optional($laporan->detail_kasus)->tanggal ?: '-' }}</span>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="detail-item">
                                         <span class="detail-label">Waktu Kejadian</span>
                                         <span
-                                            class="detail-value">{{ optional($laporan->detail_kasus)->waktu_kejadian ? \Illuminate\Support\Carbon::parse($laporan->detail_kasus->waktu_kejadian)->format('H:i') : '-' }}</span>
+                                            class="detail-value">{{ optional($laporan->detail_kasus)->waktu_kejadian ? \Illuminate\Support\Carbon::parse(optional($laporan->detail_kasus)->waktu_kejadian)->format('H:i') : '-' }}</span>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="detail-item">
                                         <span class="detail-label">Tempat Kejadian</span>
                                         <span
