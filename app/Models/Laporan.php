@@ -68,6 +68,24 @@ class Laporan extends Model
         return $this->hasOne(DetailKasus::class, 'id_laporan', 'id_laporan');
     }
 
+    /**
+     * Laporan yang dikirim lewat fitur "Laporan Cepat" di mobile.
+     *
+     * Alur data: mobile (PppaQuickReportScreen) → POST /api/laporan-cepat →
+     * LaporanControllerMobile::quickAccess. Endpoint itu selalu menulis
+     * kategori 'unset', layanan_pjsrk NULL, dan TIDAK membuat penerima
+     * manfaat. Laporan PPA biasa (POST /api/post-report) selalu membuat
+     * penerima manfaat, sehingga kombinasi berikut memisahkan keduanya.
+     *
+     * Dipakai bersama forUser() agar tetap terbatas pada instansi PPA.
+     */
+    public function scopeLaporanCepat($query)
+    {
+        return $query->where('kategori', 'unset')
+            ->whereNull('layanan_pjsrk')
+            ->whereDoesntHave('detail_penerima_manfaat');
+    }
+
     public function scopeForUser($query, $user)
     {
         // Superadmin hanya memantau aktivitas (audit) — tidak membaca isi laporan.
