@@ -60,6 +60,16 @@
                         </li>
                     </ul>
                 </li>
+
+                {{-- Halaman terpisah untuk form ringkas "Laporan Cepat" PJSRK
+                     (rehabilitasi/bencana/permasalahan sosial) dari mobile.
+                     Bukan submenu Laporan PJSRK karena isinya tanpa detail_pjsrk. --}}
+                <li class="{{ request()->routeIs('dinsos.laporan_cepat*') ? 'mm-active' : '' }}">
+                    <a href="{{ route('dinsos.laporan_cepat') }}" aria-expanded="false" title="Laporan Cepat">
+                        <i class="fa fa-bolt"></i>
+                        <span class="nav-text">Laporan Cepat</span>
+                    </a>
+                </li>
             @else
                 {{-- SEKSI: MENU UTAMA (Admin PPA) --}}
                 <li class="sidebar-section-label">Menu Utama</li>

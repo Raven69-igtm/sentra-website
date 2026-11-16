@@ -68,6 +68,14 @@ class Laporan extends Model
         return $this->hasOne(DetailKasus::class, 'id_laporan', 'id_laporan');
     }
 
+    // Detail khusus laporan PJSRK (bencana/rehabilitasi/permasalahan sosial).
+    // Relasi ini dipakai DinsosLaporanController untuk menampilkan badge layanan,
+    // lokasi, dan status rahasia pada daftar serta detail laporan Dinsos.
+    public function detail_pjsrk()
+    {
+        return $this->hasOne(DetailPjsrk::class, 'id_laporan', 'id_laporan');
+    }
+
     /**
      * Laporan yang dikirim lewat fitur "Laporan Cepat" di mobile.
      *
@@ -84,6 +92,26 @@ class Laporan extends Model
         return $query->where('kategori', 'unset')
             ->whereNull('layanan_pjsrk')
             ->whereDoesntHave('detail_penerima_manfaat');
+    }
+
+    /**
+     * Laporan yang dikirim lewat form "Laporan Cepat" layanan PJSRK di mobile.
+     *
+     * Alur data: mobile (FormBencanaAlam/FormRehabilitasiSosial/
+     * FormPermasalahanSosial) → POST /api/pjsrk/cepat →
+     * PjsrkControllerMobile::storeCepat.
+     *
+     * Penanda sumbernya: layanan_pjsrk terisi TAPI tidak ada baris
+     * detail_pjsrk. Alur PJSRK lengkap (3 langkah) selalu membuat
+     * detail_pjsrk, sedangkan form cepat hanya mengirim data pelapor +
+     * detail kasus. Laporan cepat PPA tidak ikut karena layanan_pjsrk NULL.
+     *
+     * Dipakai bersama forUser() agar tetap terbatas pada instansi Dinsos.
+     */
+    public function scopeLaporanCepatPjsrk($query)
+    {
+        return $query->whereNotNull('layanan_pjsrk')
+            ->whereDoesntHave('detail_pjsrk');
     }
 
     public function scopeForUser($query, $user)

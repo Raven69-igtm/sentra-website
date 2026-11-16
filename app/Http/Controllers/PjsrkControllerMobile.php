@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Akun;
 use App\Models\DetailPelapor;
 use App\Models\DetailPjsrk;
 use App\Models\Laporan;
@@ -265,11 +266,15 @@ class PjsrkControllerMobile extends Controller
      * telepon, lokasi, jenis, dan deskripsi. Karena tidak memuat field khusus
      * PJSRK (tingkat dampak, jumlah penerima, dsb.), data disimpan sebagai
      * detail pelapor + detail kasus supaya tetap tampil utuh di admin Dinsos.
+     *
+     * Boleh dikirim tanpa login (menu Laporan Cepat juga dibuka dari halaman
+     * awal aplikasi). Tanpa id_akun, laporan diatribusikan ke akun penampung
+     * guest yang sama dengan laporan cepat PPA.
      */
     public function storeCepat(Request $request)
     {
         $data = $request->validate([
-            'id_akun' => ['required', 'exists:akun,id_akun'],
+            'id_akun' => ['nullable', 'integer', 'exists:akun,id_akun'],
             'layanan' => ['required', 'in:pengaduan_bencana,rehabilitasi_sosial,permasalahan_sosial'],
             'nama' => ['required', 'string', 'max:150'],
             'telepon' => ['required', 'string', 'max:30'],
@@ -277,6 +282,8 @@ class PjsrkControllerMobile extends Controller
             'jenis' => ['required', 'string', 'max:100'],
             'deskripsi' => ['required', 'string'],
         ]);
+
+        $idAkun = $data['id_akun'] ?? $this->akunAnonim()->id_akun;
 
         $kategori = match ($data['layanan']) {
             'rehabilitasi_sosial' => 'Penelantaran',
@@ -288,7 +295,7 @@ class PjsrkControllerMobile extends Controller
 
         try {
             $idLaporan = $this->insertLaporan([
-                'id_akun' => $data['id_akun'],
+                'id_akun' => $idAkun,
                 'judul' => Str::limit(
                     Laporan::LAYANAN_PJSRK[$data['layanan']] . ' - ' . $data['jenis'],
                     150
@@ -332,6 +339,28 @@ class PjsrkControllerMobile extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Akun penampung untuk laporan cepat PJSRK tanpa login.
+     *
+     * Tabel laporan mewajibkan id_akun (foreign key laporan_id_akun_foreign),
+     * sehingga kiriman anonim diatribusikan ke akun guest yang sama dengan
+     * laporan cepat PPA (is_active = false, tidak bisa dipakai login).
+     * firstOrCreate membuatnya sekali saja karena email-nya unik.
+     */
+    private function akunAnonim(): Akun
+    {
+        return Akun::firstOrCreate(
+            ['email' => 'anonim@sentra.local'],
+            [
+                'nama' => 'Pelapor Anonim',
+                'notelp' => '0000000000',
+                'password' => Str::random(40),
+                'role' => 'guest',
+                'is_active' => false,
+            ]
+        );
     }
 
     /**

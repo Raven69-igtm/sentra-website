@@ -24,6 +24,7 @@ use App\Http\Controllers\Superadmin\SuperadminProfileController;
 use App\Http\Controllers\Superadmin\SuperadminAuditController;
 use App\Http\Controllers\DinsosDashboardController;
 use App\Http\Controllers\DinsosLaporanController;
+use App\Http\Controllers\DinsosLaporanCepatController;
 use App\Models\ActivityLog;
 
 // =======================
@@ -136,6 +137,13 @@ Route::controller(LaporanCepatController::class)->middleware('role:admin')->grou
             Route::get('/dashboard', [DinsosDashboardController::class, 'index'])->name('dashboard');
 
             Route::get('/laporan', [DinsosLaporanController::class, 'index'])->name('laporan.index');
+
+            // Laporan Cepat PJSRK (form ringkas dari menu Pelaporan Cepat mobile).
+            // Halaman sendiri, bukan filter/tab di Laporan PJSRK, karena isinya
+            // hanya data pelapor + kasus tanpa detail_pjsrk.
+            Route::get('/laporan-cepat', [DinsosLaporanCepatController::class, 'index'])->name('laporan_cepat');
+            Route::get('/laporan-cepat/{id}', [DinsosLaporanCepatController::class, 'show'])->name('laporan_cepat.show');
+
             Route::get('/layanan/{layanan}', [DinsosLaporanController::class, 'layanan'])->name('layanan');
             Route::get('/laporan/{id}', [DinsosLaporanController::class, 'show'])->name('laporan.show');
             Route::put('/laporan/{id}/verifikasi', [DinsosLaporanController::class, 'verifikasi'])->name('laporan.verifikasi');
