@@ -25,6 +25,7 @@ class LaporanControllerMobile extends Controller
             'detailTerlapor',
             'detailPenerimaManfaat',
             'detailKasus',
+            'detailPjsrk',
             'informasiAnak'
         ])
             ->where('id_laporan', $data['id_laporan'])
@@ -260,7 +261,7 @@ class LaporanControllerMobile extends Controller
     {
 
         $laporan = LaporanMobile::where('id_akun', $id_akun)
-            ->with(['detailPelapor', 'detailTerlapor', 'detailPenerimaManfaat', 'detailKasus', 'informasiAnak'])
+            ->with(['detailPelapor', 'detailTerlapor', 'detailPenerimaManfaat', 'detailKasus', 'detailPjsrk', 'informasiAnak'])
             ->get();
 
         return response()->json(['message' => 'Laporan ditemukan', 'laporan' => $laporan]);
@@ -272,7 +273,7 @@ class LaporanControllerMobile extends Controller
 
         $laporan = LaporanMobile::where('id_akun', $id_akun)
             ->where('status', $status)
-            ->with(['detailPelapor', 'detailTerlapor', 'detailPenerimaManfaat', 'detailKasus', 'informasiAnak'])
+            ->with(['detailPelapor', 'detailTerlapor', 'detailPenerimaManfaat', 'detailKasus', 'detailPjsrk', 'informasiAnak'])
             ->get();
 
         return response()->json(['message' => 'Laporan ditemukan', 'laporan' => $laporan]);
@@ -394,6 +395,7 @@ class LaporanControllerMobile extends Controller
             'detailTerlapor',
             'detailPenerimaManfaat',
             'detailKasus',
+            'detailPjsrk',
             'detailPenerimaManfaat.informasiAnak'
         ])
             ->search($keyword, $idAkun)

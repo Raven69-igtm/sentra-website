@@ -23,6 +23,7 @@ class DetailPjsrk extends Model
         'kebutuhan_mendesak',
         'keterangan',
         'jenis_rehabilitasi',
+        'jenis_permasalahan',
         'jumlah_penerima',
         'jenis_kelamin',
         'kelompok_usia',
@@ -38,6 +39,12 @@ class DetailPjsrk extends Model
         'foto',
         'kontak',
     ];
+
+    /**
+     * URL foto ikut dikirim ke aplikasi mobile agar daftar/detail laporan
+     * dapat menampilkan lampiran tanpa menyusun path sendiri.
+     */
+    protected $appends = ['foto_urls'];
 
     protected $casts = [
         'kebutuhan_mendesak' => 'array',

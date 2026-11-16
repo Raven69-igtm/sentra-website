@@ -21,6 +21,15 @@ class LaporanMobile extends Model
         return $query->where('id_akun', $idAkun)->where(function ($q) use ($keyword) {
             $q->where('kategori', 'like', "%{$keyword}%")
                 ->orWhere('status', 'like', "%{$keyword}%")
+                ->orWhere('judul', 'like', "%{$keyword}%")
+                ->orWhere('layanan_pjsrk', 'like', "%{$keyword}%")
+                ->orWhereHas('detailPjsrk', function ($q2) use ($keyword) {
+                    $q2->where('jenis_permasalahan', 'like', "%{$keyword}%")
+                        ->orWhere('jenis_rehabilitasi', 'like', "%{$keyword}%")
+                        ->orWhere('jenis_bencana', 'like', "%{$keyword}%")
+                        ->orWhere('alamat', 'like', "%{$keyword}%")
+                        ->orWhere('kecamatan', 'like', "%{$keyword}%");
+                })
                 ->orWhereHas('detailPelapor', function ($q2) use ($keyword) {
                     $q2->where('nama', 'like', "%{$keyword}%")
                         ->orWhere('alamat', 'like', "%{$keyword}%")
@@ -68,6 +77,11 @@ class LaporanMobile extends Model
     public function detailKasus()
     {
         return $this->hasOne(DetailKasus::class, 'id_laporan');
+    }
+
+    public function detailPjsrk()
+    {
+        return $this->hasOne(DetailPjsrk::class, 'id_laporan', 'id_laporan');
     }
 
     public function informasiAnak()

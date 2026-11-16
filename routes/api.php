@@ -45,6 +45,7 @@ Route::post('/laporan-cepat', [LaporanControllerMobile::class, 'quickAccess']);
 
 Route::post('/pjsrk/bencana', [PjsrkControllerMobile::class, 'storeBencana']);
 Route::post('/pjsrk/rehabilitasi', [PjsrkControllerMobile::class, 'storeRehabilitasi']);
+Route::post('/pjsrk/permasalahan-sosial', [PjsrkControllerMobile::class, 'storePermasalahanSosial']);
 Route::post('/pjsrk/cepat', [PjsrkControllerMobile::class, 'storeCepat']);
 
 

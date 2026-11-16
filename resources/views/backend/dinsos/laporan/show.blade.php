@@ -147,6 +147,41 @@
                                 </div>
                             @endif
 
+                            {{-- DATA PERMASALAHAN SOSIAL (PJSRK) --}}
+                            @if ($laporan->layanan_pjsrk === 'permasalahan_sosial')
+                                <div class="form-section">
+                                    <h5 class="form-section-title">
+                                        Data Permasalahan Sosial
+                                        @if ($pj->rahasia)
+                                            <span class="badge badge-warning ms-2"><i class="fa fa-lock me-1"></i>
+                                                Rahasia</span>
+                                        @endif
+                                    </h5>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="detail-item">
+                                                <span class="detail-label">Jenis Permasalahan</span>
+                                                <span class="detail-value">{{ $pj->jenis_permasalahan ?: '-' }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="detail-item">
+                                                <span class="detail-label">Judul Laporan</span>
+                                                <span class="detail-value">{{ $laporan->judul_tampil }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="detail-item mb-0">
+                                                <span class="detail-label">Uraian Kejadian</span>
+                                                <div class="detail-text">
+                                                    {!! nl2br(e(optional($laporan->detail_kasus)->kronologi ?: '-')) !!}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+
                             {{-- LOKASI & KONTAK (PJSRK) --}}
                             <div class="form-section">
                                 <h5 class="form-section-title">Lokasi & Kontak</h5>
@@ -560,6 +595,13 @@
                                 <span class="summary-key">Kategori</span>
                                 <span class="summary-value">{{ $laporan->kategori ?: '-' }}</span>
                             </div>
+                            @if (optional($laporan->detail_pjsrk)->jenis_permasalahan)
+                                <div class="summary-row">
+                                    <span class="summary-key">Jenis</span>
+                                    <span
+                                        class="summary-value">{{ $laporan->detail_pjsrk->jenis_permasalahan }}</span>
+                                </div>
+                            @endif
                             <div class="summary-row">
                                 <span class="summary-key">Kecamatan</span>
                                 <span class="summary-value">{{ $laporan->kecamatan_tampil }}</span>
@@ -698,26 +740,103 @@
             border-radius: .5rem;
             border: 1px solid rgba(0, 0, 0, .1);
         }
+
+        /* Gaya modal ditulis per-id karena tema global memakai .modal-header
+           berlatar gelap dan .modal-title berwarna #EEEEEE, sehingga judul dan
+           tombol tutupnya tidak terbaca. */
+        #rejectModal {
+            z-index: 1060;
+        }
+
+        #rejectModal .modal-content {
+            border: 0;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 24px 48px rgba(16, 24, 40, .18);
+        }
+
+        #rejectModal .modal-header {
+            background: var(--i-primary, #b45309);
+            border: 0;
+            padding: 18px 22px;
+        }
+
+        #rejectModal .modal-title {
+            color: #fff;
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+        #rejectModal .modal-header .close {
+            margin: 0;
+            padding: 0;
+            color: #fff;
+            opacity: .85;
+            text-shadow: none;
+            font-size: 1.6rem;
+            line-height: 1;
+        }
+
+        #rejectModal .modal-header .close:hover {
+            color: #fff;
+            opacity: 1;
+        }
+
+        #rejectModal .modal-body {
+            padding: 20px 22px;
+            max-height: none;
+            overflow-y: visible;
+        }
+
+        #rejectModal .modal-footer {
+            border: 0;
+            padding: 0 22px 20px;
+            flex-direction: row;
+            gap: 8px;
+        }
     </style>
 @endpush
 
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            var modal = document.getElementById('rejectModal');
+            var modalEl = document.getElementById('rejectModal');
             var form = document.getElementById('rejectForm');
             var description = document.getElementById('rejectDescription');
 
+            // Modal dipindah ke <body> agar tidak terkurung di dalam
+            // #main-wrapper/.content-body yang memiliki overflow dan stacking
+            // context sendiri (penyebab modal terpotong atau tertimpa lapisan).
+            if (modalEl && modalEl.parentElement !== document.body) {
+                document.body.appendChild(modalEl);
+            }
+
+            var $modal = window.jQuery ? window.jQuery(modalEl) : null;
+            var canShow = $modal && typeof $modal.modal === 'function';
+
+            function showRejectModal(button) {
+                form.action = button.dataset.action;
+                description.textContent = 'Tambahkan alasan penolakan untuk tiket ' + button.dataset.ticket + '.';
+
+                // Dibuka manual supaya tidak bergantung pada data-api tema.
+                if (canShow) {
+                    $modal.modal('show');
+                }
+            }
+
+            // Tombol "Tolak Laporan" pada halaman detail.
             document.querySelectorAll('.js-reject').forEach(function(button) {
-                button.addEventListener('click', function() {
-                    form.action = button.dataset.action;
-                    description.textContent = 'Tambahkan alasan penolakan untuk tiket ' + button.dataset.ticket + '.';
+                button.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    showRejectModal(button);
                 });
             });
 
-            if (window.jQuery) {
-                window.jQuery(modal).on('hidden.bs.modal', function() {
+            if (canShow) {
+                $modal.on('hidden.bs.modal', function() {
                     form.reset();
+                    form.removeAttribute('action');
                 });
             }
         });
