@@ -128,13 +128,6 @@
                 </a>
             </li>
 
-            <li class="{{ request()->routeIs('informasi.*') ? 'mm-active' : '' }}">
-                <a href="{{ route('informasi.index') }}" aria-expanded="false" title="Informasi">
-                    <i class="fa fa-circle-info"></i>
-                    <span class="nav-text">Informasi</span>
-                </a>
-            </li>
-
             <li class="{{ request()->routeIs('chat.*') ? 'mm-active' : '' }}">
                 <a href="{{ route('chat.index') }}" aria-expanded="false" title="Chat">
                     <i class="fa fa-comments"></i>

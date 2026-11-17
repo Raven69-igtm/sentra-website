@@ -2,6 +2,14 @@
 
 @section('content')
 
+    @php
+        $screenshots = setting_json('mobile_screenshots');
+        $appFeatures = setting_json('mobile_features');
+        $faqs = setting_json('faq_items');
+        $footerLinks = setting_json('footer_links');
+        $footerServices = setting_json('footer_services');
+    @endphp
+
     <body class="index-page">
 
         <header id="header" class="header d-flex align-items-center fixed-top">
@@ -16,19 +24,19 @@
 
                 <nav id="navmenu" class="navmenu">
                     <ul>
-                        <li><a href="#hero" class="active">Beranda</a></li>
-                        <li><a href="#about">Tentang Kami</a></li>
-                        <li><a href="#swipper">Aplikasi</a></li>
-                        <li><a href="#faq">Pertanyaan Umum</a></li>
-                        <li><a href="#information">Informasi</a></li>
-                        <li><a href="#contact">Kontak</a></li>
+                        <li><a href="#hero" class="active">{{ setting('nav_label_home') }}</a></li>
+                        <li><a href="#about">{{ setting('nav_label_about') }}</a></li>
+                        <li><a href="#swipper">{{ setting('nav_label_app') }}</a></li>
+                        <li><a href="#faq">{{ setting('nav_label_faq') }}</a></li>
+                        <li><a href="#information">{{ setting('nav_label_info') }}</a></li>
+                        <li><a href="#contact">{{ setting('nav_label_contact') }}</a></li>
                         {{-- <li><a href="#team">Team</a></li> --}}
                     </ul>
                 </nav>
 
                 <div class="d-flex align-items-center gap-2">
                     <a href="{{ route('login') }}" class="btn btn-success"><i class="bi bi-box-arrow-in-right me-1"></i>
-                        Admin </a>
+                        {{ setting('nav_label_admin') }} </a>
                 </div>
 
                 <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
@@ -38,7 +46,7 @@
 
         <!-- Hero Section -->
         <section id="hero" class="hero section dark-background2">
-            <img src="{{ asset('landingpage/assets/img/nganjuk.webp') }}" alt="" class="hero-bg">
+            <img src="{{ setting_image('hero_background') }}" alt="" class="hero-bg">
 
             <div class="container d-flex flex-column align-items-center justify-content-center text-center"
                 style="min-height: 100vh;">
@@ -78,39 +86,29 @@
 
             <!-- Section Title -->
             <div class="container section-title text-center" data-aos="fade-down" data-aos-duration="800">
-                <h2 class="section-main-title">TENTANG KAMI</h2>
-                <p class="section-description">Tentang Web Dinas Sosial Pemberdayaan Perempuan dan Perlindungan Anak</p>
+                <h2 class="section-main-title">{{ setting('about_title') }}</h2>
+                <p class="section-description">{{ setting('about_subtitle') }}</p>
             </div><!-- End Section Title -->
 
             <div class="container">
                 <div class="row gy-4 align-items-center features-item px-xl-5">
                     <div class="col-md-5 d-flex align-items-center" data-aos="zoom-in" data-aos-delay="200">
-                        <img src="{{ asset('landingpage/assets/img/family-1.png') }}" class="img-fluid" alt="">
+                        <img src="{{ setting_image('about_image') }}" class="img-fluid" alt="">
                     </div>
                     <div class="col-md-7" data-aos="fade-left" data-aos-delay="300" style="text-align: justify;">
                         <p data-aos="fade-up" data-aos-delay="400">
-                            Website ini merupakan portal informasi resmi dari Dinas Sosial P3A yang bertujuan untuk
-                            memberikan layanan informasi, edukasi, serta wadah komunikasi
-                            bagi masyarakat terkait isu-isu sosial, pemberdayaan perempuan, dan perlindungan anak.
-                            Melalui platform ini, kami berkomitmen untuk:
+                            {{ setting('about_paragraph_1') }}
                         </p>
                         <ul data-aos="fade-up" data-aos-delay="500">
-                            <li><i class="bi bi-check2-circle"></i><span> Meningkatkan transparansi dan akuntabilitas dalam
-                                    penyelenggaraan program sosial.</span></li>
-                            <li><i class="bi bi-check2-circle"></i><span> Memberikan akses mudah terhadap layanan sosial,
-                                    pengaduan, dan perlindungan hak-hak perempuan dan anak.</span></li>
-                            <li><i class="bi bi-check2-circle"></i><span> Menyediakan informasi terkini mengenai kegiatan,
-                                    program kerja, serta kebijakan pemerintah dibidang sosial dan pemberdayaan
-                                    masyarakat.</span></li>
+                            <li><i class="bi bi-check2-circle"></i><span> {{ setting('about_bullet_1') }}</span></li>
+                            <li><i class="bi bi-check2-circle"></i><span> {{ setting('about_bullet_2') }}</span></li>
+                            <li><i class="bi bi-check2-circle"></i><span> {{ setting('about_bullet_3') }}</span></li>
                         </ul>
                         <p data-aos="fade-up" data-aos-delay="600">
-                            Kami percaya bahwa sinergi antara pemerintah dan masyarakat menjadi kunci utama dalam mewujudkan
-                            kesejahteraan sosial yang inklusif dan berkeadilan.
-                            Mari bersama menciptakan lingkungan yang aman, ramah, dan memberdayakan bagi selruh warga,
-                            terutama perempuan dan anak-anak.
+                            {{ setting('about_paragraph_2') }}
                         </p>
-                        <p data-aos="fade-up" data-aos-delay="700"> Salam hangat, </p>
-                        <p class="fst-italic" data-aos="fade-up" data-aos-delay="750">Tim Dinas Sosial P3A</p>
+                        <p data-aos="fade-up" data-aos-delay="700"> {{ setting('about_closing') }} </p>
+                        <p class="fst-italic" data-aos="fade-up" data-aos-delay="750">{{ setting('about_signature') }}</p>
                     </div>
                 </div>
             </div>
@@ -121,64 +119,23 @@
             <div class="container">
                 <div class="row align-items-center">
                     <div class="container section-title text-center" data-aos="fade-up" data-aos-delay="100">
-                        <h2 class="section-main-title">APLIKASI MOBILE</h2>
-                        <p class="section-description">Aplikasi dari Dinas Sosial Pemberdayaan Perempuan dan Perlindungan
-                            Anak</p>
+                        <h2 class="section-main-title">{{ setting('mobile_title') }}</h2>
+                        <p class="section-description">{{ setting('mobile_subtitle') }}</p>
                     </div>
                     <!-- Kolom kiri: Swiper 3D -->
                     <div class="col-lg-6">
                         <div class="swiper-container-wrapper">
                             <div class="swiper my-swiper-3d">
                                 <div class="swiper-wrapper">
-                                    <div class="swiper-slide">
-                                        <div class="phone-mockup">
-                                            <img src="landingpage/assets/img/pertama.png" alt="Fitur Pencarian Lapangan"
-                                                class="app-screenshot">
+                                    @foreach ($screenshots as $screenshot)
+                                        <div class="swiper-slide">
+                                            <div class="phone-mockup">
+                                                <img src="{{ asset($screenshot['src'] ?? '') }}"
+                                                    alt="{{ $screenshot['alt'] ?? '' }}" class="app-screenshot">
 
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="swiper-slide">
-                                        <div class="phone-mockup">
-                                            <img src="landingpage/assets/img/halaman-login.png" alt="Fitur Booking Online"
-                                                class="app-screenshot">
-
-                                        </div>
-                                    </div>
-                                    <div class="swiper-slide">
-                                        <div class="phone-mockup">
-                                            <img src="landingpage/assets/img/laporan-cepat.png"
-                                                alt="Fitur Pembayaran Aman" class="app-screenshot">
-
-                                        </div>
-                                    </div>
-                                    <div class="swiper-slide">
-                                        <div class="phone-mockup">
-                                            <img src="landingpage/assets/img/beranda.png" alt="Fitur Info Event"
-                                                class="app-screenshot">
-
-                                        </div>
-                                    </div>
-                                    <div class="swiper-slide">
-                                        <div class="phone-mockup">
-                                            <img src="landingpage/assets/img/chat.png" alt="Fitur Notifikasi"
-                                                class="app-screenshot">
-
-                                        </div>
-                                    </div>
-                                    <div class="swiper-slide">
-                                        <div class="phone-mockup">
-                                            <img src="landingpage/assets/img/laporan.png" alt="Fitur Profile"
-                                                class="app-screenshot">
-
-                                        </div>
-                                    </div>
-                                    <div class="swiper-slide">
-                                        <div class="phone-mockup">
-                                            <img src="landingpage/assets/img/profil.png" alt="Fitur Rating"
-                                                class="app-screenshot">
-
-                                        </div>
-                                    </div>
+                                    @endforeach
                                 </div>
                                 <!-- Pagination -->
                                 <div class="swiper-pagination"></div>
@@ -202,66 +159,35 @@
                     <div class="col-lg-6">
                         <div class="content-wrapper">
                             <h2>
-                                <span class="highlight">SENTRA</span>
+                                <span class="highlight">{{ setting('mobile_app_name') }}</span>
                             </h2>
                             <p class="section-description">
-                                "SENTRA adalah aplikasi pelaporan cepat untuk kasus yang melibatkan perempuan dan anak di
-                                Kabupaten Nganjuk.
-                                Melalui SENTRA, masyarakat dapat langsung melapor ke Dinas Sosial P3A tanpa harus datang ke
-                                kantor, sehingga proses pelaporan menjadi lebih mudah, cepat, dan efisien."
+                                "{{ setting('mobile_description') }}"
                             </p>
 
                             <div class="features-list">
-                                <div class="feature-item">
-                                    <div class="feature-icon">
-                                        <i class="bi bi-send-fill"></i>
+                                @foreach ($appFeatures as $feature)
+                                    <div class="feature-item">
+                                        <div class="feature-icon">
+                                            <i class="{{ $feature['icon'] ?? '' }}"></i>
+                                        </div>
+                                        <div class="feature-text">
+                                            <h4>{{ $feature['title'] ?? '' }}</h4>
+                                            <p>{{ $feature['desc'] ?? '' }}</p>
+                                        </div>
                                     </div>
-                                    <div class="feature-text">
-                                        <h4>Pelaporan Cepat</h4>
-                                        <p>Membuat laporan tanpa perlu registrasi dan login</p>
-                                    </div>
-                                </div>
-
-                                <div class="feature-item">
-                                    <div class="feature-icon">
-                                        <i class="bi bi-geo-alt-fill"></i>
-                                    </div>
-                                    <div class="feature-text">
-                                        <h4>Tracking Laporan</h4>
-                                        <p>Tracking laporan anda sudah sampai tahap mana</p>
-                                    </div>
-                                </div>
-
-                                <div class="feature-item">
-                                    <div class="feature-icon">
-                                        <i class="bi bi-clipboard-data-fill"></i>
-                                    </div>
-                                    <div class="feature-text">
-                                        <h4>Riwayat laporan</h4>
-                                        <p>Lihat jumlah riwayat laporan yang sudah ditangani oleh Dinas Sosial P3A</p>
-                                    </div>
-                                </div>
-
-                                <div class="feature-item">
-                                    <div class="feature-icon">
-                                        <i class="bi bi-chat-dots-fill"></i>
-                                    </div>
-                                    <div class="feature-text">
-                                        <h4>Chat Konsultasi</h4>
-                                        <p>Anda bisa konsultasi kepada admin melalui aplikasi SENTRA</p>
-                                    </div>
-                                </div>
+                                @endforeach
                             </div>
 
                             <div class="download-section">
-                                <p class="download-text">Cooming Soon!</p>
-                                <a href="https://play.google.com/store/apps/details?id=com.example.app" target="_blank"
+                                <p class="download-text">{{ setting('mobile_download_text') }}</p>
+                                <a href="{{ setting('playstore_url') }}" target="_blank"
                                     class="download-btn">
                                     <img src="landingpage/assets/img/playstore.png" alt="Download di Play Store"
                                         class="playstore-img">
                                     <div class="btn-overlay">
                                         <i class="fab fa-google-play"></i>
-                                        <span>Download Gratis</span>
+                                        <span>{{ setting('playstore_label') }}</span>
                                     </div>
                                 </a>
                             </div>
@@ -281,76 +207,23 @@
                     <div class="col-lg-7 mx-auto d-flex flex-column justify-content-center order-2 order-lg-1">
 
                         <div class="container section-title text-center" data-aos="fade-up" data-aos-delay="100">
-                            <h2 class="section-main-title">PERTANYAAN UMUM</h2>
-                            <p class="section-description">Pertanyaan umum terkait Dinas Sosial Pemberdayaan Perempuan dan
-                                Perlindungan Anak</p>
+                            <h2 class="section-main-title">{{ setting('faq_title') }}</h2>
+                            <p class="section-description">{{ setting('faq_subtitle') }}</p>
                         </div>
 
                         <div class="faq-container px-xl-5" data-aos="fade-up" data-aos-delay="200">
 
-                            <div class="faq-item">
-                                <i class="faq-icon bi bi-question-circle"></i>
-                                <h3>Apa itu Dinas Sosial Pemberdayaan Perempuan dan Perlindungan Anak?</h3>
-                                <div class="faq-content">
-                                    <p> Dinas Sosial P3A adalah instansi pemerintah yang bertugas dalam bidang
-                                        kesejahteraan sosial,
-                                        perlindungan perempuan, dan perlindungan anak.
-                                    </p>
-                                </div>
-                                <i class="faq-toggle bi bi-chevron-right"></i>
-                            </div><!-- End Faq item-->
-
-                            <div class="faq-item">
-                                <i class="faq-icon bi bi-question-circle"></i>
-                                <h3>Bagaimana cara melaporkan kasus kekerasan terhadap perempuan dan anak?</h3>
-                                <div class="faq-content">
-                                    <p> Laporan pengaduan dapat dilakukan melalui aplikasi mobile yang dapat diunduh melalui
-                                        Website
-                                        resmi Dinas Sosial Pemberdayaan Perempuan dan Perlindungan Anak.
-                                    </p>
-                                </div>
-                                <i class="faq-toggle bi bi-chevron-right"></i>
-                            </div><!-- End Faq item-->
-
-                            <div class="faq-item">
-                                <i class="faq-icon bi bi-question-circle"></i>
-                                <h3>Siapa yang dapat mengakses layanan Dinas Sosial Pemberdayaan Perempuan dan Perlindungan
-                                    Anak?</h3>
-                                <div class="faq-content">
-                                    <p> Masyarakat yang membutuhkan informasi dan edukasi terkait hak perempuan dan anak,
-                                        perempuan dan anak korban kekerasan atau diskriminasi,
-                                        dan pihak keluarga atau masyarakat yang ingin melaporkan kasus kekerasan, pelecehan,
-                                        dan lain sebagainya.</p>
-                                </div>
-                                <i class="faq-toggle bi bi-chevron-right"></i>
-                            </div><!-- End Faq item-->
-
-                            <div class="faq-item">
-                                <i class="faq-icon bi bi-question-circle"></i>
-                                <h3>Apakah layanan di Dinas Sosial Pemberdayaan Perempuan dan Perlindungan Anak berbayar?
-                                </h3>
-                                <div class="faq-content">
-                                    <p> Tidak. Semua layanan yang diberikan oleh Dinas Sosial Pemberdayaan Perlindungan Anak
-                                        bersifat gratis
-                                        dan terbuka bagi masyarakat yang membutuhkan.
-                                    </p>
-                                </div>
-                                <i class="faq-toggle bi bi-chevron-right"></i>
-                            </div><!-- End Faq item-->
-
-                            <div class="faq-item">
-                                <i class="faq-icon bi bi-question-circle"></i>
-                                <h3>Bagaimana cara mengetahui informasi terbaru dari Dinas Sosial Pemberdayaan perempuan dan
-                                    Perlindungan Anak?</h3>
-                                <div class="faq-content">
-                                    <p> Informasi terbaru dari Dinas Sosial Pemberdayaan Perempuan dan Perlindungan Anak
-                                        dapat diperoleh melalui Website resmi,
-                                        Sosial Media resmi, atau dapat langsung ke Kantor Dinas Sosial Pemberdayaan
-                                        Perempuan dan Perlindungan Anak.
-                                    </p>
-                                </div>
-                                <i class="faq-toggle bi bi-chevron-right"></i>
-                            </div><!-- End Faq item-->
+                            @foreach ($faqs as $faq)
+                                <div class="faq-item">
+                                    <i class="faq-icon bi bi-question-circle"></i>
+                                    <h3>{{ $faq['question'] ?? '' }}</h3>
+                                    <div class="faq-content">
+                                        <p> {{ $faq['answer'] ?? '' }}
+                                        </p>
+                                    </div>
+                                    <i class="faq-toggle bi bi-chevron-right"></i>
+                                </div><!-- End Faq item-->
+                            @endforeach
 
                         </div>
 
@@ -366,9 +239,8 @@
             <div class="container">
                 <!-- Section Title -->
                 <div class="section-title text-center" data-aos="fade-up" data-aos-delay="100">
-                    <h2 class="section-main-title">INFORMASI TERKINI</h2>
-                    <p class="section-description">Informasi terbaru dari Dinas Sosial Pemberdayaan Perempuan dan
-                        Perlindungan Anak</p>
+                    <h2 class="section-main-title">{{ setting('information_title') }}</h2>
+                    <p class="section-description">{{ setting('information_subtitle') }}</p>
                 </div>
 
                 <div class="row g-4">
@@ -444,8 +316,8 @@
                                 <div class="mb-4">
                                     <i class="bi bi-info-circle text-muted" style="font-size: 4rem;"></i>
                                 </div>
-                                <h4 class="text-muted">Belum Ada Informasi</h4>
-                                <p class="text-muted mb-0">Informasi terbaru akan segera tersedia.</p>
+                                <h4 class="text-muted">{{ setting('information_empty_title') }}</h4>
+                                <p class="text-muted mb-0">{{ setting('information_empty_text') }}</p>
                             </div>
                         </div>
                     @endif
@@ -536,8 +408,8 @@
 
             <!-- Section Title -->
             <div class="container section-title text-center" data-aos="fade-up">
-                <h2 class="section-main-title">CEK KONTAK KAMI</h2>
-                <p class="section-description">Informasi terkait Kontak {{ \App\Models\SystemSetting::get('instansi_name', 'Dinas Sosial Pemberdayaan Perempuan dan Perlindungan Anak') }}</p>
+                <h2 class="section-main-title">{{ setting('contact_title') }}</h2>
+                <p class="section-description">{{ setting('contact_subtitle_prefix') }} {{ setting('instansi_name', 'Dinas Sosial Pemberdayaan Perempuan dan Perlindungan Anak') }}</p>
             </div><!-- End Section Title -->
 
             <div class="container" data-aos="fade" data-aos-delay="100">
@@ -547,17 +419,17 @@
                     <div class="info-item text-center" data-aos="fade-up" data-aos-delay="200">
                         <i class="bi bi-geo-alt"></i>
                         <div>
-                            <h3>Alamat</h3>
-                            <p>{{ \App\Models\SystemSetting::get('office_address', 'Jl Supriyadi No 7, Kauman, Mangundikaran, Mangun Dikaran, Kec. Nganjuk, Kabupaten Nganjuk, Jawa Timur 64412') }}</p>
+                            <h3>{{ setting('contact_label_address') }}</h3>
+                            <p>{{ setting('office_address', 'Jl Supriyadi No 7, Kauman, Mangundikaran, Mangun Dikaran, Kec. Nganjuk, Kabupaten Nganjuk, Jawa Timur 64412') }}</p>
                         </div>
                     </div><!-- End Info Item -->
 
                     <div class="info-item text-center" data-aos="fade-up" data-aos-delay="300">
                         <i class="bi bi-telephone"></i>
                         <div>
-                            <h3>Hotline & Telepon</h3>
-                            <p>{{ \App\Models\SystemSetting::get('hotline_number', '(0358) 3550722') }}</p>
-                            @if ($emergencyCall = \App\Models\SystemSetting::get('emergency_call'))
+                            <h3>{{ setting('contact_label_hotline') }}</h3>
+                            <p>{{ setting('hotline_number', '(0358) 3550722') }}</p>
+                            @if ($emergencyCall = setting('emergency_call'))
                                 <p><small class="text-danger fw-bold"><i class="bi bi-exclamation-octagon me-1"></i>Darurat: {{ $emergencyCall }}</small></p>
                             @endif
                         </div>
@@ -566,17 +438,17 @@
                     <div class="info-item text-center" data-aos="fade-up" data-aos-delay="300">
                         <i class="bi bi-envelope"></i>
                         <div>
-                            <h3>Email</h3>
-                            <p>{{ \App\Models\SystemSetting::get('office_email', 'dinsospppa@nganjukkab.go.id') }}</p>
+                            <h3>{{ setting('contact_label_email') }}</h3>
+                            <p>{{ setting('office_email', 'dinsospppa@nganjukkab.go.id') }}</p>
                         </div>
                     </div><!-- End Info Item -->
 
                     <div class="info-item text-center" data-aos="fade-up" data-aos-delay="300">
                         <i class="bi bi-clock"></i>
                         <div>
-                            <h3>Jam Buka</h3>
-                            <p>Senin - Jum'at</p>
-                            <p>07:30 AM - 03:30 PM</p>
+                            <h3>{{ setting('contact_label_hours') }}</h3>
+                            <p>{{ setting('office_hours_day') }}</p>
+                            <p>{{ setting('office_hours_time') }}</p>
                         </div>
                     </div><!-- End Info Item -->
                 </div>
@@ -587,7 +459,7 @@
                 <div class="container my-4" style="max-width: 800px;">
                     <div class="responsive-map">
                         <iframe
-                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3952.8438585054073!2d111.898124!3d-7.6013195!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e784b06ef170309%3A0xb23b3f2501c3c28e!2sDinas%20Sosial%20Pemberdayaan%20Perempuan%20dan%20Perlindungan%20Anak!5e0!3m2!1sid!2sid!4v1713866091206!5m2!1sid!2sid"
+                            src="{{ setting('maps_embed_url') }}"
                             width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy"
                             referrerpolicy="no-referrer-when-downgrade">
                         </iframe>
@@ -607,46 +479,46 @@
                             @endif
                             <span class="sitename">{{ \App\Models\SystemSetting::get('app_name', 'SENTRA') }}</span>
                         </a>
-                        <p>{{ \App\Models\SystemSetting::get('app_description', 'Sistem Entitas Pelaporan dan Respons Tanggap Aksi') }}</p>
+                        <p>{{ setting('footer_about_text') ?: setting('app_description', 'Sistem Entitas Pelaporan dan Respons Tanggap Aksi') }}</p>
                     </div>
 
                     <div class="col-lg-2 col-md-3 footer-links">
-                        <h4>Useful Links</h4>
+                        <h4>{{ setting('footer_links_title') }}</h4>
                         <ul>
-                            <li><a href="#hero" class="active">Beranda</a></li>
-                            <li><a href="#about">Tentang Kami</a></li>
-                            <li><a href="#swipper">Aplikasi</a></li>
-                            <li><a href="#faq">Pertanyaan Umum</a></li>
-                            <li><a href="#contact">Kontak</a></li>
-                            {{-- <li><a href="#team">Team</a></li> --}}
+                            @foreach ($footerLinks as $link)
+                                <li><a href="{{ $link['href'] ?? '#' }}" class="{{ $loop->first ? 'active' : '' }}">{{ $link['label'] ?? '' }}</a></li>
+                            @endforeach
                         </ul>
                     </div>
 
                     <div class="col-lg-2 col-md-3 footer-links">
-                        <h4>Layanan Kami</h4>
+                        <h4>{{ setting('footer_services_title') }}</h4>
                         <ul>
-                            <li><a href="/layanan/perempuan">Layanan Pemberdayaan Perempuan</a></li>
-                            <li><a href="/layanan/anak">Layanan Perlindungan Anak</a></li>
-                            <li><a href="/layanan/kesejahteraan">Layanan Sosial dan Bantuan Kesejahteraan</a></li>
-                            <li><a href="/layanan/edukasi">Layanan Konsultasi dan Edukasi</a></li>
+                            @foreach ($footerServices as $service)
+                                <li><a href="{{ $service['href'] ?? '#' }}">{{ $service['label'] ?? '' }}</a></li>
+                            @endforeach
                         </ul>
                     </div>
 
                     <div class="col-lg-4 col-md-12 footer-newsletter">
-                        <h4>Sosial Media Kami</h4>
-                        <p>Follow Media Sosial untuk mendapatkan informasi terbaru kami.</p>
+                        <h4>{{ setting('footer_social_title') }}</h4>
+                        <p>{{ setting('footer_social_text') }}</p>
                         <div class="social-links d-flex">
-                            <a href="https://www.instagram.com/dinsosp3anganjuk" target="_blank" class="mx-2"><i
-                                    class="bi bi-instagram"></i></a>
-                            <a href="https://www.tiktok.com/@dinsosp3a_nganjuk" target="_blank" class="mx-2"><i
-                                    class="bi bi-tiktok"></i></a>
+                            @if ($instagramUrl = setting('instagram_url'))
+                                <a href="{{ $instagramUrl }}" target="_blank" class="mx-2"><i
+                                        class="bi bi-instagram"></i></a>
+                            @endif
+                            @if ($tiktokUrl = setting('tiktok_url'))
+                                <a href="{{ $tiktokUrl }}" target="_blank" class="mx-2"><i
+                                        class="bi bi-tiktok"></i></a>
+                            @endif
                         </div>
 
                     </div>
                 </div>
 
                 <div class="container copyright text-center mt-4">
-                    <p>{{ \App\Models\SystemSetting::get('footer_copyright', '© Copyright SENTRA All Rights Reserved') }}</p>
+                    <p>{{ setting('footer_copyright', '© Copyright SENTRA All Rights Reserved') }}</p>
                     <div class="credits">
                     </div>
                 </div>

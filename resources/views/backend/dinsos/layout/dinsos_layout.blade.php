@@ -88,10 +88,6 @@
                 <i class="fa-regular fa-rectangle-list"></i>
                 <span>Rekapan</span>
             </a>
-            <a href="{{ route('informasi.index') }}" class="dinsos-menu-item">
-                <i class="fa-regular fa-circle-info"></i>
-                <span>Informasi</span>
-            </a>
             <a href="{{ route('chat.index') }}" class="dinsos-menu-item">
                 <i class="fa-regular fa-comment-dots"></i>
                 <span>Chat</span>

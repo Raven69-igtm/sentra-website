@@ -13,10 +13,4 @@ class LandingPageController extends Controller
 
         return view('frontend.index',compact('informasiList'));
     }
-
-    public function show($slug)
-    {
-        return view('frontend.detail_informasi', compact('informasi'));
-    }
-
 }

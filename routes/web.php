@@ -7,7 +7,6 @@ use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\LaporanCepatController;
 use App\Http\Controllers\RekapanController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\InformasiController;
 use App\Http\Controllers\InformasiAnakController;
 use App\Http\Controllers\GantiSandiController;
 use App\Http\Controllers\Auth\LoginController;
@@ -20,6 +19,7 @@ use App\Http\Controllers\Superadmin\SuperadminDashboardController;
 use App\Http\Controllers\Superadmin\SuperadminAkunController;
 use App\Http\Controllers\Superadmin\SuperadminRoleController;
 use App\Http\Controllers\Superadmin\SuperadminSettingController;
+use App\Http\Controllers\Superadmin\SuperadminInformasiController;
 use App\Http\Controllers\Superadmin\SuperadminProfileController;
 use App\Http\Controllers\Superadmin\SuperadminAuditController;
 use App\Http\Controllers\DinsosDashboardController;
@@ -78,15 +78,6 @@ Route::controller(LaporanCepatController::class)->middleware('role:admin')->grou
     Route::get('/laporan-cepat', 'index')->name('laporan_cepat');
     Route::get('/laporan-cepat/{id}', 'show')->name('laporan_cepat.show');
 });
-
-    // Informasi (pengelolaan konten publik oleh admin instansi)
-    Route::controller(InformasiController::class)->middleware('role:admin')->group(function () {
-        Route::get('/informasi', 'index')->name('informasi.index');
-        Route::post('/informasi', 'store')->name('informasi.store');
-        Route::get('/informasi/{id}/edit', 'edit')->name('informasi.edit');
-        Route::put('/informasi/{id}', 'update')->name('informasi.update');
-        Route::delete('/informasi/{id}', 'destroy')->name('informasi.destroy');
-    });
 
     // Informasi Anak (data dalam laporan — bukan milik superadmin)
     Route::delete('/anak/{id}', [InformasiAnakController::class, 'destroy'])
@@ -169,6 +160,11 @@ Route::controller(LaporanCepatController::class)->middleware('role:admin')->grou
         // Konfigurasi Sistem
         Route::get('/settings', [SuperadminSettingController::class, 'index'])->name('settings.index');
         Route::post('/settings', [SuperadminSettingController::class, 'update'])->name('settings.update');
+
+        // Berita "Informasi Terkini" halaman utama (dikelola dari halaman Settings)
+        Route::post('/settings/informasi', [SuperadminInformasiController::class, 'store'])->name('informasi.store');
+        Route::put('/settings/informasi/{informasi}', [SuperadminInformasiController::class, 'update'])->name('informasi.update');
+        Route::delete('/settings/informasi/{informasi}', [SuperadminInformasiController::class, 'destroy'])->name('informasi.destroy');
 
         // Profil pribadi superadmin (nama/email/no. HP + ganti password).
         // Role & status sengaja tidak dapat diubah dari sini.

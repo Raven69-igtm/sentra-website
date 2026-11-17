@@ -37,9 +37,6 @@ class SuperadminSeeder extends Seeder
             ['name' => 'laporan.rujuk', 'display_name' => 'Merujuk Laporan ke Lembaga Lain', 'group' => 'Laporan'],
             ['name' => 'laporan.delete', 'display_name' => 'Menghapus Laporan', 'group' => 'Laporan'],
 
-            // Informasi
-            ['name' => 'informasi.manage', 'display_name' => 'Mengelola Konten Informasi & Edukasi', 'group' => 'Informasi'],
-
             // Chat
             ['name' => 'chat.manage', 'display_name' => 'Mengelola Chat & Konsultasi', 'group' => 'Chat Konsultasi'],
 
@@ -69,7 +66,7 @@ class SuperadminSeeder extends Seeder
             ['name' => 'admin'],
             [
                 'display_name' => 'Admin Operasional',
-                'description' => 'Petugas operasional yang menangani laporan, rekapan, informasi, dan konsultasi chat.',
+                'description' => 'Petugas operasional yang menangani laporan, rekapan, dan konsultasi chat.',
                 'is_system' => true,
             ]
         );
@@ -98,7 +95,7 @@ class SuperadminSeeder extends Seeder
         // Assign operational permissions to admin
         $adminPermissions = Permission::whereIn('name', [
             'laporan.view', 'laporan.process', 'laporan.rujuk',
-            'informasi.manage', 'chat.manage', 'rekapan.export'
+            'chat.manage', 'rekapan.export'
         ])->pluck('id')->toArray();
         $roleAdmin->permissions()->sync($adminPermissions);
 
@@ -121,32 +118,12 @@ class SuperadminSeeder extends Seeder
         }
 
         // 4. SEED DEFAULT SYSTEM SETTINGS
-        $defaultSettings = [
-            // General
-            ['key' => 'app_name', 'value' => 'SENTRA', 'group' => 'general', 'label' => 'Nama Aplikasi', 'type' => 'text'],
-            ['key' => 'instansi_name', 'value' => 'Dinas Pemberdayaan Perempuan dan Perlindungan Anak', 'group' => 'general', 'label' => 'Nama Instansi', 'type' => 'text'],
-            ['key' => 'app_description', 'value' => 'Sistem Informasi dan Pelayanan Terpadu Penanganan Kekerasan terhadap Perempuan dan Anak', 'group' => 'general', 'label' => 'Deskripsi Aplikasi', 'type' => 'textarea'],
-            ['key' => 'footer_copyright', 'value' => '© 2026 SENTRA. All rights reserved.', 'group' => 'general', 'label' => 'Hak Cipta Footer', 'type' => 'text'],
-
-            // Kontak
-            ['key' => 'hotline_number', 'value' => '0812-3456-7890', 'group' => 'kontak', 'label' => 'Nomor WhatsApp Hotline', 'type' => 'text'],
-            ['key' => 'emergency_call', 'value' => '112 / 129', 'group' => 'kontak', 'label' => 'Call Center Darurat', 'type' => 'text'],
-            ['key' => 'office_email', 'value' => 'sentraapplication@gmail.com', 'group' => 'kontak', 'label' => 'Email Layanan', 'type' => 'text'],
-            ['key' => 'office_address', 'value' => 'Jl. Pemuda No. 45, Kompleks Perkantoran Pemerintah', 'group' => 'kontak', 'label' => 'Alamat Kantor', 'type' => 'textarea'],
-
-            // Laporan
-            ['key' => 'report_sla_days', 'value' => '3', 'group' => 'laporan', 'label' => 'Target Respon Laporan (Hari)', 'type' => 'number'],
-            ['key' => 'auto_archive_months', 'value' => '24', 'group' => 'laporan', 'label' => 'Retensi Arsip (Bulan)', 'type' => 'number'],
-            ['key' => 'enable_chat_consultation', 'value' => '1', 'group' => 'laporan', 'label' => 'Layanan Konsultasi Chat', 'type' => 'boolean'],
-
-            // Keamanan
-            ['key' => 'session_lifetime_minutes', 'value' => '120', 'group' => 'keamanan', 'label' => 'Durasi Sesi Login (Menit)', 'type' => 'number'],
-            ['key' => 'max_login_attempts', 'value' => '5', 'group' => 'keamanan', 'label' => 'Maksimal Percobaan Login Salah', 'type' => 'number'],
-            ['key' => 'otp_expiry_minutes', 'value' => '5', 'group' => 'keamanan', 'label' => 'Masa Berlaku OTP (Menit)', 'type' => 'number'],
-        ];
-
-        foreach ($defaultSettings as $setting) {
-            SystemSetting::updateOrCreate(
+        // Daftar key, default, dan label berasal dari App\Support\SettingSchema
+        // agar tidak ada duplikasi nilai default antara seeder dan tampilan.
+        // firstOrCreate dipakai supaya nilai yang sudah diubah Superadmin
+        // tidak tertimpa ketika seeder dijalankan ulang.
+        foreach (\App\Support\SettingSchema::seedRows() as $setting) {
+            SystemSetting::firstOrCreate(
                 ['key' => $setting['key']],
                 $setting
             );

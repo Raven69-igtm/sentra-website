@@ -58,7 +58,7 @@ class AdminInstansiSeeder extends Seeder
         // Permissions untuk Admin PPA
         $ppaPerms = Permission::whereIn('name', [
             'laporan.view', 'laporan.process', 'laporan.rujuk', 'laporan.view_ppa', 'laporan.process_ppa', 'laporan.rujuk_dinsos',
-            'chat.manage', 'informasi.manage', 'rekapan.export'
+            'chat.manage', 'rekapan.export'
         ])->pluck('id')->toArray();
         $rolePPA->permissions()->sync($ppaPerms);
 
@@ -66,7 +66,7 @@ class AdminInstansiSeeder extends Seeder
         $dinsosPerms = Permission::whereIn('name', [
             'laporan.view', 'laporan.process', 'laporan.view_dinsos', 'laporan.process_dinsos',
             'dinsos.dashboard.view', 'dinsos.laporan.verify', 'dinsos.laporan.finish', 'dinsos.laporan.reject',
-            'chat.manage', 'informasi.manage', 'rekapan.export'
+            'chat.manage', 'rekapan.export'
         ])->pluck('id')->toArray();
         $roleDinsos->permissions()->sync($dinsosPerms);
 
