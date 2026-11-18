@@ -16,20 +16,9 @@ class RekapanController extends Controller
 {
     public function index(Request $request)
     {
-        $statuses = Auth::user()->isAdminDinsos()
-            ? ['selesai', 'dirujuk', 'ditolak']
-            : ['selesai', 'dirujuk'];
-
-        $dataLaporan = Laporan::with([
-            'detail_pelapor',
-            'detail_terlapor',
-            'detail_penerima_manfaat.informasi_anak',
-            'detail_kasus'
-        ])
-        ->forUser(Auth::user())
-        ->whereIn('status', $statuses)
-        ->orderBy('created_at', 'desc')
-        ->get();
+        $dataLaporan = $this->baseQuery($request)
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         return view('backend.layout.page_admin.rekapan', compact('dataLaporan'));
     }
@@ -37,7 +26,7 @@ class RekapanController extends Controller
     
     public function exportSimple(Request $request)
     {
-        $dataLaporan = $this->filteredQuery($request)->get();
+        $dataLaporan = $this->baseQuery($request)->get();
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -101,42 +90,64 @@ class RekapanController extends Controller
     }
 
 
-   private function filteredQuery(Request $request)
-{
-    return Laporan::with([
-        'detail_pelapor',
-        'detail_terlapor',
-        'detail_kasus',
-        'detail_penerima_manfaat.informasi_anak'
-    ])
-    ->forUser(Auth::user())
-    ->when($request->filled('status'), fn($q) =>
-        $q->where('status', $request->status)
-    )
-    // Default jika status tidak diisi → tampilkan status akhir sesuai role
-    ->when(!$request->filled('status'), function ($q) {
-        $statuses = Auth::user()->isAdminDinsos()
-            ? ['selesai', 'dirujuk', 'ditolak']
+    /**
+     * Status akhir yang direkap per instansi. Admin Dinsos tidak memiliki
+     * kewenangan merujuk, sehingga tidak ada laporan milik Dinsos yang
+     * berstatus 'dirujuk'.
+     */
+    private function statusRekap($user): array
+    {
+        return $user->isAdminDinsos()
+            ? ['selesai', 'ditolak']
             : ['selesai', 'dirujuk'];
+    }
 
-        return $q->whereIn('status', $statuses);
-    })
-    ->when($request->filled('search'), fn($q) =>
-        $q->whereHas('detail_pelapor', fn($sub) =>
-            $sub->where('nama', 'like', "%{$request->search}%")
-                ->orWhere('nik', 'like', "%{$request->search}%")
-        )
-    )
-    ->when($request->filled('start_date'), fn($q) =>
-        $q->whereDate('created_at', '>=', $request->start_date)
-    )
-    ->when($request->filled('end_date'), fn($q) =>
-        $q->whereDate('created_at', '<=', $request->end_date)
-    )
-    ->when($request->filled('kategori'), fn($q) =>
-        $q->where('kategori', $request->kategori)
-    );
-}
+    /**
+     * Query dasar rekap — dipakai tabel dan export agar isinya selalu sama.
+     * Untuk Admin Dinsos hasilnya dibatasi ke laporan milik Dinsos saja,
+     * bukan rujukan dari PPA (lihat Laporan::scopeLaporanDinsos()).
+     */
+    private function baseQuery(Request $request)
+    {
+        $user = Auth::user();
+        $statuses = $this->statusRekap($user);
+        $requestedStatus = $request->input('status');
+
+        $query = Laporan::with([
+            'detail_pelapor',
+            'detail_terlapor',
+            'detail_kasus',
+            'detail_penerima_manfaat.informasi_anak',
+        ])->forUser($user);
+
+        if ($user->isAdminDinsos()) {
+            $query->laporanDinsos();
+        }
+
+        // Status di luar daftar role diabaikan → kembali ke status default.
+        if (is_string($requestedStatus) && in_array($requestedStatus, $statuses, true)) {
+            $query->where('status', $requestedStatus);
+        } else {
+            $query->whereIn('status', $statuses);
+        }
+
+        return $query
+            ->when($request->filled('search'), fn ($q) =>
+                $q->whereHas('detail_pelapor', fn ($sub) =>
+                    $sub->where('nama', 'like', "%{$request->search}%")
+                        ->orWhere('nik', 'like', "%{$request->search}%")
+                )
+            )
+            ->when($request->filled('start_date'), fn ($q) =>
+                $q->whereDate('created_at', '>=', $request->start_date)
+            )
+            ->when($request->filled('end_date'), fn ($q) =>
+                $q->whereDate('created_at', '<=', $request->end_date)
+            )
+            ->when($request->filled('kategori'), fn ($q) =>
+                $q->where('kategori', $request->kategori)
+            );
+    }
 
     private function applyStyle($sheet, $columnCount, $lastRow)
     {

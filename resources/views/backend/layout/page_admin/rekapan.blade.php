@@ -6,7 +6,9 @@
 
         @include('backend.components.page-header', [
             'title' => 'Rekapan',
-            'subtitle' => 'Rekapitulasi laporan selesai & dirujuk, siap diekspor ke Excel',
+            'subtitle' => Auth::user()->isAdminDinsos()
+                ? 'Rekapitulasi laporan selesai & ditolak layanan Dinsos, siap diekspor ke Excel'
+                : 'Rekapitulasi laporan selesai & dirujuk, siap diekspor ke Excel',
             'icon' => 'fa-folder-open',
         ])
 
@@ -34,7 +36,9 @@
                                 <select id="filterStatus" name="status" class="form-control">
                                     <option value="">Semua Status</option>
                                     <option value="selesai">Selesai</option>
-                                    <option value="dirujuk">Dirujuk</option>
+                                    @unless (Auth::user()->isAdminDinsos())
+                                        <option value="dirujuk">Dirujuk</option>
+                                    @endunless
                                     @if (Auth::user()->isAdminDinsos())
                                         <option value="ditolak">Ditolak</option>
                                     @endif

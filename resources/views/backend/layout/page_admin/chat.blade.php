@@ -12,9 +12,11 @@
             'icon' => 'fa-comments',
         ])
 
+        {{-- Klik percakapan dirender instan dari cache di browser. Area live
+             hanya dipakai untuk menyegarkan daftar saat ada pengirim baru. --}}
         <div class="chat-shell">
             {{-- DAFTAR PERCAKAPAN --}}
-            <div class="card chat-list mb-0">
+            <div class="card chat-list mb-0" data-live-region="ppa-chat-list">
                 <div class="card-header">
                     <h4 class="card-title mb-1">Percakapan</h4>
                     <p class="mb-0 text-muted" style="font-size: .82rem;">
@@ -24,7 +26,7 @@
                 <div class="card-body p-2">
                     <div id="conversation-list">
                         @forelse ($users as $u)
-                            <a href="{{ route('chat.show', $u->id_akun) }}" wire:navigate
+                            <a href="{{ route('chat.show', $u->id_akun) }}"
                                 class="chat-item {{ isset($activeUser) && $activeUser->id_akun == $u->id_akun ? 'active' : '' }}"
                                 data-user-id="{{ $u->id_akun }}">
                                 <span class="chat-avatar">{{ strtoupper(substr($u->nama, 0, 1)) }}</span>
@@ -54,22 +56,25 @@
             </div>
 
             {{-- JENDELA PESAN --}}
-            <div class="card chat-panel mb-0">
-                @if (isset($activeUser))
-                    <div class="card-header chat-head">
-                        <span class="chat-avatar chat-avatar-sm">
-                            {{ strtoupper(substr($activeUser->nama, 0, 1)) }}
-                        </span>
-                        <div>
-                            <h4 class="card-title mb-0">{{ $activeUser->nama }}</h4>
-                            <p class="mb-0 text-muted" style="font-size: .78rem;">Percakapan konsultasi</p>
-                        </div>
+            {{-- Panel dibuat sebagai kerangka tetap: perpindahan percakapan
+                 hanya mengubah isinya dari cache di browser (instan). --}}
+            <div class="card chat-panel mb-0" id="chat-panel">
+                <div class="card-header chat-head @if (!isset($activeUser)) d-none @endif" id="chat-head">
+                    <span class="chat-avatar chat-avatar-sm" id="chat-head-avatar">
+                        {{ isset($activeUser) ? strtoupper(substr($activeUser->nama, 0, 1)) : '' }}
+                    </span>
+                    <div>
+                        <h4 class="card-title mb-0" id="chat-head-name">{{ $activeUser->nama ?? '' }}</h4>
+                        <p class="mb-0 text-muted" style="font-size: .78rem;">Percakapan konsultasi</p>
                     </div>
+                </div>
 
-                    <div class="card-body">
-                        <div class="chat-window" id="chat-messages">
+                <div class="card-body">
+                    <div class="chat-window @if (!isset($activeUser)) d-none @endif" id="chat-messages">
+                        @if (isset($activeUser))
                             @forelse ($chats as $chat)
-                                <div class="chat-bubble {{ $chat->sender_id == $adminId ? 'is-me' : '' }}">
+                                <div class="chat-bubble {{ $chat->sender_id == $adminId ? 'is-me' : '' }}"
+                                    data-chat-id="{{ $chat->id_chat }}">
                                     <p>{{ $chat->message }}</p>
                                     <span class="chat-bubble-time">
                                         {{ \Carbon\Carbon::parse($chat->sent_at)->format('H:i') }}
@@ -81,35 +86,37 @@
                                     <p class="mb-0">Belum ada pesan. Mulai percakapan di bawah.</p>
                                 </div>
                             @endforelse
-                        </div>
+                        @endif
+                    </div>
 
-                        <form id="chat-form" class="chat-composer" method="POST" action="{{ route('chat.send') }}">
-                            @csrf
-                            <input type="hidden" name="receiver_id" value="{{ $activeUser->id_akun }}">
-                            <input type="text" name="message" id="chat-input" class="form-control"
-                                placeholder="Ketik pesan..." autocomplete="off" required>
-                            <button type="submit" class="btn btn-instansi-primary btn-pill" title="Kirim pesan">
-                                <i class="fa fa-paper-plane"></i>
-                            </button>
-                        </form>
-                    </div>
-                @else
-                    <div class="card-body">
-                        <div class="chat-window d-flex align-items-center justify-content-center">
-                            <div class="empty-state">
-                                <div class="empty-icon"><i class="fa fa-comments"></i></div>
-                                <h5 class="mb-1">Pilih percakapan</h5>
-                                <p class="mb-0">Pilih pengguna dari daftar untuk memulai chat.</p>
-                            </div>
+                    <div class="chat-window d-flex align-items-center justify-content-center @if (isset($activeUser)) d-none @endif"
+                        id="chat-placeholder">
+                        <div class="empty-state">
+                            <div class="empty-icon"><i class="fa fa-comments"></i></div>
+                            <h5 class="mb-1">Pilih percakapan</h5>
+                            <p class="mb-0">Pilih pengguna dari daftar untuk memulai chat.</p>
                         </div>
                     </div>
-                @endif
+
+                    <form id="chat-form" class="chat-composer @if (!isset($activeUser)) d-none @endif"
+                        method="POST" action="{{ route('chat.send') }}">
+                        @csrf
+                        <input type="hidden" name="receiver_id" id="chat-receiver"
+                            value="{{ isset($activeUser) ? $activeUser->id_akun : '' }}">
+                        <input type="text" name="message" id="chat-input" class="form-control"
+                            placeholder="Ketik pesan..." autocomplete="off" required>
+                        <button type="submit" class="btn btn-instansi-primary btn-pill" title="Kirim pesan">
+                            <i class="fa fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 @endsection
 
 @push('scripts')
+    <script type="application/json" id="chat-prefetch">@json($chatPrefetch ?? [])</script>
     <script>
         // Skrip halaman ikut dieksekusi ulang setiap soft navigation. Koneksi
         // WebSocket halaman sebelumnya ditutup lebih dulu lewat event
@@ -150,7 +157,7 @@
         (function() {
             'use strict';
 
-            if (!document.getElementById('conversation-list') && !document.getElementById('chat-messages')) {
+            if (!document.getElementById('conversation-list') || !document.getElementById('chat-panel')) {
                 return; // bukan halaman chat
             }
 
@@ -160,16 +167,284 @@
 
             window.__sentraChatAktif = true;
 
-            var chatMessages = document.getElementById('chat-messages');
-            if (chatMessages) {
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
-
             var adminId = {{ $adminId ?? 'null' }};
-            var activeUserId = {{ isset($activeUser) ? $activeUser->id_akun : 'null' }};
+            var activeUserId = {{ isset($activeUser) ? (int) $activeUser->id_akun : 'null' }};
             var ws = null;
             var wsHost = window.location.hostname || 'localhost';
             var wsPort = {{ env('WS_PORT', 3021) }};
+            var chatFetchUrl = '{{ route('chat.fetch', ['userId' => '__USER__']) }}';
+            var emptyChatHtml = '<div class="empty-state">' +
+                '<div class="empty-icon"><i class="fa fa-comment-dots"></i></div>' +
+                '<p class="mb-0">Belum ada pesan. Mulai percakapan di bawah.</p>' +
+                '</div>';
+
+            // Cache pesan seluruh percakapan dikirim bersama halaman. Klik
+            // percakapan cukup merender cache ini → tidak ada request/tunda.
+            var chatCache = {};
+            (function() {
+                var el = document.getElementById('chat-prefetch');
+                if (!el) return;
+                try {
+                    chatCache = JSON.parse(el.textContent || '{}') || {};
+                } catch (e) {
+                    chatCache = {};
+                }
+            })();
+
+            function normalizeChat(chat) {
+                return {
+                    id_chat: chat.id_chat || null,
+                    sender_id: chat.sender_id,
+                    receiver_id: chat.receiver_id,
+                    message: chat.message || '',
+                    sent_at: chat.sent_at || new Date().toISOString()
+                };
+            }
+
+            function formatTime(value) {
+                var raw = String(value || '').trim();
+                var date = new Date(raw);
+
+                if (isNaN(date.getTime()) && raw.indexOf(' ') !== -1) {
+                    date = new Date(raw.replace(' ', 'T'));
+                }
+
+                if (isNaN(date.getTime())) return '';
+
+                return date.toLocaleTimeString('id-ID', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+
+            function buildBubble(chat) {
+                var isMe = String(chat.sender_id) === String(adminId);
+                var bubble = $('<div>').addClass('chat-bubble' + (isMe ? ' is-me' : ''));
+
+                if (chat.id_chat) {
+                    bubble.attr('data-chat-id', chat.id_chat);
+                }
+
+                $('<p>').text(chat.message).appendTo(bubble);
+                $('<span>').addClass('chat-bubble-time').text(formatTime(chat.sent_at)).appendTo(bubble);
+
+                return bubble;
+            }
+
+            function renderMessages(chats) {
+                var container = $('#chat-messages');
+                if (!container.length) return;
+
+                container.empty();
+
+                if (!chats || !chats.length) {
+                    container.append(emptyChatHtml);
+                } else {
+                    chats.forEach(function(chat) {
+                        container.append(buildBubble(chat));
+                    });
+                }
+
+                container.scrollTop(container[0].scrollHeight);
+            }
+
+            function appendBubble(chat) {
+                var container = $('#chat-messages');
+                if (!container.length || container.hasClass('d-none')) return;
+
+                if (chat.id_chat && container.find('.chat-bubble[data-chat-id="' + chat.id_chat + '"]').length) {
+                    return;
+                }
+
+                container.append(buildBubble(chat));
+                container.scrollTop(container[0].scrollHeight);
+            }
+
+            function cachePush(userId, chat) {
+                var key = String(userId);
+                var entry = normalizeChat(chat);
+                var list = chatCache[key] || (chatCache[key] = []);
+
+                if (entry.id_chat && list.some(function(existing) {
+                        return existing.id_chat && String(existing.id_chat) === String(entry.id_chat);
+                    })) {
+                    return entry;
+                }
+
+                list.push(entry);
+                return entry;
+            }
+
+            function otherUserId(data) {
+                return String(data.sender_id) === String(adminId) ? data.receiver_id : data.sender_id;
+            }
+
+            // Gabungkan hasil server dengan cache lokal. Pesan WebSocket yang
+            // tiba saat sinkronisasi berjalan tidak boleh hilang.
+            function mergeChats(primary, extra) {
+                var seen = {};
+                var merged = [];
+
+                function push(chat) {
+                    var key = chat.id_chat ?
+                        'id:' + chat.id_chat :
+                        'tmp:' + chat.sender_id + '|' + chat.sent_at + '|' + chat.message;
+
+                    if (seen[key]) return;
+                    seen[key] = true;
+                    merged.push(chat);
+                }
+
+                (primary || []).forEach(push);
+                (extra || []).forEach(push);
+
+                merged.sort(function(a, b) {
+                    return new Date(a.sent_at).getTime() - new Date(b.sent_at).getTime();
+                });
+
+                return merged;
+            }
+
+            function sameMessages(a, b) {
+                if (a.length !== b.length) return false;
+
+                for (var i = 0; i < a.length; i++) {
+                    var idA = a[i].id_chat ? String(a[i].id_chat) : '';
+                    var idB = b[i].id_chat ? String(b[i].id_chat) : '';
+
+                    if (idA || idB) {
+                        if (idA !== idB) return false;
+                    } else if (a[i].message !== b[i].message || a[i].sent_at !== b[i].sent_at) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            // Render percakapan dari cache: sinkron, tanpa menunggu server.
+            function renderConversation(userId) {
+                var key = String(userId);
+                var item = $('.chat-item[data-user-id="' + key + '"]');
+                var name = (item.find('.chat-item-name').text() || '').trim();
+
+                $('.chat-item').removeClass('active');
+                item.addClass('active');
+                item.find('.chat-unread').remove();
+
+                $('#chat-head-name').text(name || 'Percakapan');
+                $('#chat-head-avatar').text((name || '?').charAt(0).toUpperCase());
+                $('#chat-head').removeClass('d-none');
+                $('#chat-receiver').val(key);
+                $('#chat-input').val('');
+                $('#chat-form').removeClass('d-none');
+                $('#chat-placeholder').addClass('d-none');
+                $('#chat-messages').removeClass('d-none');
+
+                renderMessages(chatCache[key] || []);
+            }
+
+            // Sinkronisasi latar belakang: tandai sudah dibaca + ambil pesan
+            // terbaru yang mungkin belum masuk lewat WebSocket.
+            function refreshConversation(userId) {
+                var url = chatFetchUrl.replace('__USER__', encodeURIComponent(userId));
+
+                fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                }).then(function(response) {
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    return response.json();
+                }).then(function(payload) {
+                    if (!payload || !Array.isArray(payload.chats)) return;
+
+                    var key = String(userId);
+                    var previous = chatCache[key] || [];
+                    var normalized = payload.chats.map(normalizeChat);
+                    var merged = mergeChats(normalized, previous);
+
+                    chatCache[key] = merged;
+
+                    // Hanya render ulang bila memang ada perubahan, supaya
+                    // hasil klik yang sudah instan tidak berkedip.
+                    if (String(activeUserId) === key && !sameMessages(previous, merged)) {
+                        renderMessages(merged);
+                    }
+                }).catch(function() {
+                    // Cache preload tetap dipakai bila sinkronisasi gagal.
+                });
+            }
+
+            function openConversation(userId, href) {
+                if (!userId) return;
+
+                activeUserId = String(userId);
+                renderConversation(userId);
+
+                if (href) {
+                    try {
+                        window.history.replaceState(window.history.state, '', href);
+                    } catch (e) {}
+                }
+
+                refreshConversation(userId);
+            }
+
+            // Klik percakapan → instan (tanpa reload / tanpa soft navigation).
+            $(document).off('click.sentraChatItem').on('click.sentraChatItem', '.chat-item[data-user-id]', function(e) {
+                if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+                e.preventDefault();
+
+                var userId = String($(this).attr('data-user-id') || '');
+                if (!userId) return;
+
+                openConversation(userId, this.getAttribute('href'));
+            });
+
+            function updateConversationList(data, otherId) {
+                var item = $('.chat-item[data-user-id="' + otherId + '"]');
+
+                if (item.length) {
+                    item.find('.chat-item-preview').text(data.message);
+                    item.find('.chat-item-time').text('Baru saja');
+
+                    // Badge unread hanya untuk pesan masuk dari lawan bicara.
+                    if (String(data.sender_id) !== String(adminId) && String(otherId) !== String(activeUserId)) {
+                        var badge = item.find('.chat-unread');
+                        if (badge.length) {
+                            var count = parseInt(badge.text()) || 0;
+                            badge.text(count + 1);
+                        } else {
+                            item.find('.chat-item-bottom').append('<span class="chat-unread">1</span>');
+                        }
+                    }
+
+                    item.prependTo('#conversation-list');
+                } else if (String(data.sender_id) !== String(adminId)) {
+                    // Pengirim baru belum ada di daftar: segarkan area daftar
+                    // secara parsial (tanpa reload halaman).
+                    if (window.sentraLiveRefresh && window.sentraLiveRefresh()) {
+                        return;
+                    }
+                    window.location.reload();
+                }
+            }
+
+            function handleIncomingMessage(data) {
+                var otherId = otherUserId(data);
+
+                cachePush(otherId, data);
+
+                if (String(activeUserId) === String(otherId)) {
+                    appendBubble(normalizeChat(data));
+                }
+
+                updateConversationList(data, otherId);
+            }
 
             function connectWebSocket() {
                 try {
@@ -192,14 +467,7 @@
                             var data = JSON.parse(event.data);
 
                             if (data.type === 'new_message') {
-                                var isCurrentChat = (data.sender_id == activeUserId && data.receiver_id == adminId) ||
-                                    (data.sender_id == adminId && data.receiver_id == activeUserId);
-
-                                if (isCurrentChat) {
-                                    appendMessage(data);
-                                }
-
-                                updateConversationList(data);
+                                handleIncomingMessage(data);
                             }
                         } catch (e) {
                             console.error('Error parsing WS message:', e);
@@ -225,119 +493,77 @@
 
             connectWebSocket();
 
-            function appendMessage(data) {
-                var time = new Date(data.sent_at || Date.now()).toLocaleTimeString('id-ID', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-                var isMe = (data.sender_id == adminId);
-                var safe = $('<span>').text(data.message).html();
+            // Delegasi ke document agar form tetap berfungsi setelah panel
+            // diubah oleh render cache.
+            $(document).off('submit.sentraChat').on('submit.sentraChat', '#chat-form', function(e) {
+                e.preventDefault();
+                var form = $(this);
+                var input = $('#chat-input');
+                var message = input.val().trim();
+                if (!message || !activeUserId) return;
 
-                var html = '<div class="chat-bubble' + (isMe ? ' is-me' : '') + '">' +
-                    '<p>' + safe + '</p>' +
-                    '<span class="chat-bubble-time">' + time + '</span>' +
-                    '</div>';
+                // Serialize dulu: jQuery melewati field yang disabled.
+                var payload = form.serialize();
 
-                $('#chat-messages').append(html);
-                if (chatMessages) {
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
-                }
-            }
+                input.prop('disabled', true);
 
-            function updateConversationList(data) {
-                var senderId = data.sender_id;
-                var item = $('.chat-item[data-user-id="' + senderId + '"]');
-
-                if (item.length) {
-                    item.find('.chat-item-preview').text(data.message);
-                    item.find('.chat-item-time').text('Baru saja');
-
-                    if (senderId != activeUserId) {
-                        var badge = item.find('.chat-unread');
-                        if (badge.length) {
-                            var count = parseInt(badge.text()) || 0;
-                            badge.text(count + 1);
-                        } else {
-                            item.find('.chat-item-bottom').append('<span class="chat-unread">1</span>');
-                        }
-                    }
-
-                    item.prependTo('#conversation-list');
-                } else if (senderId != adminId) {
-                    // User baru yang belum ada di daftar percakapan
-                    window.location.reload();
-                }
-            }
-
-            @if (isset($activeUser))
-                $('#chat-form').on('submit', function(e) {
-                    e.preventDefault();
-                    var form = $(this);
-                    var input = $('#chat-input');
-                    var message = input.val().trim();
-                    if (!message) return;
-
-                    // Serialize dulu: jQuery melewati field yang disabled.
-                    var payload = form.serialize();
-
-                    input.prop('disabled', true);
-
-                    if (ws && ws.readyState === WebSocket.OPEN) {
-                        ws.send(JSON.stringify({
-                            type: 'send_message',
-                            sender_id: adminId,
-                            receiver_id: activeUserId,
-                            message: message
-                        }));
-                        input.val('').prop('disabled', false).focus();
-                    } else {
-                        $.ajax({
-                            url: form.attr('action'),
-                            method: 'POST',
-                            data: payload,
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                            },
-                            success: function(response) {
-                                if (response.success) {
-                                    appendMessage({
-                                        sender_id: adminId,
-                                        receiver_id: activeUserId,
-                                        message: message,
-                                        sent_at: new Date().toISOString()
-                                    });
-                                    input.val('');
-                                }
-                            },
-                            error: function(xhr) {
-                                if (xhr.status === 401 || xhr.status === 419) {
-                                    alert('Sesi login Anda sudah berakhir. Halaman akan dimuat ulang, silakan login kembali lalu kirim pesan.');
-                                    window.location.reload();
-                                    return;
-                                }
-
-                                var serverMessage = xhr.responseJSON && xhr.responseJSON.message;
-
-                                if (xhr.status === 403) {
-                                    alert(serverMessage || 'Layanan konsultasi chat sedang dinonaktifkan.');
-                                    return;
-                                }
-
-                                if (xhr.status === 422) {
-                                    alert(serverMessage || 'Pesan tidak valid.');
-                                    return;
-                                }
-
-                                alert('Gagal mengirim pesan');
-                            },
-                            complete: function() {
-                                input.prop('disabled', false).focus();
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({
+                        type: 'send_message',
+                        sender_id: adminId,
+                        receiver_id: activeUserId,
+                        message: message
+                    }));
+                    input.val('').prop('disabled', false).focus();
+                } else {
+                    $.ajax({
+                        url: form.attr('action'),
+                        method: 'POST',
+                        data: payload,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                var chat = response.chat || {};
+                                handleIncomingMessage({
+                                    id_chat: chat.id_chat || null,
+                                    sender_id: adminId,
+                                    receiver_id: activeUserId,
+                                    message: message,
+                                    sent_at: chat.sent_at || new Date().toISOString()
+                                });
+                                input.val('');
                             }
-                        });
-                    }
-                });
-            @endif
+                        },
+                        error: function(xhr) {
+                            if (xhr.status === 401 || xhr.status === 419) {
+                                alert('Sesi login Anda sudah berakhir. Halaman akan dimuat ulang, silakan login kembali lalu kirim pesan.');
+                                window.location.reload();
+                                return;
+                            }
+
+                            var serverMessage = xhr.responseJSON && xhr.responseJSON.message;
+
+                            if (xhr.status === 403) {
+                                alert(serverMessage || 'Layanan konsultasi chat sedang dinonaktifkan.');
+                                return;
+                            }
+
+                            if (xhr.status === 422) {
+                                alert(serverMessage || 'Pesan tidak valid.');
+                                return;
+                            }
+
+                            alert('Gagal mengirim pesan');
+                        },
+                        complete: function() {
+                            input.prop('disabled', false).focus();
+                        }
+                    });
+                }
+            });
         })();
     </script>
 @endpush

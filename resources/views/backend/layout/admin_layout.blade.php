@@ -335,7 +335,8 @@
 
                 fetch(url, {
                         headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'text/html'
                         },
                         credentials: 'same-origin'
                     })
@@ -366,6 +367,12 @@
                         try {
                             window.history.replaceState(window.history.state, '', url);
                         } catch (e) {}
+
+                        // Beri tahu skrip halaman bahwa area live sudah ditukar
+                        // (mis. chat perlu menyinkronkan percakapan aktif).
+                        document.dispatchEvent(new CustomEvent('sentra:live-region-swapped', {
+                            detail: { url: url }
+                        }));
                     })
                     .catch(function() {
                         fallbackLiveNavigate(url);
@@ -454,6 +461,20 @@
             // Fase capture agar mengungguli listener navigasi Livewire.
             document.addEventListener('click', function(event) {
                 if (!event.target || typeof event.target.closest !== 'function') return;
+
+                // Tautan di dalam area live yang bertanda data-live-link
+                // ditukar parsial juga: instan, tanpa soft navigation dan
+                // tanpa reload.
+                var liveLink = event.target.closest('[data-live-region] a[data-live-link][href]');
+                if (liveLink) {
+                    // Biarkan perilaku bawaan untuk buka tab baru / klik kanan.
+                    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    partialLoad(liveLink.href);
+                    return;
+                }
 
                 var link = event.target.closest('[data-live-region] .pagination a[href]');
                 if (link) {

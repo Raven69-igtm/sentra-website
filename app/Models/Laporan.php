@@ -114,6 +114,26 @@ class Laporan extends Model
             ->whereDoesntHave('detail_pjsrk');
     }
 
+    /**
+     * Laporan yang berasal dari Dinsos sendiri: layanan PJSRK atau kategori
+     * legacy Dinsos. Laporan PPA yang berstatus 'dirujuk' TIDAK termasuk,
+     * sehingga rekap Dinsos tidak memuat data PPA.
+     *
+     * Dipakai khusus untuk Rekapan. Jangan dipakai sebagai pengganti
+     * forUser() pada daftar operasional — daftar operasional tetap harus
+     * menampilkan rujukan dari PPA.
+     */
+    public function scopeLaporanDinsos($query)
+    {
+        return $query->where(function ($q) {
+            $q->whereIn('layanan_pjsrk', array_keys(self::LAYANAN_PJSRK))
+                ->orWhere(function ($legacy) {
+                    $legacy->whereNull('layanan_pjsrk')
+                        ->whereIn('kategori', self::DINSOS_CATEGORIES);
+                });
+        });
+    }
+
     public function scopeForUser($query, $user)
     {
         // Superadmin hanya memantau aktivitas (audit) — tidak membaca isi laporan.

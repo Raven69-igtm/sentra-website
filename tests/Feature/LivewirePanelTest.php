@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Akun;
+use App\Models\ChatMobile;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
@@ -82,10 +83,12 @@ class LivewirePanelTest extends TestCase
             ->assertSee('data-livewire-navigate', false)
             ->assertSee('data-live-region="ppa-laporan-cepat"', false);
 
-        // Daftar percakapan memakai soft navigation.
+        // Daftar percakapan: klik dirender instan dari cache yang dikirim
+        // bersama halaman, bukan lewat request/soft navigation.
         $this->get(route('chat.index'))
             ->assertOk()
-            ->assertSee('wire:navigate', false);
+            ->assertSee('data-live-region="ppa-chat-list"', false)
+            ->assertSee('id="chat-prefetch"', false);
     }
 
     public function test_halaman_dinsos_memakai_soft_navigation_dan_live_filter(): void
@@ -114,6 +117,36 @@ class LivewirePanelTest extends TestCase
         $this->get(route('dinsos.laporan.index', ['status' => 'selesai', 'search' => 'uji']))
             ->assertOk()
             ->assertSee('data-live-region="dinsos-laporan"', false);
+    }
+
+    public function test_chat_show_tetap_mengembalikan_html_untuk_request_xhr(): void
+    {
+        $admin = $this->admin('admin_ppa', 'admin.ppa@sentra.com');
+        $this->actingAs($admin);
+
+        $warga = Akun::create([
+            'nama' => 'Warga Uji Chat',
+            'email' => 'warga.chat.' . random_int(1000, 9999) . '@sentra.test',
+            'notelp' => '0813000' . random_int(1000, 9999),
+            'password' => 'RahasiaUji123!',
+            'role' => 'user',
+            'is_active' => true,
+        ]);
+
+        ChatMobile::create([
+            'sender_id' => $warga->id_akun,
+            'receiver_id' => $admin->id_akun,
+            'message' => 'Halo admin, saya ingin konsultasi.',
+        ]);
+
+        // Klien chat memakai XHR, tetapi halaman show harus tetap HTML.
+        $this->withHeaders(['X-Requested-With' => 'XMLHttpRequest'])
+            ->get(route('chat.show', $warga->id_akun))
+            ->assertOk()
+            ->assertSee('data-live-region="ppa-chat-list"', false)
+            ->assertSee('id="chat-prefetch"', false)
+            ->assertSee('Percakapan konsultasi', false)
+            ->assertSee('Halo admin, saya ingin konsultasi.', false);
     }
 
     public function test_perubahan_status_masih_tersedia_di_daftar_laporan(): void

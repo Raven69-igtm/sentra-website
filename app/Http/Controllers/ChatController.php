@@ -4,12 +4,63 @@ namespace App\Http\Controllers;
 
 use App\Models\ChatMobile;
 use App\Models\UserMobile;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class ChatController extends Controller
 {
+    /**
+     * Bentuk data chat yang dipakai klien (ISO date agar aman di semua
+     * browser) — dipakai untuk preload maupun fetch JSON.
+     */
+    private function serializeChat(ChatMobile $chat): array
+    {
+        return [
+            'id_chat' => (int) $chat->id_chat,
+            'sender_id' => (int) $chat->sender_id,
+            'receiver_id' => (int) $chat->receiver_id,
+            'message' => $chat->message,
+            'sent_at' => Carbon::parse($chat->sent_at)->toIso8601String(),
+        ];
+    }
+
+    /**
+     * Semua pesan untuk seluruh percakapan, dikelompokkan per lawan bicara.
+     * Dikirim bersama halaman agar klik percakapan bisa dirender instan
+     * tanpa menunggu request ke server.
+     */
+    private function getChatPrefetch($adminId, $userIds): array
+    {
+        $userIds = collect($userIds)
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($userIds->isEmpty()) {
+            return [];
+        }
+
+        $ids = $userIds->all();
+
+        $chats = ChatMobile::where(function ($q) use ($adminId, $ids) {
+            $q->where('sender_id', $adminId)->whereIn('receiver_id', $ids);
+        })->orWhere(function ($q) use ($adminId, $ids) {
+            $q->where('receiver_id', $adminId)->whereIn('sender_id', $ids);
+        })->orderBy('sent_at', 'asc')->get();
+
+        $prefetch = [];
+
+        foreach ($chats as $chat) {
+            $otherId = (string) ($chat->sender_id == $adminId ? $chat->receiver_id : $chat->sender_id);
+            $prefetch[$otherId][] = $this->serializeChat($chat);
+        }
+
+        return $prefetch;
+    }
+
     private function getConversationList($adminId)
     {
         $uId = intval($adminId);
@@ -55,8 +106,9 @@ class ChatController extends Controller
     {
         $adminId = Auth::id();
         $users = $this->getConversationList($adminId);
+        $chatPrefetch = $this->getChatPrefetch($adminId, $users->pluck('id_akun'));
 
-        return view('backend.layout.page_admin.chat', compact('users', 'adminId'));
+        return view('backend.layout.page_admin.chat', compact('users', 'adminId', 'chatPrefetch'));
     }
 
     public function show($userId)
@@ -76,11 +128,11 @@ class ChatController extends Controller
 
         $user = UserMobile::where('id_akun', $userId)->first();
 
-        if (request()->ajax()) {
+        if (request()->wantsJson()) {
             return response()->json([
-                'chats' => $chats,
+                'chats' => $chats->map(fn ($chat) => $this->serializeChat($chat))->values(),
                 'user' => $user,
-                'admin_id' => $adminId,
+                'admin_id' => (int) $adminId,
             ]);
         }
 
@@ -91,6 +143,7 @@ class ChatController extends Controller
             'activeUser' => $user,
             'chats' => $chats,
             'adminId' => $adminId,
+            'chatPrefetch' => $this->getChatPrefetch($adminId, $conversations->pluck('id_akun')),
         ]);
     }
 
@@ -141,8 +194,8 @@ class ChatController extends Controller
         })->orderBy('sent_at', 'asc')->get();
 
         return response()->json([
-            'chats' => $chats,
-            'admin_id' => $adminId,
+            'chats' => $chats->map(fn ($chat) => $this->serializeChat($chat))->values(),
+            'admin_id' => (int) $adminId,
         ]);
     }
 }
