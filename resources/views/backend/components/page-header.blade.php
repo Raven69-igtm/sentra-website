@@ -1,10 +1,12 @@
 @php
+    // Default string (bukan null) agar variabel selalu terdefinisi saat
+    // dipakai di kondisi @if — sekaligus lolos analisis statis Blade.
     $pageTitle = $title ?? '';
     $pageSubtitle = $subtitle ?? '';
     $pageIcon = $icon ?? 'fa-circle';
     $pageActions = $actions ?? [];
-    $pageActionUrl = $actionUrl ?? null;
-    $pageActionLabel = $actionLabel ?? null;
+    $pageActionUrl = $actionUrl ?? '';
+    $pageActionLabel = $actionLabel ?? '';
     $pageActionIcon = $actionIcon ?? 'fa-plus';
     $pageActionClass = $actionClass ?? 'btn-instansi-primary';
 @endphp
@@ -26,13 +28,13 @@
 
     <div class="page-head-actions d-flex flex-wrap align-items-center">
         @if ($pageActionUrl && $pageActionLabel)
-            <a href="{{ $pageActionUrl }}" class="btn {{ $pageActionClass }} btn-pill">
+            <a href="{{ $pageActionUrl }}" wire:navigate class="btn {{ $pageActionClass }} btn-pill">
                 <i class="fa {{ $pageActionIcon }} me-2"></i> {{ $pageActionLabel }}
             </a>
         @endif
 
         @foreach ($pageActions as $action)
-            <a href="{{ $action['url'] ?? '#' }}"
+            <a href="{{ $action['url'] ?? '#' }}" @if (!empty($action['url'])) wire:navigate @endif
                 class="btn {{ $action['class'] ?? 'btn-instansi-soft' }} btn-pill">
                 @if (!empty($action['icon']))
                     <i class="fa {{ $action['icon'] }} me-2"></i>

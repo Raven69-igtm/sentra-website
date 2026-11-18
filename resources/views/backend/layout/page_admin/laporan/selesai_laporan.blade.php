@@ -9,30 +9,46 @@
             'icon' => 'fa-circle-check',
         ])
 
-        {{-- Filter & pencarian (kolom tabel difilter lewat DataTables) --}}
+        {{-- Filter server-side: otomatis diterapkan lewat live filter. --}}
         <div class="filter-bar mb-4">
-            <div class="filter-grid">
-                <div class="filter-field" style="flex: 2 1 280px;">
-                    <label for="searchNama">Cari Pelapor</label>
-                    <input type="text" id="searchNama" class="form-control" placeholder="Cari nama pelapor...">
+            <form method="GET" action="{{ route('selesai') }}" data-livewire-navigate>
+                <div class="filter-grid">
+                    <div class="filter-field" style="flex: 2 1 280px;">
+                        <label for="searchNama">Cari Pelapor / No. Tiket</label>
+                        <input type="text" id="searchNama" name="search" value="{{ request('search') }}"
+                            class="form-control" placeholder="Cari nama pelapor atau nomor tiket...">
+                    </div>
+                    <div class="filter-field">
+                        <label for="filterKategori">Kategori</label>
+                        <select id="filterKategori" name="kategori" class="form-control">
+                            <option value="">Semua Kategori</option>
+                            @foreach (['Kekerasan Fisik', 'Kekerasan Psikis', 'Kekerasan Seksual', 'Penelantaran', 'Eksploitasi', 'TPPO', 'unset'] as $kategori)
+                                <option value="{{ $kategori }}"
+                                    {{ request('kategori') === $kategori ? 'selected' : '' }}>{{ $kategori }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="filter-field" style="flex: 1 1 100%; min-width: 0;">
+                        {{-- Area live terpisah agar tombol Reset ikut diperbarui
+                             setelah filter parsial tanpa reload. --}}
+                        <div class="filter-actions" data-live-region="ppa-laporan-selesai-actions"
+                            style="flex-wrap: wrap; justify-content: flex-end;">
+                            <button type="submit" class="btn btn-instansi-primary btn-pill"
+                                style="white-space: nowrap;">
+                                <i class="fa fa-filter"></i> Filter
+                            </button>
+                            @if (request()->hasAny(['search', 'kategori']))
+                                <a href="{{ route('selesai') }}" data-live-reset class="btn btn-light btn-pill"
+                                    style="white-space: nowrap;">Reset</a>
+                            @endif
+                        </div>
+                    </div>
                 </div>
-                <div class="filter-field">
-                    <label for="filterKategori">Kategori</label>
-                    <select id="filterKategori" class="form-control">
-                        <option value="">Semua Kategori</option>
-                        <option value="Kekerasan Fisik">Kekerasan Fisik</option>
-                        <option value="Kekerasan Psikis">Kekerasan Psikis</option>
-                        <option value="Kekerasan Seksual">Kekerasan Seksual</option>
-                        <option value="Penelantaran">Penelantaran</option>
-                        <option value="Eksploitasi">Eksploitasi</option>
-                        <option value="TPPO">TPPO</option>
-                        <option value="unset">Tidak Disetting</option>
-                    </select>
-                </div>
-            </div>
+            </form>
         </div>
 
-        <div class="card">
+        {{-- Area live: filter menukar bagian ini saja (tanpa reload) --}}
+        <div class="card" data-live-region="ppa-laporan-selesai">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="card-title mb-0">Arsip Laporan</h4>
                 <span class="badge badge-primary">{{ $laporan->count() }} laporan</span>
@@ -120,6 +136,9 @@
     @include('backend.components.style-confirm')
     {{-- JavaScript untuk Modal --}}
     <script>
+        // Filter dijalankan server-side lewat live filter, sehingga DataTables
+        // tidak lagi dipakai di halaman ini. Fungsi tetap global karena dipanggil
+        // dari atribut onclick pada baris tabel.
         function showPreview(laporanId) {
             // Tampilkan modal
             $('#previewModal').modal('show');
@@ -172,23 +191,5 @@
                 }
             });
         }
-    </script>
-    <script>
-        $(document).ready(function() {
-            const table = $('#laporanTable').DataTable({
-                dom: 'rt',
-                ordering: false,
-            });
-
-            // Search berdasarkan nama pelapor (kolom ke-1)
-            $('#searchNama').on('keyup', function() {
-                table.column(1).search(this.value).draw();
-            });
-
-            // Filter berdasarkan status (kolom ke-2)
-            $('#filterKategori').on('change', function() {
-                table.column(3).search(this.value).draw();
-            });
-        });
     </script>
 @endpush

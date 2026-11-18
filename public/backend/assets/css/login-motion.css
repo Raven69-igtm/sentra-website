@@ -1,0 +1,336 @@
+/* ==========================================================================
+   Ilustrasi & animasi halaman login SENTRA
+   --------------------------------------------------------------------------
+   Sumber gambar tetap SATU aset milik pengguna:
+   public/backend/assets/img/illustrations/tree-sentra.png
+
+   Agar pohon dan ayunan bisa bergerak, scripts/build-login-tree-sentra.py
+   memecah aset itu menjadi tiga lapisan PNG transparan berukuran kanvas
+   penuh (1672x941) di img/illustrations/login/:
+     sentra-scene.png  langit, bukit, matahari, burung, tanaman di tanah
+     sentra-tree.png   batang + dahan + tajuk
+     sentra-swing.png  tali + anak + papan ayunan
+   Saat ketiganya diam, gabungannya persis gambar aslinya.
+
+   Pohon berayun memakai poros di pangkal batang; ayunan adalah anak dari
+   lapisan pohon sehingga titik gantungnya ikut bergerak bersama dahan.
+   Daun jatuh lahir di tepi bawah tajuk (titiknya dicetak oleh skrip yang
+   sama) lalu melayang turun sambil berputar.
+
+   Semua gerakan hanya transform + opacity, lapisan daun pointer-events:
+   none, dan semuanya berhenti pada prefers-reduced-motion.
+   ========================================================================== */
+
+/* --------------------------------------------------------- panggung kolom */
+.login-hero {
+    position: relative;
+    overflow: hidden;
+    /* Langit pada ilustrasi berwarna putih, jadi latar kolom putih juga. */
+    background: #fff;
+}
+
+/* Panggung selebar 148% kolom: tajuk pohon memenuhi sekitar tiga perempat
+   lebar kolom tanpa terpotong. Dijangkar kiri bawah supaya pohon selalu
+   berdiri di dasar kolom pada segala tinggi layar. */
+.login-hero__stage {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 148%;
+    aspect-ratio: 1672 / 941;
+    pointer-events: none;
+    animation: login-art-in 1s ease-out 0.1s both;
+}
+
+.login-hero__scene,
+.login-hero__tree,
+.login-hero__swing,
+.login-hero__tree > img,
+.login-hero__swing > img {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Pohon tertiup angin: berputar pelan di pangkal batang, jadi puncak tajuk
+   bergerak paling jauh sedangkan pangkalnya tetap menapak di tanah. */
+.login-hero__tree {
+    transform-origin: 24.912% 88.948%;
+    animation: login-tree-sway 6.4s ease-in-out infinite alternate;
+}
+
+/* Ayunan: poros tepat di titik tali bertemu dahan. Karena berada di dalam
+   .login-hero__tree, titik gantung ini ikut bergeser saat pohon berayun. */
+.login-hero__swing {
+    transform-origin: 35.108% 56.004%;
+    animation: login-swing 3.9s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite
+        alternate;
+}
+
+/* ------------------------------------------------------------- daun jatuh */
+/* Dua panggung daun:
+   - .login-hero__leaves  : di dalam panggung ilustrasi (layar >= 992px),
+                            daun lahir dari tajuk pohon
+   - .login-leaves-page   : di belakang konten halaman (layar < 992px) */
+.login-hero__leaves,
+.login-leaves-page {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.login-hero__leaves {
+    z-index: 2;
+}
+
+.login-leaves-page {
+    z-index: -1;
+    display: none;
+}
+
+/* Pembungkus setinggi panggung. Daunnya sendiri berada di --leaf-y (titik
+   lahir di tajuk), lalu pembungkus digeser sejauh --leaf-fall (persen tinggi
+   panggung) sampai daun keluar dari tepi bawah. */
+.login-leaf {
+    position: absolute;
+    top: 0;
+    left: var(--leaf-x);
+    width: var(--leaf-size);
+    height: 100%;
+    opacity: 0;
+    will-change: transform, opacity;
+    animation: login-leaf-fall var(--leaf-duration) linear var(--leaf-delay)
+        infinite;
+}
+
+/* Putaran: lapisan tersendiri supaya tidak bentrok dengan geseran (fall)
+   maupun ayunan (shape). Arah putar tiap daun bisa berbeda. */
+.login-leaf__flip {
+    position: absolute;
+    top: var(--leaf-y, 0%);
+    left: 0;
+    width: 100%;
+    height: auto;
+    animation: login-leaf-spin var(--leaf-spin) linear var(--leaf-spin-delay)
+        infinite;
+    animation-direction: var(--leaf-spin-direction, normal);
+}
+
+/* Kibasan angin: bergeser kiri-kanan, miring, dan agak menipis seperti daun
+   yang berbalik arah. */
+.login-leaf__shape {
+    display: block;
+    width: 100%;
+    height: auto;
+    color: var(--leaf-color, #56b455);
+    transform-origin: 50% 48%;
+    animation: login-leaf-sway var(--leaf-sway-duration) ease-in-out infinite
+        alternate;
+}
+
+/* Tulang daun: garis terang tipis di atas warna daun. */
+.login-leaf__veins {
+    stroke: #fff;
+    stroke-opacity: 0.38;
+}
+
+/* Saat tab tidak aktif, animasi dijeda supaya tidak memakan CPU. */
+.login-hero__leaves.is-paused .login-leaf,
+.login-hero__leaves.is-paused .login-leaf__flip,
+.login-hero__leaves.is-paused .login-leaf__shape,
+.login-leaves-page.is-paused .login-leaf,
+.login-leaves-page.is-paused .login-leaf__flip,
+.login-leaves-page.is-paused .login-leaf__shape {
+    animation-play-state: paused;
+}
+
+/* ------------------------------------------------------------- keyframes */
+@keyframes login-art-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Angin pelan dan tidak teratur: dua ujung ayunan tidak simetris supaya
+   terlihat seperti hembusan, bukan bandul mekanis. */
+@keyframes login-tree-sway {
+    from {
+        transform: rotate(-1.05deg);
+    }
+
+    to {
+        transform: rotate(0.85deg);
+    }
+}
+
+@keyframes login-swing {
+    from {
+        transform: rotate(5.5deg);
+    }
+
+    to {
+        transform: rotate(-5.5deg);
+    }
+}
+
+/* Daun muncul di tajuk, turun perlahan sambil terbawa angin, lalu memudar
+   sebelum berulang: perulangannya tidak terlihat. */
+@keyframes login-leaf-fall {
+    0% {
+        opacity: 0;
+        transform: translate3d(0, 0, 0);
+    }
+
+    6% {
+        opacity: var(--leaf-opacity, 0.85);
+    }
+
+    86% {
+        opacity: var(--leaf-opacity, 0.85);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate3d(
+            var(--leaf-drift, 60px),
+            var(--leaf-fall, 112%),
+            0
+        );
+    }
+}
+
+@keyframes login-leaf-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes login-leaf-sway {
+    from {
+        transform: translate3d(calc(var(--leaf-sway, 14px) * -1), 0, 0)
+            rotate(-16deg) scaleX(0.84);
+    }
+
+    to {
+        transform: translate3d(var(--leaf-sway, 14px), 0, 0) rotate(16deg)
+            scaleX(1);
+    }
+}
+
+/* --------------------------------------------------- animasi kolom form */
+@keyframes login-fade-up {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 16px, 0);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+.card-header.ms-3 {
+    animation: login-fade-up 0.7s ease-out both;
+}
+
+.card-plain .card-body > form > * {
+    animation: login-fade-up 0.6s ease-out both;
+}
+
+.card-plain .card-body > form > *:nth-child(1) {
+    animation-delay: 0.12s;
+}
+
+.card-plain .card-body > form > *:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.card-plain .card-body > form > *:nth-child(3) {
+    animation-delay: 0.28s;
+}
+
+.card-plain .card-body > form > *:nth-child(4) {
+    animation-delay: 0.36s;
+}
+
+.card-plain .card-body > form > *:nth-child(5) {
+    animation-delay: 0.44s;
+}
+
+.card-plain .card-body > form > *:nth-child(6) {
+    animation-delay: 0.52s;
+}
+
+.card-plain .card-footer {
+    animation: login-fade-up 0.6s ease-out 0.6s both;
+}
+
+/* ------------------------------------------------ interaksi mikro tombol */
+.custom-login-btn {
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.18s ease,
+        background-color 0.18s ease;
+}
+
+.custom-login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(82, 174, 119, 0.28);
+}
+
+.custom-login-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 10px rgba(82, 174, 119, 0.24);
+}
+
+.card-plain .input-group-outline .form-control:focus {
+    box-shadow: 0 0 0 3px rgba(82, 174, 119, 0.12);
+}
+
+/* ------------------------------------------------------------- responsif */
+/* Di bawah breakpoint lg kolom ilustrasi disembunyikan oleh grid, jadi daun
+   dipindah ke lapisan halaman yang berada di belakang form (z-index: -1). */
+@media (max-width: 991.98px) {
+    .login-leaves-page {
+        display: block;
+    }
+
+    .login-hero__leaves {
+        display: none;
+    }
+}
+
+/* ------------------------------------------------- aksesibilitas / hemat daya */
+@media (prefers-reduced-motion: reduce) {
+    .login-hero__stage,
+    .login-hero__tree,
+    .login-hero__swing,
+    .login-leaf,
+    .login-leaf__flip,
+    .login-leaf__shape,
+    .card-header.ms-3,
+    .card-plain .card-body > form > *,
+    .card-plain .card-footer,
+    .custom-login-btn {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    /* Tanpa animasi daun hanya akan menumpuk di satu titik, jadi disembunyikan. */
+    .login-hero__leaves,
+    .login-leaves-page {
+        display: none;
+    }
+}

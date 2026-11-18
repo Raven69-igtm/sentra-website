@@ -666,7 +666,7 @@
                                     </button>
                                 @endif
 
-                                <a href="{{ route('dinsos.laporan.index') }}" class="btn btn-light btn-pill">
+                                <a href="{{ route('dinsos.laporan.index') }}" wire:navigate class="btn btn-light btn-pill">
                                     <i class="fa fa-arrow-left"></i> Kembali ke Daftar
                                 </a>
                             </div>
@@ -799,7 +799,10 @@
 
 @push('scripts')
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        // Skrip dapat dieksekusi ulang oleh Livewire (soft navigation). Dibungkus
+        // IIFE dan langsung dijalankan karena elemen halaman sudah terpasang
+        // (event DOMContentLoaded tidak lagi terpicu setelah navigasi).
+        (function() {
             var modalEl = document.getElementById('rejectModal');
             var form = document.getElementById('rejectForm');
             var description = document.getElementById('rejectDescription');
@@ -812,16 +815,30 @@
             }
 
             var $modal = window.jQuery ? window.jQuery(modalEl) : null;
-            var canShow = $modal && typeof $modal.modal === 'function';
+
+            // Plugin Bootstrap (jQuery.fn.modal) baru tersedia setelah
+            // global.min.js dimuat di akhir layout, sedangkan skrip halaman ini
+            // berjalan lebih dulu. Karena itu ketersediaannya diperiksa saat
+            // tombol diklik, bukan saat halaman dipasang.
+            function modalPlugin() {
+                return $modal && typeof $modal.modal === 'function' ? $modal : null;
+            }
 
             function showRejectModal(button) {
                 form.action = button.dataset.action;
                 description.textContent = 'Tambahkan alasan penolakan untuk tiket ' + button.dataset.ticket + '.';
 
                 // Dibuka manual supaya tidak bergantung pada data-api tema.
-                if (canShow) {
-                    $modal.modal('show');
+                var $instance = modalPlugin();
+                if ($instance) {
+                    $instance.modal('show');
+                    return;
                 }
+
+                // Fallback tanpa plugin Bootstrap.
+                modalEl.classList.add('show');
+                modalEl.style.display = 'block';
+                modalEl.removeAttribute('aria-hidden');
             }
 
             // Tombol "Tolak Laporan" pada halaman detail.
@@ -833,12 +850,12 @@
                 });
             });
 
-            if (canShow) {
+            if ($modal) {
                 $modal.on('hidden.bs.modal', function() {
                     form.reset();
                     form.removeAttribute('action');
                 });
             }
-        });
+        })();
     </script>
 @endpush

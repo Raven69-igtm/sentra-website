@@ -1,4 +1,7 @@
 <script>
+    // Dibungkus IIFE agar aman dieksekusi ulang oleh Livewire soft navigation:
+    // deklarasi const/let di top-level akan bentrok saat <body> diganti.
+    (function() {
     document.querySelectorAll('.reset-pwd-close').forEach(btn => {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
@@ -243,4 +246,5 @@
     @if (session('success'))
         showSuccessNotification('{{ session('success') }}');
     @endif
+    })();
 </script>

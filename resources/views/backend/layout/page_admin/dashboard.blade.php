@@ -152,7 +152,7 @@
                             <h4 class="card-title mb-1">Laporan Terbaru</h4>
                             <p class="mb-0 text-muted" style="font-size: .82rem;">5 laporan terakhir yang masuk</p>
                         </div>
-                        <a href="{{ route('laporan_proses') }}" class="btn btn-instansi-soft btn-pill">
+                        <a href="{{ route('laporan_proses') }}" wire:navigate class="btn btn-instansi-soft btn-pill">
                             Lihat semua <i class="fa fa-arrow-right ms-1"></i>
                         </a>
                     </div>
@@ -180,7 +180,7 @@
                                                 {{ optional($laporan->created_at)->format('d M Y') }}</td>
                                             <td class="text-right">
                                                 <a href="{{ route('laporan.show', $laporan->id_laporan) }}"
-                                                    class="btn btn-instansi-soft btn-pill btn-sm">
+                                                    wire:navigate class="btn btn-instansi-soft btn-pill btn-sm">
                                                     Detail
                                                 </a>
                                             </td>
@@ -341,16 +341,28 @@
                 runCountUp();
             }
 
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', boot);
+            // Chart.js dimuat di akhir layout, sedangkan skrip halaman ini ikut
+            // isi konten sehingga pada load pertama Chart belum tersedia.
+            // Setelah soft navigation pustaka sudah ada, jadi cukup jalankan
+            // langsung. Timer jaring pengaman menangani CDN yang lambat.
+            if (document.readyState === 'loading' || typeof Chart === 'undefined') {
+                window.addEventListener('load', boot, {
+                    once: true
+                });
             } else {
                 boot();
             }
 
-            // Filter tahun (perilaku lama dipertahankan)
+            // Filter tahun (perilaku lama dipertahankan, kini tanpa reload penuh)
             window.updateChart = function() {
                 var tahun = document.getElementById('tahun-filter').value;
-                window.location.href = "{{ route('dashboard') }}?tahun=" + tahun;
+                var url = "{{ route('dashboard') }}?tahun=" + tahun;
+
+                if (window.Livewire && typeof window.Livewire.navigate === 'function') {
+                    window.Livewire.navigate(url);
+                } else {
+                    window.location.href = url;
+                }
             };
         })();
     </script>

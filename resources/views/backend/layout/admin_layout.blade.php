@@ -36,6 +36,26 @@
          body.dinsos-admin (lihat token --i-*). --}}
     <link href="{{ asset('admin/assets_instansi/css/instansi.css') }}" rel="stylesheet">
     @stack('styles')
+
+    <style>
+        /* ============================================================
+           LIVEWIRE SOFT NAVIGATION
+           Livewire hanya mengganti <body>, sehingga #preloader baru ikut
+           terpasang kembali padahal animasi masuk hanya untuk load pertama.
+           Sama seperti panel Superadmin, preloader dimatikan permanen dan
+           #main-wrapper dipaksa terlihat (tema menyembunyikannya dengan
+           opacity: 0 sampai class "show" dipasang).
+           ============================================================ */
+        html.instansi-navigated #preloader {
+            display: none !important;
+        }
+
+        html.instansi-navigated #main-wrapper {
+            opacity: 1 !important;
+        }
+    </style>
+
+    @livewireStyles
 </head>
 
 <body class="{{ Auth::check() && Auth::user()->isAdminDinsos() ? 'dinsos-admin' : 'instansi-admin' }}">
@@ -60,66 +80,71 @@
 
     @include('backend.layout.page_admin.reset_password.reset-password')
     @include('backend.layout.page_admin.reset_password.scripts')
-    @include('backend.layout.page_admin.notifikasi')
 
     <!-- SCRIPTS - URUTAN PENTING! -->
+    {{-- Pustaka inti cukup dimuat sekali. Livewire navigate mengganti <body>,
+         jadi tanpa data-navigate-once skrip yang sama dieksekusi ulang dan
+         memicu error "already declared" serta listener ganda. --}}
     <!-- 1. jQuery PERTAMA (HAPUS DUPLIKASI) -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" data-navigate-once></script>
 
     <!-- 3. DataTables -->
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js" data-navigate-once></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js" data-navigate-once></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js" data-navigate-once></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js" data-navigate-once></script>
 
     <!-- 4. SweetAlert2 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.3/sweetalert2.all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.3/sweetalert2.all.min.js" data-navigate-once></script>
 
-    <!-- 5. Custom Scripts dari @stack('scripts') -->
+    <!-- 5. Custom Scripts dari @stack('scripts') — sengaja TIDAK ditandai:
+         skrip halaman harus jalan ulang setiap halaman baru dipasang. -->
     @stack('scripts')
 
     <!-- 6. Required vendors -->
-    <script src="{{ asset('admin/assets_2/vendor/global/global.min.js') }}"></script>
+    <script src="{{ asset('admin/assets_2/vendor/global/global.min.js') }}" data-navigate-once></script>
+    {{-- quixnav-init.js sengaja tidak ditandai: ia harus jalan ulang agar
+         atribut data-* pada <body> yang baru dipasang kembali oleh quixSettings. --}}
     <script src="{{ asset('admin/assets_2/js/quixnav-init.js') }}"></script>
-    <script src="{{ asset('admin/assets_2/js/custom.min.js') }}"></script>
+    <script src="{{ asset('admin/assets_2/js/custom.min.js') }}" data-navigate-once></script>
 
     <!-- Chart ChartJS plugin files -->
-    <script src="{{ asset('admin/assets_2/js/plugins-init/chartjs-init.js') }}"></script>
+    <script src="{{ asset('admin/assets_2/js/plugins-init/chartjs-init.js') }}" data-navigate-once></script>
 
     <!-- Vectormap -->
-    <script src="{{ asset('admin/assets_2/vendor/raphael/raphael.min.js') }}"></script>
-    <script src="{{ asset('admin/assets_2/vendor/morris/morris.min.js') }}"></script>
+    <script src="{{ asset('admin/assets_2/vendor/raphael/raphael.min.js') }}" data-navigate-once></script>
+    <script src="{{ asset('admin/assets_2/vendor/morris/morris.min.js') }}" data-navigate-once></script>
 
-    <script src="{{ asset('admin/assets_2/vendor/circle-progress/circle-progress.min.js') }}"></script>
-    <script src="{{ asset('admin/assets_2/vendor/chart.js/Chart.bundle.min.js') }}"></script>
+    <script src="{{ asset('admin/assets_2/vendor/circle-progress/circle-progress.min.js') }}" data-navigate-once></script>
+    <script src="{{ asset('admin/assets_2/vendor/chart.js/Chart.bundle.min.js') }}" data-navigate-once></script>
 
-    <script src="{{ asset('admin/assets_2/vendor/gaugeJS/dist/gauge.min.js') }}"></script>
+    <script src="{{ asset('admin/assets_2/vendor/gaugeJS/dist/gauge.min.js') }}" data-navigate-once></script>
 
     <!-- flot-chart js -->
-    <script src="{{ asset('admin/assets_2/vendor/flot/jquery.flot.js') }}"></script>
-    <script src="{{ asset('admin/assets_2/vendor/flot/jquery.flot.resize.js') }}"></script>
+    <script src="{{ asset('admin/assets_2/vendor/flot/jquery.flot.js') }}" data-navigate-once></script>
+    <script src="{{ asset('admin/assets_2/vendor/flot/jquery.flot.resize.js') }}" data-navigate-once></script>
 
     <!-- Owl Carousel -->
-    <script src="{{ asset('admin/assets_2/vendor/owl-carousel/js/owl.carousel.min.js') }}"></script>
+    <script src="{{ asset('admin/assets_2/vendor/owl-carousel/js/owl.carousel.min.js') }}" data-navigate-once></script>
 
     <!-- Counter Up -->
-    <script src="{{ asset('admin/assets_2/vendor/jqvmap/js/jquery.vmap.min.js') }}"></script>
-    <script src="{{ asset('admin/assets_2/vendor/jqvmap/js/jquery.vmap.usa.js') }}"></script>
-    <script src="{{ asset('admin/assets_2/vendor/jquery.counterup/jquery.counterup.min.js') }}"></script>
+    <script src="{{ asset('admin/assets_2/vendor/jqvmap/js/jquery.vmap.min.js') }}" data-navigate-once></script>
+    <script src="{{ asset('admin/assets_2/vendor/jqvmap/js/jquery.vmap.usa.js') }}" data-navigate-once></script>
+    <script src="{{ asset('admin/assets_2/vendor/jquery.counterup/jquery.counterup.min.js') }}" data-navigate-once></script>
 
-    <script src="{{ asset('admin/assets_2/js/dashboard/dashboard-1.js') }}"></script>
+    <script src="{{ asset('admin/assets_2/js/dashboard/dashboard-1.js') }}" data-navigate-once></script>
 
     {{-- Form-wizard --}}
-    <script src="{{ asset('admin/assets_2/vendor/jquery-steps/build/jquery.steps.min.js') }}"></script>
-    <script src="{{ asset('admin/assets_2/vendor/jquery-validation/jquery.validate.min.js') }}"></script>
+    <script src="{{ asset('admin/assets_2/vendor/jquery-steps/build/jquery.steps.min.js') }}" data-navigate-once></script>
+    <script src="{{ asset('admin/assets_2/vendor/jquery-validation/jquery.validate.min.js') }}" data-navigate-once></script>
     <!-- Form validate init -->
-    <script src="{{ asset('admin/assets_2/js/plugins-init/jquery.validate-init.js') }}"></script>
+    <script src="{{ asset('admin/assets_2/js/plugins-init/jquery.validate-init.js') }}" data-navigate-once></script>
     <!-- Form step init -->
-    <script src="{{ asset('admin/assets_2/js/plugins-init/jquery-steps-init.js') }}"></script>
+    <script src="{{ asset('admin/assets_2/js/plugins-init/jquery-steps-init.js') }}" data-navigate-once></script>
 
     <!-- Datatable -->
-    <script src="{{ asset('admin/assets_2/vendor/datatables/js/jquery.dataTables.min.js') }}"></script>
-    <script src="{{ asset('admin/assets_2/js/plugins-init/datatables.init.js') }}"></script>
+    <script src="{{ asset('admin/assets_2/vendor/datatables/js/jquery.dataTables.min.js') }}" data-navigate-once></script>
+    <script src="{{ asset('admin/assets_2/js/plugins-init/datatables.init.js') }}" data-navigate-once></script>
     <script>
         // Bahasa DataTables untuk seluruh tabel panel instansi.
         // Ditaruh setelah datatables dimuat terakhir agar default-nya tidak tertimpa.
@@ -158,20 +183,328 @@
         }
     </script>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" data-navigate-once></script>
     @hasSection('chart')
         @yield('chart')
     @endif
 
-    {{-- ============ TOGGLE SIDEBAR ============
-         custom.min.js sudah memasang handler sendiri pada .nav-control.
-         Agar satu klik tidak men-toggle dua kali (sidebar jadi tidak bisa
-         ditutup), hanya listener fase-capture di document yang menentukan,
-         lalu propagasi dihentikan sebelum handler tema berjalan. --}}
-    <script>
+    @livewireScripts
+
+    {{-- ============================================================
+         SKRIP PERSISTEN PANEL INSTANSI (PPA & DINSOS)
+         Didaftarkan sekali ke document (data-navigate-once) sehingga
+         tetap hidup meski <body> diganti oleh Livewire. Isinya:
+           1. reinit komponen tema setelah navigasi
+           2. live filter parsial ([data-live-region]) tanpa reload
+           3. toggle sidebar dan normalisasi gaya sidebar
+         ============================================================ --}}
+    <script data-navigate-once>
         (function() {
             'use strict';
 
+            // ============ SIDEBAR: NORMALISASI & IKON HAMBURGER ============
+            // Ikon X hanya untuk drawer mobile (menandakan "tutup").
+            // Di desktop sidebar mengecil menjadi rail, jadi ikon tetap
+            // hamburger agar tidak terbaca sebagai tombol tutup.
+            function syncHamburger() {
+                var wrapper = document.getElementById('main-wrapper');
+                var isDrawer = window.innerWidth < 992;
+                var opened = !!wrapper && wrapper.classList.contains('menu-toggle');
+
+                document.querySelectorAll('.hamburger').forEach(function(el) {
+                    el.classList.toggle('is-active', isDrawer && opened);
+                });
+            }
+
+            // quixnav.min.js memaksa data-sidebar-style="mini" pada 768–1199px.
+            // Gaya "mini" itu menyembunyikan teks menu, sedangkan geometri
+            // sidebar instansi hanya punya dua keadaan: penuh 260px (teks tampil)
+            // atau rail manual lewat #main-wrapper.menu-toggle.
+            //  • < 992px  → "overlay": drawer, teks tetap tampil
+            //  • 992–1199 → "full": sidebar penuh 260px + teks
+            function normalizeSidebarStyle() {
+                var width = window.innerWidth;
+                var body = document.body;
+                if (!body) return;
+
+                var desired = width < 992 ? 'overlay' : (width < 1200 ? 'full' : null);
+                if (desired && body.getAttribute('data-sidebar-style') !== desired) {
+                    body.setAttribute('data-sidebar-style', desired);
+                }
+                syncHamburger();
+            }
+
+            // ============ REINIT SETELAH NAVIGASI LIVEWIRE ============
+            function markNavigated() {
+                document.documentElement.classList.add('instansi-navigated');
+
+                var preloader = document.getElementById('preloader');
+                if (preloader) preloader.style.display = 'none';
+            }
+
+            function reinitInstansi() {
+                // Tema menyembunyikan #main-wrapper (opacity: 0) sampai class
+                // "show" dipasang. Body baru hasil navigasi perlu class ini.
+                var wrapperEl = document.getElementById('main-wrapper');
+                if (wrapperEl) wrapperEl.classList.add('show');
+
+                var $ = window.jQuery;
+                if ($) {
+                    // global.min.js menyimpan referensi lama `var body = $('body')`.
+                    // Setelah Livewire mengganti <body>, referensi itu menunjuk ke
+                    // body lama sehingga atribut posisi header/sidebar tidak
+                    // terpasang pada body baru. Perbarui lalu jalankan ulang tema.
+                    if (window.quixSettings) {
+                        window.body = $('body');
+                        new window.quixSettings({
+                            typography: 'roboto',
+                            version: 'light',
+                            layout: 'vertical',
+                            headerBg: 'color_1',
+                            navheaderBg: 'color_1',
+                            sidebarBg: 'color_1',
+                            sidebarStyle: 'full',
+                            sidebarPosition: 'fixed',
+                            headerPosition: 'fixed',
+                            containerLayout: 'wide',
+                            direction: 'ltr'
+                        });
+                    }
+
+                    if ($.fn.metisMenu) {
+                        $('#menu').metisMenu();
+                    }
+
+                    if (window.PerfectScrollbar && document.querySelector('.quixnav-scroll')) {
+                        new window.PerfectScrollbar('.quixnav-scroll');
+                    }
+
+                    var winH = window.outerHeight;
+                    if (winH > 0) {
+                        $('.content-body').css('min-height', (winH + 60) + 'px');
+                    }
+                }
+
+                // Di layar kecil sidebar adalah drawer: tutup setelah pindah
+                // halaman agar konten tidak tertutup saat halaman baru dimuat.
+                if (window.innerWidth < 992 && wrapperEl) {
+                    wrapperEl.classList.remove('menu-toggle');
+                }
+
+                normalizeSidebarStyle();
+            }
+
+            document.addEventListener('livewire:navigating', markNavigated);
+
+            document.addEventListener('livewire:navigated', function() {
+                markNavigated();
+                reinitInstansi();
+            });
+
+            // ============ LIVE FILTER (tanpa refresh) ============
+            // Form filter GET bertanda data-livewire-navigate diperbarui secara
+            // parsial: hanya elemen [data-live-region] yang ditukar hasilnya,
+            // sementara sidebar, header, dan form filter tidak disentuh —
+            // sehingga terasa instan tanpa reload halaman.
+
+            function buildLiveUrl(form) {
+                var target = form.getAttribute('action') || window.location.pathname;
+                var url = new URL(target, window.location.origin);
+                var data = new FormData(form);
+
+                data.forEach(function(value, key) {
+                    if (value === '' || value === null) return;
+                    url.searchParams.set(key, value);
+                });
+
+                return url.pathname + url.search;
+            }
+
+            function fallbackLiveNavigate(url) {
+                if (window.Livewire && typeof window.Livewire.navigate === 'function') {
+                    window.Livewire.navigate(url);
+                } else {
+                    window.location.href = url;
+                }
+            }
+
+            var liveRegionToken = 0;
+
+            function partialLoad(url) {
+                var token = ++liveRegionToken;
+
+                fetch(url, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        credentials: 'same-origin'
+                    })
+                    .then(function(response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.text();
+                    })
+                    .then(function(html) {
+                        if (token !== liveRegionToken) return; // respons kedaluwarsa, abaikan
+
+                        var doc = new DOMParser().parseFromString(html, 'text/html');
+                        var swapped = 0;
+
+                        document.querySelectorAll('[data-live-region]').forEach(function(el) {
+                            var fresh = doc.querySelector('[data-live-region="' + el.getAttribute('data-live-region') + '"]');
+                            if (fresh) {
+                                el.innerHTML = fresh.innerHTML;
+                                swapped++;
+                            }
+                        });
+
+                        if (!swapped) {
+                            fallbackLiveNavigate(url);
+                            return;
+                        }
+
+                        // Selaraskan URL address bar tanpa menambah riwayat.
+                        try {
+                            window.history.replaceState(window.history.state, '', url);
+                        } catch (e) {}
+                    })
+                    .catch(function() {
+                        fallbackLiveNavigate(url);
+                    });
+            }
+
+            function pageHasLiveRegions() {
+                return !!document.querySelector('[data-live-region]');
+            }
+
+            // Dipakai halaman yang punya polling (mis. daftar laporan PPA)
+            // agar penyegaran hanya menukar area hasil, bukan reload penuh.
+            window.sentraLiveRefresh = function() {
+                if (!pageHasLiveRegions()) return false;
+                partialLoad(window.location.href);
+                return true;
+            };
+
+            // Submit (tombol Filter / Enter) pada halaman live → update parsial.
+            document.addEventListener('submit', function(event) {
+                var form = event.target;
+                if (!form || !form.hasAttribute('data-livewire-navigate')) return;
+                if ((form.getAttribute('method') || 'get').toLowerCase() !== 'get') return;
+
+                var url = buildLiveUrl(form);
+
+                if (pageHasLiveRegions()) {
+                    event.preventDefault();
+                    partialLoad(url);
+                    return;
+                }
+
+                // Fallback: navigasi Livewire penuh (soft navigation).
+                if (!window.Livewire || typeof window.Livewire.navigate !== 'function') return;
+                event.preventDefault();
+                window.Livewire.navigate(url);
+            });
+
+            // Auto-submit: filter langsung diterapkan saat mengetik/memilih.
+            var liveFilterTimers = new WeakMap();
+            var lastLiveInputName = null;
+
+            function queueLiveFilterSubmit(form, delay) {
+                if (!form || !form.hasAttribute('data-livewire-navigate')) return;
+                if ((form.getAttribute('method') || 'get').toLowerCase() !== 'get') return;
+
+                var pending = liveFilterTimers.get(form);
+                if (pending) clearTimeout(pending);
+
+                liveFilterTimers.set(form, setTimeout(function() {
+                    liveFilterTimers.delete(form);
+                    if (!form.isConnected) return;
+
+                    if (pageHasLiveRegions()) {
+                        partialLoad(buildLiveUrl(form));
+                        return;
+                    }
+
+                    // Halaman tanpa area live: submit biasa — interceptor di atas
+                    // akan memprosesnya sebagai navigasi Livewire.
+                    if (typeof form.requestSubmit === 'function') {
+                        form.requestSubmit();
+                    } else {
+                        form.submit();
+                    }
+                }, delay));
+            }
+
+            document.addEventListener('input', function(event) {
+                var el = event.target;
+                var form = el && el.closest ? el.closest('form[data-livewire-navigate]') : null;
+                if (!form) return;
+                if (el.name) lastLiveInputName = el.name;
+                queueLiveFilterSubmit(form, 450);
+            });
+
+            document.addEventListener('change', function(event) {
+                var el = event.target;
+                var form = el && el.closest ? el.closest('form[data-livewire-navigate]') : null;
+                if (!form) return;
+                // Dropdown & tanggal langsung diterapkan; input teks didebounce singkat.
+                queueLiveFilterSubmit(form, el.tagName === 'SELECT' || el.type === 'date' ? 0 : 150);
+            });
+
+            // Pagination dan tombol Reset di dalam area live → update parsial juga.
+            // Fase capture agar mengungguli listener navigasi Livewire.
+            document.addEventListener('click', function(event) {
+                if (!event.target || typeof event.target.closest !== 'function') return;
+
+                var link = event.target.closest('[data-live-region] .pagination a[href]');
+                if (link) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    partialLoad(link.href);
+                    return;
+                }
+
+                var reset = event.target.closest('form[data-livewire-navigate] a[data-live-reset]');
+                if (reset) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+
+                    var form = reset.closest('form');
+                    if (!form) return;
+
+                    form.querySelectorAll('input, select, textarea').forEach(function(field) {
+                        if (!field.name || field.type === 'hidden') return;
+                        if (field.tagName === 'SELECT') {
+                            field.selectedIndex = 0;
+                        } else {
+                            field.value = '';
+                        }
+                    });
+
+                    lastLiveInputName = null;
+                    partialLoad(buildLiveUrl(form));
+                }
+            }, true);
+
+            // Setelah fallback navigasi soft, kembalikan fokus ke input pencarian
+            // terakhir agar pengguna bisa melanjutkan mengetik.
+            document.addEventListener('livewire:navigated', function() {
+                if (!lastLiveInputName) return;
+                var el = document.querySelector('form[data-livewire-navigate] [name="' + lastLiveInputName + '"]');
+                if (el && typeof el.focus === 'function') {
+                    el.focus();
+                    var len = (el.value || '').length;
+                    try {
+                        el.setSelectionRange(len, len);
+                    } catch (e) { /* input non-teks */ }
+                }
+                lastLiveInputName = null;
+            });
+
+            // ============ TOGGLE SIDEBAR ============
+            // custom.min.js sudah memasang handler sendiri pada .nav-control.
+            // Agar satu klik tidak men-toggle dua kali (sidebar jadi tidak bisa
+            // ditutup), hanya listener fase-capture di document yang menentukan,
+            // lalu propagasi dihentikan sebelum handler tema berjalan.
             document.addEventListener('click', function(event) {
                 if (!event.target || typeof event.target.closest !== 'function') return;
 
@@ -188,410 +521,18 @@
                 syncHamburger();
             }, true);
 
-            // Ikon X hanya untuk drawer mobile (menandakan "tutup").
-            // Di desktop sidebar mengecil menjadi rail, jadi ikon tetap
-            // hamburger agar tidak terbaca sebagai tombol tutup.
-            function syncHamburger() {
-                var wrapper = document.getElementById('main-wrapper');
-                var isDrawer = window.innerWidth < 992;
-                var opened = !!wrapper && wrapper.classList.contains('menu-toggle');
-
-                document.querySelectorAll('.hamburger').forEach(function(el) {
-                    el.classList.toggle('is-active', isDrawer && opened);
-                });
-            }
-
-            // Di layar kecil sidebar adalah drawer: tutup setelah pindah halaman
-            // agar konten tidak tertutup saat halaman baru dimuat.
+            // Di layar kecil sidebar adalah drawer: tutup pada load pertama.
             if (window.innerWidth < 992) {
-                var wrapper = document.getElementById('main-wrapper');
-                if (wrapper) wrapper.classList.remove('menu-toggle');
-            }
-
-            // quixnav.min.js memaksa data-sidebar-style="mini" pada 768–1199px.
-            // Gaya "mini" itu menyembunyikan teks menu, sedangkan geometri
-            // sidebar instansi hanya punya dua keadaan: penuh 260px (teks tampil)
-            // atau rail manual lewat #main-wrapper.menu-toggle.
-            //  • < 992px  → "overlay": drawer, teks tetap tampil
-            //  • 992–1199 → "full": sidebar penuh 260px + teks
-            // Tanpa normalisasi ini sidebar 768–1199px tampil 260px tetapi
-            // teksnya tersembunyi (kondisi tidak konsisten).
-            function normalizeSidebarStyle() {
-                var width = window.innerWidth;
-                var body = document.body;
-                if (!body) return;
-
-                var desired = width < 992 ? 'overlay' : (width < 1200 ? 'full' : null);
-                if (desired && body.getAttribute('data-sidebar-style') !== desired) {
-                    body.setAttribute('data-sidebar-style', desired);
-                }
-                syncHamburger();
+                var wrapperAwal = document.getElementById('main-wrapper');
+                if (wrapperAwal) wrapperAwal.classList.remove('menu-toggle');
             }
 
             normalizeSidebarStyle();
-            window.addEventListener('resize', normalizeSidebarStyle, { passive: true });
+            window.addEventListener('resize', normalizeSidebarStyle, {
+                passive: true
+            });
         })();
     </script>
 </body>
-
-<script>
-    $(document).ready(function() {
-        // Fungsi untuk mengambil dan memperbarui notifikasi di dropdown
-        function fetchDropdownNotifications() {
-            $.ajax({
-                url: '{{ route('notifikasi.get') }}',
-                method: 'GET',
-                dataType: 'json',
-                success: function(response) {
-                    if (response.success) {
-                        var count = response.count;
-                        var notifikasi = response.notifikasi;
-
-                        // Update badge dan pulse di navbar
-                        if (count > 0) {
-                            $('#notification-badge').text(count).show();
-                            $('#notification-pulse').show();
-                            $('#notification-count-header').text(count + ' baru').show();
-                            $('#notification-footer').show();
-                        } else {
-                            $('#notification-badge').hide();
-                            $('#notification-pulse').hide();
-                            $('#notification-count-header').hide();
-                            $('#notification-footer').hide();
-                        }
-
-                        // Update isi dropdown
-                        var listContent = '';
-                        if (notifikasi.length > 0) {
-                            $.each(notifikasi, function(index, notif) {
-                                var id_laporan = null;
-                                if (notif.judul.includes('Laporan Baru')) {
-                                    var parts = notif.judul.split(' - ');
-                                    if (parts.length > 1) {
-                                        id_laporan = parts[0].trim();
-                                        console.log('Parsed id_laporan for notif', notif
-                                            .id_notif, ':', id_laporan); // Debugging
-                                    } else {
-                                        console.warn('Invalid judul format for notif', notif
-                                            .id_notif, ':', notif.judul);
-                                    }
-                                }
-                                var formAction = id_laporan ?
-                                    '{{ route('admin.notifikasi.terima-laporan', ['id_notif' => ':id_notif', 'id_laporan' => ':id_laporan']) }}'
-                                    .replace(':id_notif', notif.id_notif)
-                                    .replace(':id_laporan', id_laporan) :
-                                    '';
-                                listContent += `
-                                <div class="media dropdown-item align-items-start py-2 px-3 border-bottom">
-                                    <span class="success mr-2"><i class="fa fa-user"></i></span>
-                                    <div class="media-body" style="width: 100%;">
-                                        <p class="mb-1 font-weight-bold" style="font-size: 0.9rem;">${notif.judul}</p>
-                                        <p class="mb-2 text-muted" style="font-size: 0.85rem;">${notif.pesan}</p>
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            ${id_laporan ? `
-                                                <form method="POST" action="${formAction}">
-                                                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                                                    <button type="submit" class="btn btn-sm btn-hijau">TERIMA</button>
-                                                </form>
-                                            ` : ''}
-                                        </div>
-                                    </div>
-                                </div>`;
-                            });
-                        } else {
-                            listContent =
-                                '<div class="text-center p-3"><p class="mb-0">Tidak ada notifikasi baru</p></div>';
-                        }
-                        $('#notification-list').html(listContent);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('Gagal mengambil notifikasi dropdown:', error);
-                }
-            });
-        }
-
-        // Simpan URL dengan placeholder dummy
-        var baseUrlTerima =
-            '{{ route('admin.notifikasi.terima-laporan', ['id_notif' => '__id_notif__', 'id_laporan' => '__id_laporan__']) }}';
-        var baseUrlRead = '{{ route('admin.notifikasi.mark-read', ['id' => '__id_notif__']) }}';
-
-        // Fungsi untuk mengambil dan memperbarui notifikasi di modal
-        function fetchModalNotifications() {
-            $.ajax({
-                url: '{{ route('notifikasi.get') }}',
-                method: 'GET',
-                dataType: 'json',
-                success: function(response) {
-                    if (response.success) {
-                        var notifikasi = response.notifikasi;
-                        var tableContent = '';
-
-                        if (notifikasi.length > 0) {
-                            $.each(notifikasi, function(index, notif) {
-                                var id_laporan = null;
-
-                                // parsing id laporan dari judul
-                                if (notif.judul.includes('Laporan Baru')) {
-                                    var parts = notif.judul.split(' - ');
-                                    if (parts.length > 1) {
-                                        id_laporan = parts[0].trim();
-                                    }
-                                }
-
-                                var actionForm = '';
-                                if (id_laporan) {
-                                    // ganti placeholder dengan id asli
-                                    var actionUrl = baseUrlTerima
-                                        .replace('__id_notif__', notif.id_notif)
-                                        .replace('__id_laporan__', id_laporan);
-
-                                    actionForm = `
-                                    <form method="POST" action="${actionUrl}" class="d-inline">
-                                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                                        <button type="submit" class="btn btn-sm btn-hijau">TERIMA</button>
-                                    </form>
-                                `;
-                                } else {
-                                    var actionUrl = baseUrlRead.replace('__id_notif__',
-                                        notif.id_notif);
-
-                                    actionForm = `
-                                    <form method="POST" action="${actionUrl}" class="d-inline">
-                                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                                        <button type="submit" class="btn btn-sm btn-info">Tandai Dibaca</button>
-                                    </form>
-                                `;
-                                }
-
-                                tableContent += `
-                                <tr>
-                                    <td>${index + 1}</td>
-                                    <td>${notif.judul}</td>
-                                    <td>${notif.pesan}</td>
-                                    <td>${new Date(notif.created_at).toLocaleString('id-ID', {
-                                        day: '2-digit', month: 'short', year: 'numeric',
-                                        hour: '2-digit', minute: '2-digit'
-                                    })}</td>
-                                    <td>${actionForm}</td>
-                                </tr>`;
-                            });
-                        } else {
-                            tableContent =
-                                '<tr><td colspan="5" class="text-center">Tidak ada notifikasi yang belum dibaca</td></tr>';
-                        }
-
-                        $('#notification-table-body').html(tableContent);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('Gagal mengambil notifikasi modal:', error);
-                }
-            });
-        }
-
-        // Panggil fetch awal untuk dropdown
-        fetchDropdownNotifications();
-
-        // Polling setiap 5 detik untuk dropdown
-        setInterval(fetchDropdownNotifications, 5000);
-
-        // Load notifikasi di modal saat dibuka
-        $('#allNotificationsModal').on('shown.bs.modal', function() {
-            fetchModalNotifications();
-        });
-
-        // Handler untuk tombol TERIMA di dropdown
-        $(document).on('submit', '.notification-list form', function(e) {
-            e.preventDefault();
-            var form = $(this);
-            var url = form.attr('action');
-            var formData = form.serialize();
-            var notificationItem = form.closest('.media');
-            var submitButton = form.find('button[type="submit"]');
-            var originalText = submitButton.text();
-            submitButton.prop('disabled', true).text('Processing...');
-
-            console.log('Submitting form to:', url); // Debugging
-
-            $.ajax({
-                url: url,
-                type: 'POST',
-                data: formData,
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                success: function(response) {
-                    if (response.success) {
-                        notificationItem.fadeOut(300, function() {
-                            $(this).remove();
-                            updateNotificationCounter();
-                            checkEmptyNotifications();
-                        });
-                        showNotificationMessage(response.message, 'success');
-                        fetchModalNotifications(); // Refresh modal jika terbuka
-                    } else {
-                        submitButton.prop('disabled', false).text(originalText);
-                        showNotificationMessage(response.message, 'error');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    submitButton.prop('disabled', false).text(originalText);
-                    var errorMessage = 'Terjadi kesalahan. Silakan coba lagi.';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage = xhr.responseJSON.message;
-                    }
-                    showNotificationMessage(errorMessage, 'error');
-                    console.error('Error:', error, 'Response:', xhr.responseText);
-                }
-            });
-        });
-
-        // Handler untuk tombol TERIMA dan Tandai Dibaca di modal
-        $(document).on('submit', '#allNotificationsModal form', function(e) {
-            e.preventDefault();
-            var form = $(this);
-            var url = form.attr('action');
-            var formData = form.serialize();
-            var tableRow = form.closest('tr');
-            var submitButton = form.find('button[type="submit"]');
-            var originalText = submitButton.text();
-            submitButton.prop('disabled', true).text('Processing...');
-
-            console.log('Submitting form to:', url); // Debugging
-
-            $.ajax({
-                url: url,
-                type: 'POST',
-                data: formData,
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                success: function(response) {
-                    if (response.success) {
-                        tableRow.fadeOut(300, function() {
-                            $(this).remove();
-                            updateTableNumbers();
-                            checkEmptyTable();
-                        });
-                        showNotificationMessage(response.message, 'success');
-                        fetchDropdownNotifications(); // Refresh dropdown
-                    } else {
-                        submitButton.prop('disabled', false).text(originalText);
-                        showNotificationMessage(response.message, 'error');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    submitButton.prop('disabled', false).text(originalText);
-                    var errorMessage = 'Terjadi kesalahan. Silakan coba lagi.';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage = xhr.responseJSON.message;
-                    }
-                    showNotificationMessage(errorMessage, 'error');
-                    console.error('Error:', error, 'Response:', xhr.responseText);
-                }
-            });
-        });
-
-        // Handler untuk mark-read
-        $(document).on('submit', 'form[action*="mark-read"]', function(e) {
-            e.preventDefault();
-            var form = $(this);
-            var url = form.attr('action');
-            var formData = form.serialize();
-            var tableRow = form.closest('tr');
-            var submitButton = form.find('button[type="submit"]');
-            var originalText = submitButton.text();
-            submitButton.prop('disabled', true).text('Processing...');
-
-            console.log('Submitting mark-read to:', url); // Debugging
-
-            $.ajax({
-                url: url,
-                type: 'POST',
-                data: formData,
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                success: function(response) {
-                    if (response.success) {
-                        tableRow.fadeOut(300, function() {
-                            $(this).remove();
-                            updateTableNumbers();
-                            checkEmptyTable();
-                        });
-                        showNotificationMessage(response.message, 'success');
-                        fetchDropdownNotifications(); // Refresh dropdown
-                    } else {
-                        submitButton.prop('disabled', false).text(originalText);
-                        showNotificationMessage(response.message, 'error');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    submitButton.prop('disabled', false).text(originalText);
-                    var errorMessage = 'Terjadi kesalahan. Silakan coba lagi.';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage = xhr.responseJSON.message;
-                    }
-                    showNotificationMessage(errorMessage, 'error');
-                    console.error('Error:', error, 'Response:', xhr.responseText);
-                }
-            });
-        });
-    });
-
-    // Fungsi-fungsi pendukung yang sudah ada
-    function updateNotificationCounter() {
-        var remainingNotifications = $('.notification-list .media').length;
-        var badge = $('#notification-badge');
-
-        if (remainingNotifications > 0) {
-            badge.text(remainingNotifications).show();
-        } else {
-            badge.hide();
-        }
-    }
-
-    function checkEmptyNotifications() {
-        if ($('.notification-list .media').length === 0) {
-            $('.notification-list').html(
-                '<div class="text-center p-3"><p class="mb-0">Tidak ada notifikasi baru</p></div>');
-            $('#notification-footer').hide();
-        }
-    }
-
-    function updateTableNumbers() {
-        $('#notification-table-body tr').each(function(index) {
-            $(this).find('td:first').text(index + 1);
-        });
-    }
-
-    function checkEmptyTable() {
-        if ($('#notification-table-body tr').length === 0) {
-            $('#notification-table-body').html(
-                '<tr><td colspan="5" class="text-center">Tidak ada notifikasi yang belum dibaca</td></tr>');
-        }
-    }
-
-    function showNotificationMessage(message, type) {
-        var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
-        var toast = $('<div class="alert ' + alertClass +
-            ' alert-dismissible fade show position-fixed" style="top: 20px; right: 20px; z-index: 9999;">' +
-            '<span>' + message + '</span>' +
-            '<button type="button" class="close" data-dismiss="alert">' +
-            '<span>&times;</span>' +
-            '</button>' +
-            '</div>');
-
-        $('body').append(toast);
-
-        setTimeout(function() {
-            toast.alert('close');
-        }, 3000);
-    }
-</script>
 
 </html>

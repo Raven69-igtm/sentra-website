@@ -9,16 +9,38 @@ use Illuminate\Support\Facades\Auth;
 
 class LaporanController extends Controller
 {
-    public function laporan_selesai()
+    public function laporan_selesai(Request $request)
     {
         if (Auth::user()->isAdminDinsos()) {
             return redirect()->route('dinsos.laporan.index', ['status' => 'selesai']);
         }
 
-        $laporan = Laporan::with('detail_pelapor')
+        $query = Laporan::with('detail_pelapor')
             ->forUser(Auth::user())
-            ->whereIn('status', ['selesai', 'dirujuk'])
-            ->get();
+            ->whereIn('status', ['selesai', 'dirujuk']);
+
+        $search = trim((string) $request->input('search', ''));
+
+        if ($search !== '') {
+            $like = '%' . $search . '%';
+
+            $query->where(function ($q) use ($like) {
+                $q->where('id_laporan', 'like', $like)
+                    ->orWhere('judul', 'like', $like)
+                    ->orWhereHas('detail_pelapor', function ($pelapor) use ($like) {
+                        $pelapor->where('nama', 'like', $like);
+                    });
+            });
+        }
+
+        $kategori = trim((string) $request->input('kategori', ''));
+
+        if ($kategori !== '') {
+            $query->where('kategori', $kategori);
+        }
+
+        $laporan = $query->latest('created_at')->get();
+
         return view('backend.layout.page_admin.laporan.selesai_laporan', compact('laporan'));
     }
 
@@ -55,18 +77,40 @@ public function laporan_show($id)
     return view('backend.layout.page_admin.laporan.preview_laporan', compact('laporan'));
 }
 
-    public function proses()
+    public function proses(Request $request)
     {
         if (Auth::user()->isAdminDinsos()) {
             return redirect()->route('dinsos.laporan.index');
         }
 
-        $laporan = Laporan::with('detail_pelapor')
+        $query = Laporan::with('detail_pelapor')
             ->forUser(Auth::user())
-            ->whereIn('status', ['diproses', 'diterima'])
-            ->get();
+            ->whereIn('status', ['diproses', 'diterima']);
+
+        $search = trim((string) $request->input('search', ''));
+
+        if ($search !== '') {
+            $like = '%' . $search . '%';
+
+            $query->where(function ($q) use ($like) {
+                $q->where('id_laporan', 'like', $like)
+                    ->orWhere('judul', 'like', $like)
+                    ->orWhereHas('detail_pelapor', function ($pelapor) use ($like) {
+                        $pelapor->where('nama', 'like', $like);
+                    });
+            });
+        }
+
+        $status = strtolower(trim((string) $request->input('status', '')));
+
+        if (in_array($status, ['diterima', 'diproses'], true)) {
+            $query->where('status', $status);
+        }
+
+        $laporan = $query->latest('created_at')->get();
+
         return view('backend.layout.page_admin.laporan.proses_laporan', compact('laporan'));
-    }    
+    }
 
 public function selesai($id)
     {

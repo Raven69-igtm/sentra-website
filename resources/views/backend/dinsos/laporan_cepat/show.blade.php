@@ -143,7 +143,7 @@
                         {{-- Tindak lanjut status tetap dilakukan dari halaman
                              Laporan PJSRK agar aturan verifikasi/proses hanya
                              ada di satu tempat. --}}
-                        <a href="{{ route('dinsos.laporan.index', ['search' => $laporan->id_laporan]) }}"
+                        <a href="{{ route('dinsos.laporan.index', ['search' => $laporan->id_laporan]) }}" wire:navigate
                             class="btn btn-instansi-soft btn-pill w-100 mt-3">
                             <i class="fa fa-arrow-up-right-from-square"></i> Buka di Laporan PJSRK
                         </a>

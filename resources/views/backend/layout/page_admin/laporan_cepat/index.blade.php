@@ -12,29 +12,46 @@
             'icon' => 'fa-bolt',
         ])
 
-        {{-- Filter & pencarian dijalankan di sisi klien lewat DataTables --}}
+        {{-- Filter server-side: otomatis diterapkan lewat live filter. --}}
         <div class="filter-bar mb-4">
-            <div class="filter-grid">
-                <div class="filter-field" style="flex: 2 1 280px;">
-                    <label for="searchNama">Cari Pelapor</label>
-                    <input type="text" id="searchNama" class="form-control" placeholder="Cari nama pelapor...">
+            <form method="GET" action="{{ route('laporan_cepat') }}" data-livewire-navigate>
+                <div class="filter-grid">
+                    <div class="filter-field" style="flex: 2 1 280px;">
+                        <label for="searchNama">Cari Pelapor / No. Tiket</label>
+                        <input type="text" id="searchNama" name="search" value="{{ request('search') }}"
+                            class="form-control" placeholder="Cari nama pelapor, tiket, atau lokasi...">
+                    </div>
+                    <div class="filter-field">
+                        <label for="filterStatus">Status</label>
+                        <select id="filterStatus" name="status" class="form-control">
+                            <option value="">Semua Status</option>
+                            @foreach (['dikirim' => 'Dikirim', 'diterima' => 'Diterima', 'diproses' => 'Diproses', 'selesai' => 'Selesai', 'dirujuk' => 'Dirujuk', 'ditolak' => 'Ditolak'] as $value => $label)
+                                <option value="{{ $value }}"
+                                    {{ request('status') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="filter-field" style="flex: 1 1 100%; min-width: 0;">
+                        {{-- Area live terpisah agar tombol Reset ikut diperbarui
+                             setelah filter parsial tanpa reload. --}}
+                        <div class="filter-actions" data-live-region="ppa-laporan-cepat-actions"
+                            style="flex-wrap: wrap; justify-content: flex-end;">
+                            <button type="submit" class="btn btn-instansi-primary btn-pill"
+                                style="white-space: nowrap;">
+                                <i class="fa fa-filter"></i> Filter
+                            </button>
+                            @if (request()->hasAny(['search', 'status']))
+                                <a href="{{ route('laporan_cepat') }}" data-live-reset class="btn btn-light btn-pill"
+                                    style="white-space: nowrap;">Reset</a>
+                            @endif
+                        </div>
+                    </div>
                 </div>
-                <div class="filter-field">
-                    <label for="filterStatus">Status</label>
-                    <select id="filterStatus" class="form-control">
-                        <option value="">Semua Status</option>
-                        <option value="Dikirim">Dikirim</option>
-                        <option value="Diterima">Diterima</option>
-                        <option value="Diproses">Diproses</option>
-                        <option value="Selesai">Selesai</option>
-                        <option value="Dirujuk">Dirujuk</option>
-                        <option value="Ditolak">Ditolak</option>
-                    </select>
-                </div>
-            </div>
+            </form>
         </div>
 
-        <div class="card">
+        {{-- Area live: filter menukar bagian ini saja (tanpa reload) --}}
+        <div class="card" data-live-region="ppa-laporan-cepat">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="card-title mb-0">Daftar Laporan Cepat</h4>
                 <span class="text-muted" style="font-size: .8rem;">{{ $laporan->count() }} laporan</span>
@@ -86,7 +103,7 @@
                                     <td>{{ $data->created_at->format('d-m-Y H:i') }}</td>
                                     <td>
                                         <a href="{{ route('laporan_cepat.show', $data->id_laporan) }}"
-                                            class="btn btn-instansi-primary btn-pill btn-sm" title="Detail">
+                                            wire:navigate class="btn btn-instansi-primary btn-pill btn-sm" title="Detail">
                                             Detail
                                         </a>
                                     </td>
@@ -105,24 +122,3 @@
         </div>
     </div>
 @endsection
-
-@push('scripts')
-    <script>
-        $(document).ready(function() {
-            // Semua baris sudah dirender server; DataTables hanya untuk filter.
-            var table = $('#laporanCepatTable').DataTable({
-                dom: 'rt',
-                ordering: false,
-                paging: false,
-            });
-
-            $('#searchNama').on('keyup', function() {
-                table.column(2).search(this.value).draw(); // kolom "Nama Pelapor"
-            });
-
-            $('#filterStatus').on('change', function() {
-                table.column(5).search(this.value).draw(); // kolom "Status"
-            });
-        });
-    </script>
-@endpush

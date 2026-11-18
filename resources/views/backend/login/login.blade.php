@@ -27,19 +27,46 @@
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
     <!-- CSS Files -->
     <link id="pagestyle" href="{{ 'backend/assets/css/material-dashboard.css?v=3.2.0' }}" rel="stylesheet" />
+    {{-- Ilustrasi & animasi daun (aset tunggal tree-sentra.png). Hanya halaman login. --}}
+    <link href="{{ asset('backend/assets/css/login-motion.css?v=3') }}" rel="stylesheet" />
 </head>
 
 <body class="">
     <main class="main-content  mt-0">
         <section>
             <div class="page-header min-vh-100">
+                {{-- Daun untuk layar kecil: lapisan ini berada di belakang konten
+                     halaman, jadi tidak menutupi form login. --}}
+                <div class="login-leaves-page" aria-hidden="true" data-login-leaves="page"></div>
+
                 <div class="container">
                     <div class="row">
 
                         <div
                             class="col-7 d-lg-flex d-none h-100 my-auto pe-0 position-absolute top-0 start-0 text-center justify-content-center flex-column">
-                            <div class="position-relative bg-gradient-primary h-100 m-1 px-7 border-radius-lg d-flex flex-column justify-content-center"
-                                style="background-image: url('backend/assets/img/illustrations/tree-1.png'); background-size: cover; background-position: center;">
+                            {{-- Ilustrasi dari satu aset tree-sentra.png, dipecah oleh
+                                 scripts/build-login-tree-sentra.py menjadi latar, pohon,
+                                 dan ayunan agar bisa dianimasikan. Posisi ketiganya diam
+                                 persis seperti gambar aslinya. --}}
+                            <div
+                                class="position-relative h-100 m-1 border-radius-lg d-flex flex-column justify-content-center login-hero">
+                                <div class="login-hero__stage" aria-hidden="true">
+                                    <img class="login-hero__scene"
+                                        src="{{ asset('backend/assets/img/illustrations/login/sentra-scene.png') }}" alt="">
+                                    <div class="login-hero__tree">
+                                        <img src="{{ asset('backend/assets/img/illustrations/login/sentra-tree.png') }}"
+                                            alt="">
+                                        <div class="login-hero__swing">
+                                            <img src="{{ asset('backend/assets/img/illustrations/login/sentra-swing.png') }}"
+                                                alt="">
+                                        </div>
+                                    </div>
+                                    {{-- Daun lahir di tepi bawah tajuk. data-spawns berisi
+                                         [x%, y%] pada kanvas 1672x941, dicetak oleh skrip
+                                         build-login-tree-sentra.py. 8-12 daun di layar lebar. --}}
+                                    <div class="login-hero__leaves" data-login-leaves="hero"
+                                        data-spawns="[[7.0,53.67],[9.87,54.2],[12.75,57.7],[15.62,58.02],[18.5,55.47],[21.37,57.81],[24.25,49.42],[27.12,40.06],[30.0,48.03],[32.87,53.13],[35.75,54.09],[38.62,56.64],[41.5,61.32],[44.37,59.19],[47.25,56.32]]"></div>
+                                </div>
                             </div>
                         </div>
 
@@ -124,6 +151,8 @@
     <script async defer src="https://buttons.github.io/buttons.js'}}"></script>
     <!-- Control Center for Material Dashboard: parallax effects, scripts for the example pages etc -->
     <script src="{{ 'backend/assets/js/material-dashboard.min.js?v=3.2.0' }}"></script>
+    {{-- Menyiapkan daun animasi (JavaScript vanilla, tanpa library). --}}
+    <script src="{{ asset('backend/assets/js/login-leaves.js?v=3') }}" defer></script>
 </body>
 
 </html>

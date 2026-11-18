@@ -21,7 +21,7 @@
                 <li class="sidebar-section-label">Menu Utama</li>
 
                 <li class="{{ request()->routeIs('dinsos.dashboard') ? 'mm-active' : '' }}">
-                    <a href="{{ route('dinsos.dashboard') }}" aria-expanded="false" title="Dashboard">
+                    <a href="{{ route('dinsos.dashboard') }}" wire:navigate aria-expanded="false" title="Dashboard">
                         <i class="fa fa-gauge-high"></i>
                         <span class="nav-text">Dashboard</span>
                     </a>
@@ -35,25 +35,25 @@
                     </a>
                     <ul aria-expanded="{{ $laporanAktif ? 'true' : 'false' }}" class="{{ $laporanAktif ? 'in' : '' }}">
                         <li>
-                            <a href="{{ route('dinsos.laporan.index') }}"
+                            <a href="{{ route('dinsos.laporan.index') }}" wire:navigate
                                 class="{{ request()->routeIs('dinsos.laporan.index') ? 'mm-active' : '' }}">
                                 Semua Laporan
                             </a>
                         </li>
                         <li>
-                            <a href="{{ route('dinsos.layanan', 'rehabilitasi-sosial') }}"
+                            <a href="{{ route('dinsos.layanan', 'rehabilitasi-sosial') }}" wire:navigate
                                 class="{{ $layananAktif === 'rehabilitasi-sosial' ? 'mm-active' : '' }}">
                                 Rehabilitasi Sosial
                             </a>
                         </li>
                         <li>
-                            <a href="{{ route('dinsos.layanan', 'pengaduan-bencana') }}"
+                            <a href="{{ route('dinsos.layanan', 'pengaduan-bencana') }}" wire:navigate
                                 class="{{ $layananAktif === 'pengaduan-bencana' ? 'mm-active' : '' }}">
                                 Pengaduan Bencana
                             </a>
                         </li>
                         <li>
-                            <a href="{{ route('dinsos.layanan', 'permasalahan-sosial') }}"
+                            <a href="{{ route('dinsos.layanan', 'permasalahan-sosial') }}" wire:navigate
                                 class="{{ $layananAktif === 'permasalahan-sosial' ? 'mm-active' : '' }}">
                                 Permasalahan Sosial
                             </a>
@@ -65,7 +65,7 @@
                      (rehabilitasi/bencana/permasalahan sosial) dari mobile.
                      Bukan submenu Laporan PJSRK karena isinya tanpa detail_pjsrk. --}}
                 <li class="{{ request()->routeIs('dinsos.laporan_cepat*') ? 'mm-active' : '' }}">
-                    <a href="{{ route('dinsos.laporan_cepat') }}" aria-expanded="false" title="Laporan Cepat">
+                    <a href="{{ route('dinsos.laporan_cepat') }}" wire:navigate aria-expanded="false" title="Laporan Cepat">
                         <i class="fa fa-bolt"></i>
                         <span class="nav-text">Laporan Cepat</span>
                     </a>
@@ -75,7 +75,7 @@
                 <li class="sidebar-section-label">Menu Utama</li>
 
                 <li class="{{ request()->routeIs('dashboard') ? 'mm-active' : '' }}">
-                    <a href="{{ route('dashboard') }}" aria-expanded="false" title="Dashboard">
+                    <a href="{{ route('dashboard') }}" wire:navigate aria-expanded="false" title="Dashboard">
                         <i class="fa fa-gauge-high"></i>
                         <span class="nav-text">Dashboard</span>
                     </a>
@@ -94,13 +94,13 @@
                     </a>
                     <ul aria-expanded="{{ $laporanAktif ? 'true' : 'false' }}" class="{{ $laporanAktif ? 'in' : '' }}">
                         <li>
-                            <a href="{{ route('laporan_proses') }}"
+                            <a href="{{ route('laporan_proses') }}" wire:navigate
                                 class="{{ request()->routeIs('laporan_proses') ? 'mm-active' : '' }}">
                                 Diproses
                             </a>
                         </li>
                         <li>
-                            <a href="{{ route('selesai') }}"
+                            <a href="{{ route('selesai') }}" wire:navigate
                                 class="{{ request()->routeIs('selesai') ? 'mm-active' : '' }}">
                                 Selesai
                             </a>
@@ -111,7 +111,7 @@
                 {{-- Menu terpisah (bukan submenu Laporan) khusus laporan dari
                      fitur Laporan Cepat mobile; hanya tampil untuk Admin PPA. --}}
                 <li class="{{ request()->routeIs('laporan_cepat*') ? 'mm-active' : '' }}">
-                    <a href="{{ route('laporan_cepat') }}" aria-expanded="false" title="Laporan Cepat">
+                    <a href="{{ route('laporan_cepat') }}" wire:navigate aria-expanded="false" title="Laporan Cepat">
                         <i class="fa fa-bolt"></i>
                         <span class="nav-text">Laporan Cepat</span>
                     </a>
@@ -122,14 +122,14 @@
             <li class="sidebar-section-label">Layanan</li>
 
             <li class="{{ request()->routeIs('rekapan') ? 'mm-active' : '' }}">
-                <a href="{{ route('rekapan') }}" aria-expanded="false" title="Rekapan">
+                <a href="{{ route('rekapan') }}" wire:navigate aria-expanded="false" title="Rekapan">
                     <i class="fa fa-folder-open"></i>
                     <span class="nav-text">Rekapan</span>
                 </a>
             </li>
 
             <li class="{{ request()->routeIs('chat.*') ? 'mm-active' : '' }}">
-                <a href="{{ route('chat.index') }}" aria-expanded="false" title="Chat">
+                <a href="{{ route('chat.index') }}" wire:navigate aria-expanded="false" title="Chat">
                     <i class="fa fa-comments"></i>
                     <span class="nav-text">Chat</span>
                     {{-- ID dipertahankan: diperbarui oleh polling halaman chat --}}

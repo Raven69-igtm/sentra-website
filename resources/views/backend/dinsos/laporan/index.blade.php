@@ -20,7 +20,7 @@
 
         {{-- FILTER --}}
         <div class="filter-bar">
-            <form method="GET" action="{{ $filterRoute }}">
+            <form method="GET" action="{{ $filterRoute }}" data-livewire-navigate>
                 <div class="filter-grid">
                     <div class="filter-field" style="flex: 2 1 260px;">
                         <label for="filterSearch">Pencarian</label>
@@ -68,13 +68,16 @@
                     {{-- Tombol aksi dibuat satu baris sendiri agar tidak
                          terpotong saat layar menyempit. --}}
                     <div class="filter-field" style="flex: 1 1 100%; min-width: 0;">
-                        <div class="filter-actions" style="flex-wrap: wrap; justify-content: flex-end;">
+                        {{-- Aksi filter juga area live agar tombol Reset muncul /
+                             hilang tanpa reload setelah filter parsial. --}}
+                        <div class="filter-actions" data-live-region="dinsos-laporan-actions"
+                            style="flex-wrap: wrap; justify-content: flex-end;">
                             <button type="submit" class="btn btn-instansi-primary btn-pill"
                                 style="white-space: nowrap;">
                                 <i class="fa fa-filter"></i> Filter
                             </button>
                             @if (request()->hasAny(['search', 'status', 'layanan', 'kecamatan']))
-                                <a href="{{ $filterRoute }}" class="btn btn-light btn-pill"
+                                <a href="{{ $filterRoute }}" data-live-reset class="btn btn-light btn-pill"
                                     style="white-space: nowrap;">Reset</a>
                             @endif
                         </div>
@@ -83,8 +86,8 @@
             </form>
         </div>
 
-        {{-- TABEL LAPORAN --}}
-        <div class="card">
+        {{-- TABEL LAPORAN — area live: filter & pagination menukar bagian ini saja --}}
+        <div class="card" data-live-region="dinsos-laporan">
             <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
                 <div>
                     <h4 class="card-title mb-1">Daftar Laporan</h4>
@@ -147,7 +150,7 @@
                                     <td class="text-muted">{{ $laporan->firstItem() + $index }}</td>
                                     <td>
                                         <a href="{{ route('dinsos.laporan.show', $item->id_laporan) }}"
-                                            class="fw-semibold">
+                                            wire:navigate class="fw-semibold">
                                             {{ $item->id_laporan }}
                                         </a>
                                     </td>
@@ -204,7 +207,7 @@
                                     <td>
                                         <div class="action-group">
                                             <a href="{{ route('dinsos.laporan.show', $item->id_laporan) }}"
-                                                class="btn btn-instansi-soft btn-sm btn-pill">Detail</a>
+                                                wire:navigate class="btn btn-instansi-soft btn-sm btn-pill">Detail</a>
 
                                             @if (in_array($item->status, ['dikirim', 'diterima'], true))
                                                 <form method="POST"
@@ -354,46 +357,68 @@
 
 @push('scripts')
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var modalEl = document.getElementById('rejectModal');
-            var form = document.getElementById('rejectForm');
-            var description = document.getElementById('rejectDescription');
+        // Skrip ini bisa dieksekusi ulang oleh Livewire (soft navigation) dan
+        // baris tabel ditukar oleh live filter, jadi listener dipasang sekali
+        // (delegasi pada document) dan selalu mencari elemen terbaru.
+        (function() {
+            'use strict';
 
-            // Modal dipindah ke <body> agar tidak terkurung di dalam
-            // #main-wrapper/.content-body yang memiliki overflow dan stacking
-            // context sendiri (penyebab modal terpotong atau tertimpa lapisan).
-            if (modalEl && modalEl.parentElement !== document.body) {
-                document.body.appendChild(modalEl);
-            }
+            function ambilModal() {
+                var modalEl = document.getElementById('rejectModal');
+                if (!modalEl) return null;
 
-            var $modal = window.jQuery ? window.jQuery(modalEl) : null;
-            var canShow = $modal && typeof $modal.modal === 'function';
-
-            function showRejectModal(button) {
-                form.action = button.dataset.action;
-                description.textContent = 'Tambahkan alasan penolakan untuk tiket ' + button.dataset.ticket + '.';
-
-                // Dibuka manual supaya tidak bergantung pada data-api tema.
-                if (canShow) {
-                    $modal.modal('show');
+                // Modal dipindah ke <body> agar tidak terkurung di dalam
+                // #main-wrapper/.content-body yang memiliki overflow dan stacking
+                // context sendiri (penyebab modal terpotong atau tertimpa lapisan).
+                if (modalEl.parentElement !== document.body) {
+                    document.body.appendChild(modalEl);
                 }
+
+                return modalEl;
             }
 
-            // Tombol "Tolak" pada setiap baris laporan.
-            document.querySelectorAll('.js-reject').forEach(function(button) {
-                button.addEventListener('click', function(event) {
+            ambilModal();
+
+            if (!window.__dinsosRejectBound) {
+                window.__dinsosRejectBound = true;
+
+                // Tombol "Tolak" pada setiap baris laporan (termasuk baris baru
+                // hasil live filter) — fase capture agar data-api tema tidak
+                // membuka modal sebelum form.action diperbarui.
+                document.addEventListener('click', function(event) {
+                    if (!event.target || typeof event.target.closest !== 'function') return;
+
+                    var button = event.target.closest('.js-reject');
+                    if (!button) return;
+
                     event.preventDefault();
                     event.stopPropagation();
-                    showRejectModal(button);
-                });
-            });
 
-            if (canShow) {
-                $modal.on('hidden.bs.modal', function() {
-                    form.reset();
-                    form.removeAttribute('action');
-                });
+                    var modalEl = ambilModal();
+                    var form = document.getElementById('rejectForm');
+                    var description = document.getElementById('rejectDescription');
+                    if (!modalEl || !form || !description) return;
+
+                    form.action = button.dataset.action;
+                    description.textContent = 'Tambahkan alasan penolakan untuk tiket ' + button.dataset.ticket + '.';
+
+                    // Dibuka manual supaya tidak bergantung pada data-api tema.
+                    var $modal = window.jQuery ? window.jQuery(modalEl) : null;
+                    if ($modal && typeof $modal.modal === 'function') {
+                        $modal.modal('show');
+                    }
+                }, true);
+
+                var $doc = window.jQuery ? window.jQuery(document) : null;
+                if ($doc) {
+                    $doc.on('hidden.bs.modal.dinsosReject', '#rejectModal', function() {
+                        var form = document.getElementById('rejectForm');
+                        if (!form) return;
+                        form.reset();
+                        form.removeAttribute('action');
+                    });
+                }
             }
-        });
+        })();
     </script>
 @endpush

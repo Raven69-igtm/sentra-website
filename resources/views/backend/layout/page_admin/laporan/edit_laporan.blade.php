@@ -500,7 +500,7 @@
                             </div>
 
                             <div class="form-actions">
-                                <a href="{{ route('laporan_proses') }}" class="btn btn-light btn-pill">Batal</a>
+                                <a href="{{ route('laporan_proses') }}" wire:navigate class="btn btn-light btn-pill">Batal</a>
                                 <button type="submit" class="btn btn-instansi-primary btn-pill">
                                     <i class="fa fa-floppy-disk"></i> Simpan Perubahan
                                 </button>
@@ -595,17 +595,20 @@
 
     <!-- JavaScript -->
     <script>
-        // Variabel untuk menyimpan jumlah maksimum anak yang dapat ditambahkan
-        const MAX_ANAK = 10;
+        // Variabel untuk menyimpan jumlah maksimum anak yang dapat ditambahkan.
+        // Memakai var (bukan const) agar aman dieksekusi ulang oleh Livewire
+        // soft navigation tanpa error "already declared".
+        var MAX_ANAK = 10;
 
         // Menentukan index anak berdasarkan jumlah anak yang ada
-        let indexAnak =
+        var indexAnak =
             {{ $laporan->detail_penerima_manfaat && $laporan->detail_penerima_manfaat->informasi_anak
                 ? count($laporan->detail_penerima_manfaat->informasi_anak)
                 : 0 }};
 
-        // Mendeteksi perubahan pada form penerima manfaat saat dokumen siap
-        document.addEventListener('DOMContentLoaded', function() {
+        // Siapkan form penerima manfaat. Dijalankan langsung karena elemen sudah
+        // terpasang — DOMContentLoaded tidak terpicu ulang setelah soft navigation.
+        (function initPenerimaForm() {
             // Cari semua input dan select di bagian penerima manfaat
             const penerimaInputs = document.querySelectorAll('.penerima-input');
 
@@ -628,7 +631,7 @@
                     }
                 }
             });
-        });
+        })();
 
         // Fungsi untuk memeriksa status penerima manfaat
         function checkPenerimaStatus() {

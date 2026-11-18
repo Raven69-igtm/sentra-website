@@ -129,9 +129,44 @@
 
 @push('scripts')
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize DataTable
-            const table = $('#rekapanTable').DataTable({
+        // Skrip ini ikut dieksekusi ulang setiap kali Livewire memasang halaman
+        // baru (soft navigation), sedangkan DOMContentLoaded tidak terpicu lagi.
+        // Karena itu inisialisasi dijalankan langsung dan fungsi filter global
+        // DataTables hanya didaftarkan sekali.
+        (function() {
+            'use strict';
+
+            var $ = window.jQuery;
+            if (!$ || !$.fn || !$.fn.dataTable) return;
+
+            // Pencarian gabungan kolom NIK & Nama Pelapor. Didaftarkan sekali
+            // ke $.fn.dataTable.ext.search agar tidak menumpuk antar halaman.
+            if (!window.__rekapanSearchFilter) {
+                window.__rekapanSearchFilter = true;
+
+                $.fn.dataTable.ext.search.push(function(settings, data) {
+                    var table = $(settings.nTable);
+                    if (!table.length || table.attr('id') !== 'rekapanTable') return true;
+
+                    var keyword = ($('#searchInput').val() || '').toLowerCase();
+                    if (!keyword) return true;
+
+                    var col4 = (data[4] || '').toLowerCase();
+                    var col5 = (data[5] || '').toLowerCase();
+
+                    return col4.indexOf(keyword) !== -1 || col5.indexOf(keyword) !== -1;
+                });
+            }
+
+            var tableEl = document.getElementById('rekapanTable');
+            if (!tableEl) return;
+
+            // Instans lama bisa tertinggal saat halaman dipasang ulang.
+            if ($.fn.dataTable.isDataTable(tableEl)) {
+                $(tableEl).DataTable().destroy();
+            }
+
+            var table = $(tableEl).DataTable({
                 responsive: true,
                 paging: true,
                 dom: 'rt',
@@ -139,46 +174,38 @@
                 info: true
             });
 
-            // Filter pencarian di kolom ke-4 dan 5 (NIK & Nama Pelapor)
-            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
-                const keyword = $('#searchInput').val().toLowerCase();
-                const col4 = (data[4] || '').toLowerCase();
-                const col5 = (data[5] || '').toLowerCase();
-
-                return col4.includes(keyword) || col5.includes(keyword);
-            });
-
             // Trigger filter saat mengetik
-            $('#searchInput').on('keyup', function() {
+            $('#searchInput').on('keyup.rekapan', function() {
                 table.draw();
             });
 
             // Update jumlah data
-            const updateCount = () => {
-                const info = table.page.info();
+            function updateCount() {
+                var info = table.page.info();
                 $('#dataCount').text(info.recordsDisplay);
-            };
-            $('#rekapanTable').on('draw.dt', updateCount);
+            }
+
+            $(tableEl).on('draw.dt.rekapan', updateCount);
             updateCount();
 
             // Filter berdasarkan status (kolom ke-2)
-            $('#filterStatus').on('change', function() {
+            $('#filterStatus').on('change.rekapan', function() {
                 table.column(2).search(this.value).draw();
             });
 
             // Validasi rentang tanggal sebelum ekspor
-            document.getElementById('exportForm').addEventListener('submit', function(e) {
-                const startDate = document.getElementById('exportStartDate').value;
-                const endDate = document.getElementById('exportEndDate').value;
+            var exportForm = document.getElementById('exportForm');
+            if (exportForm) {
+                exportForm.addEventListener('submit', function(e) {
+                    var startDate = document.getElementById('exportStartDate').value;
+                    var endDate = document.getElementById('exportEndDate').value;
 
-                if (startDate && endDate) {
-                    if (new Date(startDate) > new Date(endDate)) {
+                    if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
                         e.preventDefault();
                         alert('Tanggal akhir harus lebih besar atau sama dengan tanggal awal!');
-                        return false;
                     }
-                }
-            });
-        });
+                });
+            }
+        })();
     </script>
 @endpush

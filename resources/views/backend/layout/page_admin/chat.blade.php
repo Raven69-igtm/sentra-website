@@ -24,7 +24,7 @@
                 <div class="card-body p-2">
                     <div id="conversation-list">
                         @forelse ($users as $u)
-                            <a href="{{ route('chat.show', $u->id_akun) }}"
+                            <a href="{{ route('chat.show', $u->id_akun) }}" wire:navigate
                                 class="chat-item {{ isset($activeUser) && $activeUser->id_akun == $u->id_akun ? 'active' : '' }}"
                                 data-user-id="{{ $u->id_akun }}">
                                 <span class="chat-avatar">{{ strtoupper(substr($u->nama, 0, 1)) }}</span>
@@ -111,7 +111,55 @@
 
 @push('scripts')
     <script>
-        $(document).ready(function() {
+        // Skrip halaman ikut dieksekusi ulang setiap soft navigation. Koneksi
+        // WebSocket halaman sebelumnya ditutup lebih dulu lewat event
+        // livewire:navigating agar tidak ada socket yang terus reconnect di
+        // latar belakang setelah <body> diganti.
+        (function() {
+            'use strict';
+
+            function tutupSocket() {
+                window.__sentraChatAktif = false;
+
+                if (window.__sentraChatReconnect) {
+                    clearTimeout(window.__sentraChatReconnect);
+                    window.__sentraChatReconnect = null;
+                }
+
+                if (window.__sentraChatSocket) {
+                    try {
+                        window.__sentraChatSocket.onclose = null;
+                        window.__sentraChatSocket.close();
+                    } catch (e) { /* socket sudah tertutup */ }
+                    window.__sentraChatSocket = null;
+                }
+            }
+
+            if (!window.__sentraChatTeardownBound) {
+                window.__sentraChatTeardownBound = true;
+                document.addEventListener('livewire:navigating', tutupSocket);
+            }
+
+            // Dipakai halaman chat ketika dipasang ulang untuk menutup socket
+            // yang masih hidup dari kunjungan sebelumnya.
+            window.__sentraChatTeardown = tutupSocket;
+        })();
+
+        // Bagian halaman: dijalankan setiap kali skrip ini dipasang (load awal
+        // maupun setelah soft navigation).
+        (function() {
+            'use strict';
+
+            if (!document.getElementById('conversation-list') && !document.getElementById('chat-messages')) {
+                return; // bukan halaman chat
+            }
+
+            if (window.__sentraChatTeardown) {
+                window.__sentraChatTeardown();
+            }
+
+            window.__sentraChatAktif = true;
+
             var chatMessages = document.getElementById('chat-messages');
             if (chatMessages) {
                 chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -126,6 +174,7 @@
             function connectWebSocket() {
                 try {
                     ws = new WebSocket('ws://' + wsHost + ':' + wsPort);
+                    window.__sentraChatSocket = ws;
 
                     ws.onopen = function() {
                         console.log('Admin WebSocket connected');
@@ -158,8 +207,12 @@
                     };
 
                     ws.onclose = function() {
+                        // Jangan menyambung ulang bila pengguna sudah pindah
+                        // halaman (socket ditutup manual saat navigating).
+                        if (!window.__sentraChatAktif) return;
+
                         console.log('WS disconnected, reconnecting in 3s...');
-                        setTimeout(connectWebSocket, 3000);
+                        window.__sentraChatReconnect = setTimeout(connectWebSocket, 3000);
                     };
 
                     ws.onerror = function(err) {
@@ -285,6 +338,6 @@
                     }
                 });
             @endif
-        });
+        })();
     </script>
 @endpush

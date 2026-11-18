@@ -20,7 +20,7 @@
      Hamburger dipisah dari tautan brand agar klik tidak bernavigasi.
      ============================================================ --}}
 <div class="nav-header">
-    <a href="{{ $homeRoute }}" class="brand-logo" title="{{ $appName }} — {{ $instansiLabel }}">
+    <a href="{{ $homeRoute }}" wire:navigate class="brand-logo" title="{{ $appName }} — {{ $instansiLabel }}">
         @if ($appLogo = \App\Models\SystemSetting::get('app_logo'))
             <img src="{{ asset($appLogo) }}" alt="Logo {{ $instansiLabel }}">
         @else
@@ -49,30 +49,8 @@
                 <div class="header-left d-flex align-items-center"></div>
 
                 <ul class="navbar-nav header-right">
-                    {{-- Notifikasi (ID dipertahankan untuk polling AJAX 5 detik) --}}
-                    <li class="nav-item dropdown notification_dropdown">
-                        <a class="topbar-icon-btn" href="#" role="button" data-toggle="dropdown"
-                            aria-expanded="false" title="Notifikasi">
-                            <i class="fa-regular fa-bell"></i>
-                            <span id="notification-badge" class="icon-badge" style="display: none;"></span>
-                            <span id="notification-pulse" class="pulse-css" style="display: none;"></span>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-right">
-                            <div class="notif-head">
-                                <strong>Notifikasi</strong>
-                                <span id="notification-count-header" class="badge badge-danger"
-                                    style="display: none;"></span>
-                            </div>
-                            <div id="notification-list" class="notification-list">
-                                <div class="notif-empty">Memuat notifikasi…</div>
-                            </div>
-                            <div id="notification-footer" class="notif-foot" style="display: none;">
-                                <a href="#" data-toggle="modal" data-target="#allNotificationsModal">
-                                    Lihat semua notifikasi
-                                </a>
-                            </div>
-                        </div>
-                    </li>
+                    {{-- Notifikasi: komponen Livewire (polling 10 detik) --}}
+                    <livewire:notifikasi-bell />
 
                     {{-- Chip profil --}}
                     <li class="nav-item dropdown header-profile">

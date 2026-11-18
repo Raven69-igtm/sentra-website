@@ -18,7 +18,7 @@
 
         {{-- FILTER: pencarian teks + layanan + status (server-side) --}}
         <div class="filter-bar">
-            <form method="GET" action="{{ route('dinsos.laporan_cepat') }}">
+            <form method="GET" action="{{ route('dinsos.laporan_cepat') }}" data-livewire-navigate>
                 <div class="filter-grid">
                     <div class="filter-field" style="flex: 2 1 260px;">
                         <label for="filterSearch">Pencarian</label>
@@ -50,13 +50,16 @@
                         </select>
                     </div>
                     <div class="filter-field" style="flex: 1 1 100%; min-width: 0;">
-                        <div class="filter-actions" style="flex-wrap: wrap; justify-content: flex-end;">
+                        {{-- Area live terpisah agar tombol Reset ikut diperbarui
+                             setelah filter parsial tanpa reload. --}}
+                        <div class="filter-actions" data-live-region="dinsos-laporan-cepat-actions"
+                            style="flex-wrap: wrap; justify-content: flex-end;">
                             <button type="submit" class="btn btn-instansi-primary btn-pill"
                                 style="white-space: nowrap;">
                                 <i class="fa fa-filter"></i> Filter
                             </button>
                             @if (request()->hasAny(['search', 'layanan', 'status']))
-                                <a href="{{ route('dinsos.laporan_cepat') }}" class="btn btn-light btn-pill"
+                                <a href="{{ route('dinsos.laporan_cepat') }}" data-live-reset class="btn btn-light btn-pill"
                                     style="white-space: nowrap;">Reset</a>
                             @endif
                         </div>
@@ -65,7 +68,8 @@
             </form>
         </div>
 
-        <div class="card">
+        {{-- Area live: filter & pagination menukar bagian ini saja --}}
+        <div class="card" data-live-region="dinsos-laporan-cepat">
             <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
                 <div>
                     <h4 class="card-title mb-1">Daftar Laporan Cepat</h4>
@@ -111,7 +115,7 @@
                                     <td class="text-muted">{{ $laporan->firstItem() + $index }}</td>
                                     <td>
                                         <a href="{{ route('dinsos.laporan_cepat.show', $item->id_laporan) }}"
-                                            class="fw-semibold">
+                                            wire:navigate class="fw-semibold">
                                             {{ $item->id_laporan }}
                                         </a>
                                     </td>
@@ -135,7 +139,7 @@
                                     <td>
                                         <div class="action-group">
                                             <a href="{{ route('dinsos.laporan_cepat.show', $item->id_laporan) }}"
-                                                class="btn btn-instansi-soft btn-sm btn-pill">Detail</a>
+                                                wire:navigate class="btn btn-instansi-soft btn-sm btn-pill">Detail</a>
                                         </div>
                                     </td>
                                 </tr>

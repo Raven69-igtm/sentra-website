@@ -166,7 +166,7 @@
                             <h4 class="card-title mb-1">Laporan Terbaru</h4>
                             <p class="mb-0 text-muted" style="font-size: .82rem;">8 laporan terakhir pada layanan PJSRK</p>
                         </div>
-                        <a href="{{ route('dinsos.laporan.index') }}" class="btn btn-instansi-soft btn-pill">
+                        <a href="{{ route('dinsos.laporan.index') }}" wire:navigate class="btn btn-instansi-soft btn-pill">
                             Lihat semua <i class="fa fa-arrow-right ms-1"></i>
                         </a>
                     </div>
@@ -188,7 +188,7 @@
                                         <tr>
                                             <td>
                                                 <a href="{{ route('dinsos.laporan.show', $item->id_laporan) }}"
-                                                    class="fw-semibold">{{ $item->id_laporan }}</a>
+                                                    wire:navigate class="fw-semibold">{{ $item->id_laporan }}</a>
                                             </td>
                                             <td>{{ \Illuminate\Support\Str::limit($item->judul_tampil, 42) }}</td>
                                             <td class="text-muted">{{ $item->layanan_label !== '-' ? $item->layanan_label : '-' }}</td>

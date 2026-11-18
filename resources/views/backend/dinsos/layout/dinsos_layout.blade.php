@@ -20,16 +20,12 @@
     <link rel="stylesheet" href="{{ asset('admin/assets_dinsos/css/dinsos.css') }}">
 
     @include('backend.layout.page_admin.reset_password.styles')
+    @livewireStyles
     @stack('styles')
 </head>
 
 <body class="dinsos-body">
     @php
-        $notifQuery = \App\Models\Notifikasi::where('id_akun', Auth::id())
-            ->where('tipe', 'admin')
-            ->where('status', 'terkirim');
-        $notifCount = (clone $notifQuery)->count();
-        $notifItems = (clone $notifQuery)->latest('created_at')->limit(5)->get();
         $activeLayanan = request()->routeIs('dinsos.layanan')
             ? str_replace('-', '_', (string) request()->route('layanan'))
             : null;
@@ -101,30 +97,7 @@
                 </button>
 
                 <div class="dinsos-topbar-right">
-                    <div class="dinsos-profile">
-                        <button type="button" class="dinsos-icon-btn" id="notifToggle" aria-label="Notifikasi">
-                            <i class="fa-regular fa-bell"></i>
-                            @if ($notifCount > 0)
-                                <span class="dinsos-notif-dot">{{ $notifCount > 9 ? '9+' : $notifCount }}</span>
-                            @endif
-                        </button>
-                        <div class="dinsos-notif-panel" id="notifPanel">
-                            <div class="dinsos-notif-head">
-                                <span>Notifikasi</span>
-                                <span class="dinsos-badge is-waiting">{{ $notifCount }} baru</span>
-                            </div>
-                            @forelse ($notifItems as $notif)
-                                <div class="dinsos-notif-item">
-                                    <strong>{{ $notif->judul }}</strong>
-                                    <span>{{ $notif->pesan }}</span>
-                                </div>
-                            @empty
-                                <div class="dinsos-notif-item">
-                                    <span>Tidak ada notifikasi baru.</span>
-                                </div>
-                            @endforelse
-                        </div>
-                    </div>
+                    <livewire:notifikasi-bell variant="dinsos" />
 
                     <div class="dinsos-profile">
                         <button type="button" class="dinsos-profile-btn" id="profileToggle">
@@ -195,8 +168,6 @@
             const hamburger = document.getElementById('dinsosHamburger');
             const pjserkToggle = document.getElementById('pjserkToggle');
             const pjserkGroup = document.getElementById('pjserkGroup');
-            const notifToggle = document.getElementById('notifToggle');
-            const notifPanel = document.getElementById('notifPanel');
             const profileToggle = document.getElementById('profileToggle');
             const profileDropdown = document.getElementById('profileDropdown');
 
@@ -226,8 +197,7 @@
                 togglePanel(notifPanel);
             });
 
-            profileToggle?.addEventListener('click', function (event) {
-                event.stopPropagation();
+            profileToggle?.addEventListener('click', function (event) {                event.stopPropagation();
                 togglePanel(profileDropdown);
             });
 

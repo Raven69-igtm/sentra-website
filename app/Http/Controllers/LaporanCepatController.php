@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Laporan;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -21,7 +22,7 @@ class LaporanCepatController extends Controller
      * Alur: scope forUser() membatasi ke instansi PPA → scope laporanCepat()
      * menyaring hanya laporan dari fitur Laporan Cepat → view menampilkan tabel.
      */
-    public function index()
+    public function index(Request $request)
     {
         // Laporan Cepat hanya untuk Admin PPA; Admin Dinsos dialihkan ke modulnya.
         if (Auth::user()->isAdminDinsos()) {
@@ -29,11 +30,35 @@ class LaporanCepatController extends Controller
         }
 
         // Eager load relasi yang dipakai tabel agar tidak query per baris.
-        $laporan = Laporan::with(['detail_pelapor', 'detail_kasus'])
+        $query = Laporan::with(['detail_pelapor', 'detail_kasus'])
             ->forUser(Auth::user())
-            ->laporanCepat()
-            ->orderByDesc('created_at')
-            ->get();
+            ->laporanCepat();
+
+        // Pencarian lintas tiket, nama pelapor, dan lokasi kejadian.
+        $search = trim((string) $request->input('search', ''));
+
+        if ($search !== '') {
+            $like = '%' . $search . '%';
+
+            $query->where(function ($q) use ($like) {
+                $q->where('id_laporan', 'like', $like)
+                    ->orWhere('judul', 'like', $like)
+                    ->orWhereHas('detail_pelapor', function ($pelapor) use ($like) {
+                        $pelapor->where('nama', 'like', $like);
+                    })
+                    ->orWhereHas('detail_kasus', function ($kasus) use ($like) {
+                        $kasus->where('tempat_kejadian', 'like', $like);
+                    });
+            });
+        }
+
+        $status = strtolower(trim((string) $request->input('status', '')));
+
+        if (in_array($status, ['dikirim', 'diterima', 'diproses', 'dirujuk', 'selesai', 'ditolak'], true)) {
+            $query->where('status', $status);
+        }
+
+        $laporan = $query->orderByDesc('created_at')->get();
 
         return view('backend.layout.page_admin.laporan_cepat.index', compact('laporan'));
     }
