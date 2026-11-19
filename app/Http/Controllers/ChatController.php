@@ -12,6 +12,25 @@ use Illuminate\Support\Facades\DB;
 class ChatController extends Controller
 {
     /**
+     * Chat konsultasi hanya untuk Admin PPA. Admin Dinsos dialihkan ke
+     * dashboard-nya (pola sama seperti LaporanCepatController), termasuk
+     * untuk request AJAX agar polling tidak diam-diam tetap berjalan.
+     */
+    private function denyAdminDinsos(Request $request)
+    {
+        if (! Auth::user()?->isAdminDinsos()) {
+            return null;
+        }
+
+        if ($request->expectsJson() || $request->ajax()) {
+            abort(403, 'Fitur chat konsultasi tidak tersedia untuk Admin Dinsos.');
+        }
+
+        return redirect()->route('dinsos.dashboard')
+            ->with('error', 'Fitur chat konsultasi tidak tersedia untuk Admin Dinsos.');
+    }
+
+    /**
      * Bentuk data chat yang dipakai klien (ISO date agar aman di semua
      * browser) — dipakai untuk preload maupun fetch JSON.
      */
@@ -102,8 +121,12 @@ class ChatController extends Controller
         })->filter()->values();
     }
 
-    public function index()
+    public function index(Request $request)
     {
+        if ($deny = $this->denyAdminDinsos($request)) {
+            return $deny;
+        }
+
         $adminId = Auth::id();
         $users = $this->getConversationList($adminId);
         $chatPrefetch = $this->getChatPrefetch($adminId, $users->pluck('id_akun'));
@@ -111,8 +134,12 @@ class ChatController extends Controller
         return view('backend.layout.page_admin.chat', compact('users', 'adminId', 'chatPrefetch'));
     }
 
-    public function show($userId)
+    public function show(Request $request, $userId)
     {
+        if ($deny = $this->denyAdminDinsos($request)) {
+            return $deny;
+        }
+
         $adminId = Auth::id();
 
         ChatMobile::where('sender_id', $userId)
@@ -149,6 +176,10 @@ class ChatController extends Controller
 
     public function send(Request $request)
     {
+        if ($deny = $this->denyAdminDinsos($request)) {
+            return $deny;
+        }
+
         $enabled = (string) \App\Models\SystemSetting::get('enable_chat_consultation', '1');
         if ($enabled === '0') {
             if ($request->ajax()) {
@@ -178,8 +209,12 @@ class ChatController extends Controller
         return redirect()->route('chat.show', $request->receiver_id);
     }
 
-    public function fetchMessages($userId)
+    public function fetchMessages(Request $request, $userId)
     {
+        if ($deny = $this->denyAdminDinsos($request)) {
+            return $deny;
+        }
+
         $adminId = Auth::id();
 
         ChatMobile::where('sender_id', $userId)

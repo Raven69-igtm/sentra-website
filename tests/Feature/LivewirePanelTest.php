@@ -149,6 +149,36 @@ class LivewirePanelTest extends TestCase
             ->assertSee('Halo admin, saya ingin konsultasi.', false);
     }
 
+    public function test_chat_tidak_tersedia_untuk_admin_dinsos(): void
+    {
+        $dinsos = $this->admin('admin_dinsos', 'admin.dinsos@sentra.com');
+
+        // Akses langsung ke modul chat dialihkan ke dashboard Dinsos.
+        $this->actingAs($dinsos)
+            ->get(route('chat.index'))
+            ->assertRedirect(route('dinsos.dashboard'))
+            ->assertSessionHas('error');
+
+        // Menu dan badge chat tidak dirender di sidebar Dinsos.
+        $this->actingAs($dinsos)
+            ->get(route('dinsos.dashboard'))
+            ->assertOk()
+            ->assertDontSee('id="sidebar-chat-badge"', false)
+            ->assertDontSee(route('chat.index'), false);
+
+        // Kirim pesan dari akun Dinsos tidak membuat baris chat baru.
+        $sebelum = ChatMobile::count();
+
+        $this->actingAs($dinsos)
+            ->post(route('chat.send'), [
+                'receiver_id' => $dinsos->id_akun,
+                'message' => 'Pesan uji dari Admin Dinsos',
+            ])
+            ->assertRedirect(route('dinsos.dashboard'));
+
+        $this->assertSame($sebelum, ChatMobile::count());
+    }
+
     public function test_perubahan_status_masih_tersedia_di_daftar_laporan(): void
     {
         $this->actingAs($this->admin('admin_dinsos', 'admin.dinsos@sentra.com'));

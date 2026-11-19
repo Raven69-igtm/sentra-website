@@ -73,11 +73,25 @@
                         <div class="col-xl-5 col-lg-5 col-md-7 d-flex flex-column ms-auto me-auto ms-lg-auto me-lg-0">
                             <div class="card-header ms-3">
                                 <h3 class="font-weight-bolder custom-title">Login {{ \App\Models\SystemSetting::get('app_name', 'SENTRA') }}</h3>
-                                <p class="mb-0 custom-subtitle">Portal {{ \App\Models\SystemSetting::get('instansi_name', 'Dinas Sosial PPPA') }}</p>
+                                <p class="mb-0 custom-subtitle">Portal {{ \App\Models\SystemSetting::get('instansi_name', 'Dinas Sosial') }}</p>
                             </div>
 
                             <div class="card card-plain">
                                 <div class="card-body">
+                                    {{-- Flash dari alur reset password ("Password berhasil
+                                         direset") dan dari redirect middleware role. --}}
+                                    @if (session('message'))
+                                        <div class="alert alert-soft-success text-center mb-3">
+                                            {{ session('message') }}
+                                        </div>
+                                    @endif
+
+                                    @if (session('error'))
+                                        <div class="alert alert-soft-danger text-center mb-3">
+                                            {{ session('error') }}
+                                        </div>
+                                    @endif
+
                                     <form action="login" method="POST">
                                         @csrf
                                         <div class="input-group input-group-outline mb-3">
@@ -100,9 +114,13 @@
                                             </label>
                                         </div>
 
-                                        @if ($errors->has('login'))
+                                        {{-- Tampilkan semua error, termasuk error kunci 'email'
+                                             dari alur lupa password, bukan hanya 'login'. --}}
+                                        @if ($errors->any())
                                             <div class="alert alert-soft-danger text-center mb-0">
-                                                {{ $errors->first('login') }}
+                                                @foreach ($errors->all() as $error)
+                                                    <div>{{ $error }}</div>
+                                                @endforeach
                                             </div>
                                         @endif
 

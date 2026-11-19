@@ -45,7 +45,7 @@
                                 <div class="card-body">
                                     <form role="form" method="POST" action="{{ route('otp.reset') }}">
                                         @csrf
-                                        <input type="hidden" name="email" value="{{ session('verified_email') }}" />
+                                        <input type="hidden" name="email" value="{{ $email ?? session('verified_email') }}" />
 
                                         <div class="input-group input-group-outline mb-3">
                                             <label class="form-label">Password baru</label>

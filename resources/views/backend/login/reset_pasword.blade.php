@@ -78,12 +78,6 @@
             </div>
         </section>
     </main>
-    <script>
-        document.getElementById('togglePassword').addEventListener('change', function() {
-            const passwordInput = document.getElementById('passwordInput');
-            passwordInput.type = this.checked ? 'text' : 'password';
-        });
-    </script>
     <!--   Core JS Files   -->
     <script src="{{ 'backend/assets/js/core/popper.min.js' }}"></script>
     <script src="{{ 'backend/assets/js/core/bootstrap.min.js' }}"></script>

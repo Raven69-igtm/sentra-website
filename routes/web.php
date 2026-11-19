@@ -110,7 +110,8 @@ Route::controller(LaporanCepatController::class)->middleware('role:admin')->grou
     });
     Route::post('/password/close-modal', [GantiSandiController::class, 'closeModal'])->name('password.close-modal');
 
-    // Chat Konsultasi
+    // Chat Konsultasi (khusus Admin PPA). Admin Dinsos dialihkan ke dashboard
+    // oleh ChatController; endpoint mobile /api/chats tidak terpengaruh.
     Route::controller(ChatController::class)->prefix('chat')->group(function () {
         Route::get('/', 'index')->name('chat.index');
         Route::post('/send', 'send')->name('chat.send');

@@ -4,7 +4,7 @@
     $appName = \App\Models\SystemSetting::get('app_name', 'SENTRA');
 
     // Identitas instansi (Diferensiasi #2: sub-label di bawah nama aplikasi)
-    $instansiLabel = $isDinsos ? 'Dinas Sosial PPPA' : 'UPTD PPA';
+    $instansiLabel = $isDinsos ? 'Dinas Sosial Nganjuk' : 'UPTD PPA';
     $roleLabel = $isDinsos ? 'Admin Dinsos' : 'Admin PPA';
     $homeRoute = $isDinsos ? route('dinsos.dashboard') : route('dashboard');
     $accent = $isDinsos ? '#B45309' : '#006039';

@@ -14,12 +14,14 @@ class PageController extends Controller
         return view('backend.login.reset_pasword');
     }
 
+    // Halaman lama tanpa pengecekan sesi diarahkan ke route controller OTP
+    // agar seluruh alur lupa password melewati validasi yang sama.
     public function otp(){
-        return view('backend.login.otp');
+        return redirect()->route('otp.form');
     }
 
     public function new_pw(){
-        return view('backend.login.new_password');
+        return redirect()->route('password.new');
     }
     
 

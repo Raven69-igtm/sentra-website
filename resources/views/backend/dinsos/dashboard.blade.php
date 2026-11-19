@@ -19,7 +19,7 @@
 
         @include('backend.components.page-header', [
             'title' => 'Dashboard',
-            'subtitle' => 'Ringkasan laporan PJSRK Dinas Sosial PPPA',
+            'subtitle' => 'Ringkasan laporan PJSRK Dinas Sosial Nganjuk',
             'icon' => 'fa-gauge-high',
         ])
 

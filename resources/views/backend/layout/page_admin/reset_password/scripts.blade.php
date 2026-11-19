@@ -1,250 +1,308 @@
 <script>
     // Dibungkus IIFE agar aman dieksekusi ulang oleh Livewire soft navigation:
     // deklarasi const/let di top-level akan bentrok saat <body> diganti.
-    (function() {
-    document.querySelectorAll('.reset-pwd-close').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            this.closest('.reset-pwd-modal').classList.remove('show');
-            history.pushState("", document.title, window.location.pathname + window.location
-            .search); // hapus hash dari URL
-        });
-    });
+    (function () {
+        'use strict';
 
-    // Fungsi untuk menutup modal saat overlay diklik
-    const overlays = document.querySelectorAll('.reset-pwd-overlay');
-    overlays.forEach(function(overlay) {
-        overlay.addEventListener('click', function(e) {
-            closePasswordModal();
-        });
-    });
+        const modalIds = ['confirmPasswordModal', 'resetPasswordModal'];
 
-    // Fungsi untuk menangani submit pada form konfirmasi password
-    const confirmForm = document.getElementById('confirmPasswordForm');
-    if (confirmForm) {
-        confirmForm.addEventListener('submit', function(e) {
-            e.preventDefault();
+        // Fungsi untuk menampilkan modal
+        function showModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (!modal) {
+                return;
+            }
 
-            const formData = new FormData(confirmForm);
+            modal.classList.add('show');
 
-            fetch('{{ route('password.confirm') }}', {
+            const firstInput = modal.querySelector('input:not([type="hidden"])');
+            if (firstInput) {
+                setTimeout(function () {
+                    firstInput.focus();
+                }, 60);
+            }
+        }
+
+        // Fungsi untuk menyembunyikan modal
+        function hideModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('show');
+            }
+        }
+
+        // Fungsi untuk menyembunyikan semua modal
+        function hideAllModals() {
+            document.querySelectorAll('.reset-pwd-modal.show').forEach(function (modal) {
+                modal.classList.remove('show');
+            });
+        }
+
+        // Hapus hash (#confirmPasswordModal / #resetPasswordModal) dari URL.
+        // replaceState dipakai agar halaman tidak melompat ke atas.
+        function clearModalHash() {
+            if (!window.location.hash) {
+                return;
+            }
+
+            if (window.history && window.history.replaceState) {
+                window.history.replaceState(null, document.title, window.location.pathname + window.location.search);
+            } else {
+                window.location.hash = '';
+            }
+        }
+
+        // Tutup modal sekaligus lupakan status modal di sesi server.
+        function closePasswordModal() {
+            hideAllModals();
+            clearModalHash();
+
+            fetch('{{ route('password.close-modal') }}', {
                     method: 'POST',
-                    body: formData,
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     }
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        hideModal('confirmPasswordModal');
-                        showModal('resetPasswordModal');
-                    } else {
-                        const errorElement = document.querySelector(
-                            '#confirmPasswordForm .reset-pwd-error');
+                .then(function (response) {
+                    return response.ok ? response.json() : null;
+                })
+                .catch(function (error) {
+                    console.error('Error:', error);
+                });
+        }
+
+        // Tombol X
+        document.querySelectorAll('.reset-pwd-close').forEach(function (btn) {
+            btn.addEventListener('click', function (event) {
+                event.preventDefault();
+                closePasswordModal();
+            });
+        });
+
+        // Klik overlay menutup modal
+        document.querySelectorAll('.reset-pwd-overlay').forEach(function (overlay) {
+            overlay.addEventListener('click', function (event) {
+                event.preventDefault();
+                closePasswordModal();
+            });
+        });
+
+        // Link pemicu modal (dropdown profil) menggunakan href="#idModal".
+        // Ditangani lewat class "show" agar modal tetap bisa ditutup walau
+        // hash masih tertinggal di URL.
+        document.querySelectorAll('a[href="#confirmPasswordModal"], a[href="#resetPasswordModal"]').forEach(function (link) {
+            link.addEventListener('click', function (event) {
+                event.preventDefault();
+
+                const modalId = (this.getAttribute('href') || '').replace('#', '');
+                hideAllModals();
+                showModal(modalId);
+                clearModalHash();
+            });
+        });
+
+        // Tombol Escape menutup modal.
+        if (window.__sentraResetPwdKeydown) {
+            document.removeEventListener('keydown', window.__sentraResetPwdKeydown);
+        }
+        window.__sentraResetPwdKeydown = function (event) {
+            if (event.key === 'Escape' && document.querySelector('.reset-pwd-modal.show')) {
+                closePasswordModal();
+            }
+        };
+        document.addEventListener('keydown', window.__sentraResetPwdKeydown);
+
+        // Dukung URL lama yang masih membawa hash modal saat halaman dimuat.
+        const initialHash = window.location.hash.replace('#', '');
+        if (modalIds.indexOf(initialHash) !== -1) {
+            showModal(initialHash);
+            clearModalHash();
+        }
+
+        // Form konfirmasi password
+        const confirmForm = document.getElementById('confirmPasswordForm');
+        if (confirmForm) {
+            confirmForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const formData = new FormData(confirmForm);
+
+                fetch('{{ route('password.confirm') }}', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        }
+                    })
+                    .then(function (response) {
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        if (data.success) {
+                            hideModal('confirmPasswordModal');
+                            showModal('resetPasswordModal');
+                            return;
+                        }
+
+                        const errorElement = document.querySelector('#confirmPasswordForm .reset-pwd-error');
                         if (!errorElement) {
                             const errorSpan = document.createElement('span');
                             errorSpan.classList.add('reset-pwd-error');
                             errorSpan.textContent = data.message;
-                            document.getElementById('current_password').parentNode.appendChild(
-                                errorSpan);
+                            document.getElementById('current_password').parentNode.appendChild(errorSpan);
                         } else {
                             errorElement.textContent = data.message;
                         }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
-        });
-    }
+                    })
+                    .catch(function (error) {
+                        console.error('Error:', error);
+                    });
+            });
+        }
 
-    // Fungsi untuk menangani submit pada form reset password
-    const resetForm = document.getElementById('resetPasswordForm');
-    if (resetForm) {
-        resetForm.addEventListener('submit', function(e) {
-            e.preventDefault();
+        // Form reset password
+        const resetForm = document.getElementById('resetPasswordForm');
+        if (resetForm) {
+            resetForm.addEventListener('submit', function (event) {
+                event.preventDefault();
 
-            const formData = new FormData(resetForm);
+                const formData = new FormData(resetForm);
 
-            fetch('{{ route('password.reset') }}', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        hideAllModals(); // Pastikan SEMUA modal ditutup
-                        showSuccessNotification('Password berhasil diubah!');
-                    } else {
-                        // Tampilkan pesan error
+                fetch('{{ route('password.reset') }}', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        }
+                    })
+                    .then(function (response) {
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        if (data.success) {
+                            hideAllModals();
+                            clearModalHash();
+                            showSuccessNotification('Password berhasil diubah!');
+                            return;
+                        }
+
                         if (data.errors) {
-                            Object.keys(data.errors).forEach(key => {
+                            Object.keys(data.errors).forEach(function (key) {
                                 const inputElement = document.getElementById(key);
-                                if (inputElement) {
-                                    const parentDiv = inputElement.parentNode;
-                                    let errorElement = parentDiv.querySelector(
-                                        '.reset-pwd-error');
-
-                                    if (!errorElement) {
-                                        errorElement = document.createElement('span');
-                                        errorElement.classList.add('reset-pwd-error');
-                                        parentDiv.appendChild(errorElement);
-                                    }
-
-                                    errorElement.textContent = data.errors[key][0];
+                                if (!inputElement) {
+                                    return;
                                 }
+
+                                const parentDiv = inputElement.parentNode;
+                                let errorElement = parentDiv.querySelector('.reset-pwd-error');
+
+                                if (!errorElement) {
+                                    errorElement = document.createElement('span');
+                                    errorElement.classList.add('reset-pwd-error');
+                                    parentDiv.appendChild(errorElement);
+                                }
+
+                                errorElement.textContent = data.errors[key][0];
                             });
                         }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
-        });
-    }
-
-    // Fungsi untuk menutup modal melalui AJAX
-    function closePasswordModal() {
-        fetch('{{ route('password.close-modal') }}', {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    hideAllModals();
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                hideAllModals(); // Tutup modal bahkan jika terjadi error
+                    })
+                    .catch(function (error) {
+                        console.error('Error:', error);
+                    });
             });
-    }
-
-    // Fungsi untuk menampilkan modal
-    function showModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.classList.add('show');
         }
-    }
 
-    // Fungsi untuk menyembunyikan modal
-    function hideModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.classList.remove('show');
-        }
-    }
-
-    // Fungsi untuk menyembunyikan semua modal
-    function hideAllModals() {
-        const modals = document.querySelectorAll('.reset-pwd-modal');
-        modals.forEach(function(modal) {
-            modal.classList.remove('show');
-        });
-    }
-
-    // Fungsi untuk menampilkan notifikasi sukses
-    function showSuccessNotification(message) {
-        // Buat elemen notifikasi
-        const notification = document.createElement('div');
-        notification.classList.add('reset-pwd-notification');
-        notification.innerHTML = `
+        // Fungsi untuk menampilkan notifikasi sukses
+        function showSuccessNotification(message) {
+            const notification = document.createElement('div');
+            notification.classList.add('reset-pwd-notification');
+            notification.innerHTML = `
                 <div class="reset-pwd-notification-content">
                     <i class="fas fa-check-circle"></i>
-                    <span>${message}</span>
+                    <span></span>
                 </div>
             `;
+            notification.querySelector('span').textContent = message;
 
-        // Tambahkan ke body
-        document.body.appendChild(notification);
+            document.body.appendChild(notification);
 
-        // Tampilkan dengan animasi
-        setTimeout(() => {
-            notification.classList.add('show');
-        }, 100);
+            setTimeout(function () {
+                notification.classList.add('show');
+            }, 100);
 
-        // Hilangkan setelah beberapa detik
-        setTimeout(() => {
-            notification.classList.remove('show');
-            setTimeout(() => {
-                document.body.removeChild(notification);
-            }, 500);
-        }, 3000);
-    }
-
-    // Tambahkan validasi realtime untuk password
-    const passwordInput = document.getElementById('password');
-    const confirmInput = document.getElementById('password_confirmation');
-
-    if (passwordInput) {
-        passwordInput.addEventListener('input', validatePassword);
-    }
-
-    if (confirmInput) {
-        confirmInput.addEventListener('input', validateConfirmPassword);
-    }
-
-    function validatePassword() {
-        const password = passwordInput.value;
-        const parentDiv = passwordInput.parentNode;
-        let errorElement = parentDiv.querySelector('.reset-pwd-error');
-
-        if (!errorElement) {
-            errorElement = document.createElement('span');
-            errorElement.classList.add('reset-pwd-error');
-            parentDiv.appendChild(errorElement);
+            setTimeout(function () {
+                notification.classList.remove('show');
+                setTimeout(function () {
+                    notification.remove();
+                }, 500);
+            }, 3000);
         }
 
-        if (password.length < 8) {
-            errorElement.textContent = 'Password minimal harus 8 karakter';
-            return false;
-        } else if (!/[a-z]/.test(password) || !/[A-Z]/.test(password)) {
-            errorElement.textContent = 'Password harus mengandung huruf besar dan kecil';
-            return false;
-        } else if (!/[0-9]/.test(password)) {
-            errorElement.textContent = 'Password harus mengandung angka';
-            return false;
-        } else {
+        // Validasi realtime password
+        const passwordInput = document.getElementById('password');
+        const confirmInput = document.getElementById('password_confirmation');
+
+        if (passwordInput) {
+            passwordInput.addEventListener('input', validatePassword);
+        }
+
+        if (confirmInput) {
+            confirmInput.addEventListener('input', validateConfirmPassword);
+        }
+
+        function validatePassword() {
+            const password = passwordInput.value;
+            const parentDiv = passwordInput.parentNode;
+            let errorElement = parentDiv.querySelector('.reset-pwd-error');
+
+            if (!errorElement) {
+                errorElement = document.createElement('span');
+                errorElement.classList.add('reset-pwd-error');
+                parentDiv.appendChild(errorElement);
+            }
+
+            if (password.length < 8) {
+                errorElement.textContent = 'Password minimal harus 8 karakter';
+                return false;
+            } else if (!/[a-z]/.test(password) || !/[A-Z]/.test(password)) {
+                errorElement.textContent = 'Password harus mengandung huruf besar dan kecil';
+                return false;
+            } else if (!/[0-9]/.test(password)) {
+                errorElement.textContent = 'Password harus mengandung angka';
+                return false;
+            }
+
             errorElement.textContent = '';
             return true;
         }
-    }
 
-    function validateConfirmPassword() {
-        const password = passwordInput.value;
-        const confirm = confirmInput.value;
-        const parentDiv = confirmInput.parentNode;
-        let errorElement = parentDiv.querySelector('.reset-pwd-error');
+        function validateConfirmPassword() {
+            const password = passwordInput.value;
+            const confirm = confirmInput.value;
+            const parentDiv = confirmInput.parentNode;
+            let errorElement = parentDiv.querySelector('.reset-pwd-error');
 
-        if (!errorElement) {
-            errorElement = document.createElement('span');
-            errorElement.classList.add('reset-pwd-error');
-            parentDiv.appendChild(errorElement);
-        }
+            if (!errorElement) {
+                errorElement = document.createElement('span');
+                errorElement.classList.add('reset-pwd-error');
+                parentDiv.appendChild(errorElement);
+            }
 
-        if (password !== confirm) {
-            errorElement.textContent = 'Konfirmasi password tidak cocok';
-            return false;
-        } else {
+            if (password !== confirm) {
+                errorElement.textContent = 'Konfirmasi password tidak cocok';
+                return false;
+            }
+
             errorElement.textContent = '';
             return true;
         }
-    }
 
-    // Jika ada pesan sukses, tampilkan notifikasi
-    @if (session('success'))
-        showSuccessNotification('{{ session('success') }}');
-    @endif
+        // Jika ada pesan sukses, tampilkan notifikasi
+        @if (session('success'))
+            showSuccessNotification(@json(session('success')));
+        @endif
     })();
 </script>

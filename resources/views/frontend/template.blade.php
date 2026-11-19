@@ -4,9 +4,9 @@
 <head>
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>{{ \App\Models\SystemSetting::get('app_name', 'SENTRA') }} - {{ \App\Models\SystemSetting::get('instansi_name', 'Dinas Sosial PPPA') }}</title>
+    <title>{{ \App\Models\SystemSetting::get('app_name', 'SENTRA') }} - {{ \App\Models\SystemSetting::get('instansi_name', 'Dinas Sosial Nganjuk') }}</title>
     <meta name="description"
-        content="{{ \App\Models\SystemSetting::get('app_description', 'Website resmi Dinas Sosial PPPA Kabupaten Nganjuk. Informasi layanan, pengaduan, dan edukasi sosial.') }}">
+        content="{{ \App\Models\SystemSetting::get('app_description', 'Website resmi Dinas Sosial Nganjuk Kabupaten Nganjuk. Informasi layanan, pengaduan, dan edukasi sosial.') }}">
     <meta name="keywords" content="Dinas Sosial, PPPA, Kabupaten Nganjuk, perlindungan anak, pemberdayaan perempuan">
 
     <!-- Favicons -->

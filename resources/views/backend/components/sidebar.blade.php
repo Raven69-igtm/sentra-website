@@ -2,10 +2,13 @@
     $user = Auth::user();
     $isDinsos = $user && $user->isAdminDinsos();
 
-    // Badge chat belum dibaca (target AJAX memakai id yang sama)
-    $unreadChat = \App\Models\ChatMobile::where('receiver_id', $user->id ?? 0)
-        ->where('is_read', 0)
-        ->count();
+    // Badge chat belum dibaca (target AJAX memakai id yang sama).
+    // Admin Dinsos tidak memiliki modul chat, jadi query dilewati.
+    $unreadChat = $isDinsos
+        ? 0
+        : \App\Models\ChatMobile::where('receiver_id', Auth::id())
+            ->where('is_read', 0)
+            ->count();
 @endphp
 
 <div class="quixnav">
@@ -128,15 +131,19 @@
                 </a>
             </li>
 
-            <li class="{{ request()->routeIs('chat.*') ? 'mm-active' : '' }}">
-                <a href="{{ route('chat.index') }}" wire:navigate aria-expanded="false" title="Chat">
-                    <i class="fa fa-comments"></i>
-                    <span class="nav-text">Chat</span>
-                    {{-- ID dipertahankan: diperbarui oleh polling halaman chat --}}
-                    <span class="badge badge-chat" id="sidebar-chat-badge"
-                        style="{{ $unreadChat > 0 ? '' : 'display: none;' }}">{{ $unreadChat > 0 ? $unreadChat : '' }}</span>
-                </a>
-            </li>
+            {{-- Chat konsultasi hanya untuk Admin PPA; modul ini tidak tersedia
+                 di panel Admin Dinsos (route juga diblokir di ChatController). --}}
+            @if (! $isDinsos)
+                <li class="{{ request()->routeIs('chat.*') ? 'mm-active' : '' }}">
+                    <a href="{{ route('chat.index') }}" wire:navigate aria-expanded="false" title="Chat">
+                        <i class="fa fa-comments"></i>
+                        <span class="nav-text">Chat</span>
+                        {{-- ID dipertahankan: diperbarui oleh polling halaman chat --}}
+                        <span class="badge badge-chat" id="sidebar-chat-badge"
+                            style="{{ $unreadChat > 0 ? '' : 'display: none;' }}">{{ $unreadChat > 0 ? $unreadChat : '' }}</span>
+                    </a>
+                </li>
+            @endif
         </ul>
     </div>
 </div>

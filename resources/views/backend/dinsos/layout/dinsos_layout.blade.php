@@ -45,7 +45,7 @@
                 </div>
                 <div>
                     <span class="dinsos-brand-title">{{ \App\Models\SystemSetting::get('app_name', 'SENTRA') }} DINSOS</span>
-                    <span class="dinsos-brand-sub">{{ \App\Models\SystemSetting::get('instansi_name', 'Dinas Sosial PPPA') }}</span>
+                    <span class="dinsos-brand-sub">{{ \App\Models\SystemSetting::get('instansi_name', 'Dinas Sosial Nganjuk') }}</span>
                 </div>
             </div>
 
@@ -83,10 +83,6 @@
             <a href="{{ route('rekapan') }}" class="dinsos-menu-item">
                 <i class="fa-regular fa-rectangle-list"></i>
                 <span>Rekapan</span>
-            </a>
-            <a href="{{ route('chat.index') }}" class="dinsos-menu-item">
-                <i class="fa-regular fa-comment-dots"></i>
-                <span>Chat</span>
             </a>
         </aside>
 

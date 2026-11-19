@@ -1,19 +1,31 @@
 <style>
-/* Reset Password Modal Styles */
+/* ============================================================
+   MODAL RESET PASSWORD
+   Warna mengikuti token tema panel instansi (--i-primary):
+   hijau untuk Admin PPA, oranye untuk Admin Dinsos.
+   ============================================================ */
 .reset-pwd-modal {
+    --rp-accent: var(--i-primary, #006039);
+    --rp-accent-hover: var(--i-primary-hover, #004d2e);
+    --rp-accent-soft: var(--i-primary-soft, #e8f7ee);
+    --rp-accent-ring: var(--i-primary-ring, rgba(0, 96, 57, 0.12));
+
     display: none;
     position: fixed;
+    inset: 0;
     z-index: 9999;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
+    overflow-y: auto;
+    padding: 24px 16px;
+    font-family: "Plus Jakarta Sans", "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-/* Menampilkan modal saat menjadi target URL */
-.reset-pwd-modal:target {
-    display: block !important;
+/* Layout Dinsos lama (dinsos_layout.blade.php) memakai Poppins + aksen oranye. */
+body.dinsos-body .reset-pwd-modal {
+    --rp-accent: #e07a2e;
+    --rp-accent-hover: #c9661f;
+    --rp-accent-soft: #fff3e8;
+    --rp-accent-ring: rgba(224, 122, 46, 0.16);
+    font-family: "Poppins", sans-serif;
 }
 
 .reset-pwd-modal.show {
@@ -22,133 +34,230 @@
 
 .reset-pwd-overlay {
     position: fixed;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    inset: 0;
+    background-color: rgba(17, 24, 39, 0.48);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
     z-index: 10000;
-    top: 0;
-    left: 0;
 }
 
 .reset-pwd-container {
     position: relative;
-    background-color: #fff;
-    margin: 5% auto;
-    padding: 25px;
-    border-radius: 8px;
-    width: 90%;
-    max-width: 500px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     z-index: 10001;
+    width: 100%;
+    max-width: 480px;
+    margin: clamp(16px, 8vh, 72px) auto;
+    padding: 28px;
+    background-color: #fff;
+    border: 1px solid rgba(16, 24, 40, 0.05);
+    border-radius: 20px;
+    box-shadow: 0 24px 60px rgba(16, 24, 40, 0.18);
+    animation: resetPwdIn 0.18s ease-out;
 }
 
-@media (max-width: 576px) {
-    .reset-pwd-container {
-        margin: 10% auto;
-        padding: 20px;
-        width: 95%;
+@keyframes resetPwdIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.985);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
     }
 }
 
+@media (prefers-reduced-motion: reduce) {
+    .reset-pwd-container {
+        animation: none;
+    }
+}
+
+@media (max-width: 576px) {
+    .reset-pwd-modal {
+        padding: 16px;
+    }
+
+    .reset-pwd-container {
+        margin: 16px auto;
+        padding: 22px;
+        border-radius: 16px;
+    }
+}
+
+/* Tombol tutup */
 .reset-pwd-close {
     position: absolute;
-    right: 15px;
-    top: 10px;
-    font-size: 24px;
-    font-weight: bold;
-    color: #777;
+    top: 16px;
+    right: 16px;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    background-color: transparent;
+    color: #8a94a6;
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1;
     cursor: pointer;
-    text-decoration: none;
-    transition: color 0.2s;
+    transition: background-color 0.18s ease, color 0.18s ease;
 }
 
-.reset-pwd-close:hover {
-    color: #333;
+.reset-pwd-close:hover,
+.reset-pwd-close:focus-visible {
+    background-color: var(--rp-accent-soft);
+    color: var(--rp-accent);
+    outline: none;
 }
 
-/* Form styles */
+/* Header */
 .reset-pwd-header {
-    margin-bottom: 20px;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 15px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding-right: 36px;
+    margin-bottom: 18px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #edf0f4;
+}
+
+.reset-pwd-icon {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background-color: var(--rp-accent-soft);
+    color: var(--rp-accent);
+    font-size: 18px;
 }
 
 .reset-pwd-header h2 {
-    color: #059652;
     margin: 0;
-    font-size: 1.5rem;
+    color: #111827;
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.reset-pwd-subtitle {
+    margin: 4px 0 0;
+    color: #64748b;
+    font-size: 0.8rem;
+    line-height: 1.5;
 }
 
 .reset-pwd-content {
-    padding: 10px 0;
+    padding: 0;
 }
 
+/* Form */
 .reset-pwd-group {
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
 .reset-pwd-group label {
     display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-    color: #333;
+    margin-bottom: 7px;
+    color: #374151;
+    font-size: 0.8rem;
+    font-weight: 600;
 }
 
 .reset-pwd-group input {
     width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-    transition: border-color 0.2s;
+    padding: 11px 14px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    background-color: #fff;
+    color: #111827;
+    font-family: inherit;
+    font-size: 0.875rem;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .reset-pwd-group input:focus {
-    border-color: #059652;
+    border-color: var(--rp-accent);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(5, 150, 82, 0.1);
+    box-shadow: 0 0 0 4px var(--rp-accent-ring);
+}
+
+.reset-pwd-group input.invalid {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1);
+}
+
+.reset-pwd-group input.valid {
+    border-color: var(--rp-accent);
 }
 
 .reset-pwd-error {
-    color: #e74c3c;
-    font-size: 0.875rem;
-    margin-top: 5px;
     display: block;
+    margin-top: 6px;
+    color: #dc2626;
+    font-size: 0.78rem;
 }
 
 .reset-pwd-button {
-    background-color: #059652;
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: background-color 0.2s;
     width: 100%;
+    padding: 12px 20px;
+    border: 0;
+    border-radius: 12px;
+    background-color: var(--rp-accent);
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
 
 .reset-pwd-button:hover {
-    background-color: #048247;
+    background-color: var(--rp-accent-hover);
+    box-shadow: 0 8px 20px var(--rp-accent-ring);
+}
+
+.reset-pwd-button:active {
+    transform: translateY(1px);
 }
 
 .reset-pwd-rules {
-    background-color: #f8f9fa;
-    padding: 15px;
-    border-radius: 4px;
     margin-bottom: 20px;
-    border-left: 3px solid #059652;
+    padding: 14px 16px;
+    border: 0;
+    border-left: 3px solid var(--rp-accent);
+    border-radius: 12px;
+    background-color: var(--rp-accent-soft);
+    color: #475569;
+    font-size: 0.82rem;
+}
+
+.reset-pwd-rules p {
+    margin: 0 0 6px;
+}
+
+.reset-pwd-rules strong {
+    color: #111827;
 }
 
 .reset-pwd-rules ul {
-    margin-bottom: 0;
-    padding-left: 20px;
+    margin: 0;
+    padding-left: 18px;
 }
 
 .reset-pwd-rules li {
-    margin-bottom: 5px;
+    margin-bottom: 3px;
 }
-/* Notifikasi Sukses */
+
+.reset-pwd-rules li:last-child {
+    margin-bottom: 0;
+}
+
+/* Notifikasi sukses */
 .reset-pwd-notification {
     position: fixed;
     top: 20px;
@@ -165,26 +274,23 @@
 }
 
 .reset-pwd-notification-content {
-    background-color: #059652;
-    color: white;
-    padding: 15px 20px;
-    border-radius: 5px;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
     display: flex;
     align-items: center;
     gap: 10px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    background-color: var(--i-primary, #006039);
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 500;
+    box-shadow: 0 10px 30px rgba(16, 24, 40, 0.18);
+}
+
+body.dinsos-body .reset-pwd-notification-content {
+    background-color: #e07a2e;
 }
 
 .reset-pwd-notification i {
-    font-size: 20px;
-}
-
-/* Validasi Gaya */
-.reset-pwd-group input.invalid {
-    border-color: #e74c3c;
-}
-
-.reset-pwd-group input.valid {
-    border-color: #059652;
+    font-size: 18px;
 }
 </style>
