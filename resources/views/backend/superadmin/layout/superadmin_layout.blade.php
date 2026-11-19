@@ -1391,6 +1391,13 @@
         @include('backend.superadmin.components.footer')
     </div>
 
+    {{-- Modal halaman sengaja ditempatkan di luar #main-wrapper.
+         .content-body membentuk stacking context sendiri (z-index: 0 sebagai
+         flex item), sehingga modal di dalamnya (z-index: 1050) selalu tertutup
+         .modal-backdrop yang Bootstrap tempelkan langsung ke <body>. Akibatnya
+         modal tampil tetapi tidak bisa diklik. --}}
+    @yield('modals')
+
     <!-- SCRIPTS -->
     {{-- Pustaka inti cukup dimuat sekali. Livewire navigate hanya mengganti
          <body>, jadi tanpa data-navigate-once script akan dieksekusi ulang dan

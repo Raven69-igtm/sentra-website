@@ -994,69 +994,6 @@
         </div>
     </div>
 
-    {{-- MODAL EDIT BERITA --}}
-    @foreach ($informasiList as $item)
-        <div class="modal fade" id="editBerita{{ $item->id_informasi }}" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg modal-dialog-centered">
-                <div class="modal-content">
-                    <form action="{{ route('superadmin.informasi.update', $item) }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        @method('PUT')
-
-                        <div class="modal-header">
-                            <h5 class="modal-title fw-bold">Edit Berita</h5>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-
-                        <div class="modal-body">
-                            <div class="form-group">
-                                <label class="fw-bold">Judul Informasi</label>
-                                <input type="text" name="judul" class="form-control" maxlength="100"
-                                    value="{{ $item->judul }}" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label class="fw-bold">Gambar Pendukung</label>
-                                <input type="file" name="gambar" class="form-control" accept="image/*">
-                                <small class="text-muted">Kosongkan bila gambar tidak diubah. Maksimal 2 MB.</small>
-
-                                @if ($item->gambar && file_exists(public_path('uploads/informasi/' . $item->gambar)))
-                                    <div class="d-flex align-items-center mt-2">
-                                        <img src="{{ asset('uploads/informasi/' . $item->gambar) }}"
-                                            alt="{{ $item->judul }}"
-                                            style="height: 56px; width: 78px; object-fit: cover; border-radius: 8px;"
-                                            class="me-3">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" name="hapus_gambar"
-                                                value="1" id="hapusGambar{{ $item->id_informasi }}">
-                                            <label class="form-check-label text-danger"
-                                                for="hapusGambar{{ $item->id_informasi }}">
-                                                Hapus gambar ini
-                                            </label>
-                                        </div>
-                                    </div>
-                                @endif
-                            </div>
-
-                            <div class="form-group mb-0">
-                                <label class="fw-bold">Deskripsi Informasi</label>
-                                <textarea name="deskripsi" class="form-control" rows="5" required>{{ $item->deskripsi }}</textarea>
-                            </div>
-                        </div>
-
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary btn-pill" data-dismiss="modal">Batal</button>
-                            <button type="submit" class="btn btn-oripio-primary btn-pill">
-                                <i class="fa fa-save me-1"></i> Simpan Perubahan
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    @endforeach
 </div>
 
 <script>
@@ -1141,4 +1078,73 @@
         });
     })();
 </script>
+@endsection
+
+{{-- MODAL EDIT BERITA
+     Dirender lewat @yield('modals') di layout agar berada di luar #main-wrapper.
+     Bila tetap di dalam .content-body, modal tertutup .modal-backdrop dan
+     tombol Simpan Perubahan tidak bisa diklik. --}}
+@section('modals')
+    @foreach ($informasiList as $item)
+        <div class="modal fade" id="editBerita{{ $item->id_informasi }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <form action="{{ route('superadmin.informasi.update', $item) }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        @method('PUT')
+
+                        <div class="modal-header">
+                            <h5 class="modal-title fw-bold">Edit Berita</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label class="fw-bold">Judul Informasi</label>
+                                <input type="text" name="judul" class="form-control" maxlength="100"
+                                    value="{{ $item->judul }}" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="fw-bold">Gambar Pendukung</label>
+                                <input type="file" name="gambar" class="form-control" accept="image/*">
+                                <small class="text-muted">Kosongkan bila gambar tidak diubah. Maksimal 2 MB.</small>
+
+                                @if ($item->gambar && file_exists(public_path('uploads/informasi/' . $item->gambar)))
+                                    <div class="d-flex align-items-center mt-2">
+                                        <img src="{{ asset('uploads/informasi/' . $item->gambar) }}"
+                                            alt="{{ $item->judul }}"
+                                            style="height: 56px; width: 78px; object-fit: cover; border-radius: 8px;"
+                                            class="me-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="hapus_gambar"
+                                                value="1" id="hapusGambar{{ $item->id_informasi }}">
+                                            <label class="form-check-label text-danger"
+                                                for="hapusGambar{{ $item->id_informasi }}">
+                                                Hapus gambar ini
+                                            </label>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+
+                            <div class="form-group mb-0">
+                                <label class="fw-bold">Deskripsi Informasi</label>
+                                <textarea name="deskripsi" class="form-control" rows="5" required>{{ $item->deskripsi }}</textarea>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary btn-pill" data-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-oripio-primary btn-pill">
+                                <i class="fa fa-save me-1"></i> Simpan Perubahan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endforeach
 @endsection
