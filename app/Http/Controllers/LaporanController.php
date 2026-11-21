@@ -6,30 +6,64 @@ use Illuminate\Http\Request;
 use App\Models\ActivityLog;
 use App\Models\Laporan;
 use Illuminate\Support\Facades\Auth;
+use App\Support\SearchHelper;
+use App\Support\LaporanSearchParser;
 
 class LaporanController extends Controller
 {
+    private function applyParsedDate($query, array $parsed): void
+    {
+        switch ($parsed['type']) {
+            case 'date':
+                $query->orWhereDate('created_at', $parsed['date']);
+                break;
+
+            case 'month':
+                $query->orWhere(function ($monthQuery) use ($parsed) {
+                    $monthQuery->whereMonth('created_at', $parsed['month']);
+
+                    if ($parsed['year']) {
+                        $monthQuery->whereYear('created_at', $parsed['year']);
+                    }
+                });
+                break;
+
+            case 'year':
+                $query->orWhereYear('created_at', $parsed['year']);
+                break;
+
+            case 'day':
+                $query->orWhereRaw('DAY(created_at) = ?', [$parsed['day']]);
+                break;
+        }
+    }
+
     public function laporan_selesai(Request $request)
     {
         if (Auth::user()->isAdminDinsos()) {
             return redirect()->route('dinsos.laporan.index', ['status' => 'selesai']);
         }
 
-        $query = Laporan::with('detail_pelapor')
+        $query = Laporan::with(['detail_pelapor', 'detail_penerima_manfaat', 'detail_terlapor'])
             ->forUser(Auth::user())
             ->whereIn('status', ['selesai', 'dirujuk']);
 
         $search = trim((string) $request->input('search', ''));
 
         if ($search !== '') {
-            $like = '%' . $search . '%';
+            $like = '%' . SearchHelper::escapeLike($search) . '%';
+            $parsedDate = LaporanSearchParser::parse($search);
 
-            $query->where(function ($q) use ($like) {
+            $query->where(function ($q) use ($like, $parsedDate) {
                 $q->where('id_laporan', 'like', $like)
                     ->orWhere('judul', 'like', $like)
                     ->orWhereHas('detail_pelapor', function ($pelapor) use ($like) {
                         $pelapor->where('nama', 'like', $like);
                     });
+
+                if ($parsedDate) {
+                    $this->applyParsedDate($q, $parsedDate);
+                }
             });
         }
 
@@ -83,21 +117,26 @@ public function laporan_show($id)
             return redirect()->route('dinsos.laporan.index');
         }
 
-        $query = Laporan::with('detail_pelapor')
+        $query = Laporan::with(['detail_pelapor', 'detail_penerima_manfaat', 'detail_terlapor'])
             ->forUser(Auth::user())
             ->whereIn('status', ['diproses', 'diterima']);
 
         $search = trim((string) $request->input('search', ''));
 
         if ($search !== '') {
-            $like = '%' . $search . '%';
+            $like = '%' . SearchHelper::escapeLike($search) . '%';
+            $parsedDate = LaporanSearchParser::parse($search);
 
-            $query->where(function ($q) use ($like) {
+            $query->where(function ($q) use ($like, $parsedDate) {
                 $q->where('id_laporan', 'like', $like)
                     ->orWhere('judul', 'like', $like)
                     ->orWhereHas('detail_pelapor', function ($pelapor) use ($like) {
                         $pelapor->where('nama', 'like', $like);
                     });
+
+                if ($parsedDate) {
+                    $this->applyParsedDate($q, $parsedDate);
+                }
             });
         }
 
@@ -114,6 +153,9 @@ public function laporan_show($id)
 
 public function selesai($id)
     {
+        // Penyelesaian laporan operasional memakai endpoint Dinsos sendiri.
+        abort_if(Auth::user()->isAdminDinsos(), 403, 'Admin Dinsos tidak dapat menyelesaikan laporan PPA.');
+
         try {
             $laporan = Laporan::forUser(Auth::user())->where('id_laporan', $id)->firstOrFail();
             
@@ -260,6 +302,12 @@ public function proseskan($id)
 
 public function update(Request $request, $id_laporan)
 {
+    // Edit data laporan operasional adalah wilayah Admin PPA. Admin Dinsos
+    // sudah dialihkan ke halaman detail Dinsos untuk edit(), jadi endpoint
+    // mutasi ini juga harus ditutup (termasuk laporan berstatus "dirujuk"
+    // yang sengaja terlihat di daftar Dinsos).
+    abort_if(Auth::user()->isAdminDinsos(), 403, 'Admin Dinsos tidak dapat mengubah laporan PPA.');
+
     try {
         $validatedData = $request->validate([
             'kategori' => 'required',
@@ -479,6 +527,10 @@ public function update(Request $request, $id_laporan)
 public function destroy($id)
 {
     $user = Auth::user();
+
+    // Sama seperti update(): Admin Dinsos tidak boleh menghapus laporan PPA,
+    // termasuk laporan rujukan yang memang tampil di panel Dinsos.
+    abort_if($user->isAdminDinsos(), 403, 'Admin Dinsos tidak dapat menghapus laporan PPA.');
 
     // Superadmin tidak berwenang menghapus laporan privat instansi (hanya audit aktivitas).
     abort_if($user->isSuperAdmin(), 403, 'Superadmin tidak memiliki kewenangan menghapus laporan.');

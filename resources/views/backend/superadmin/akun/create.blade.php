@@ -68,7 +68,7 @@
                                 <option value="admin_dinsos" {{ old('role') === 'admin_dinsos' ? 'selected' : '' }}>Admin Dinsos (Sosial & Rujukan)</option>
                                 <option value="superadmin" {{ old('role') === 'superadmin' ? 'selected' : '' }}>Superadmin (Akses Penuh Sistem)</option>
                                 <option value="user" {{ old('role') === 'user' ? 'selected' : '' }}>User (Masyarakat / Pelapor)</option>
-                                <option value="Pelapor Cepat" {{ old('role') === 'Pelapor Cepat' ? 'selected' : '' }}>Pelapor cepat</option>
+                                <option value="guest" {{ old('role') === 'guest' ? 'selected' : '' }}>Guest / Pelapor Cepat</option>
                                 @foreach ($roles as $r)
                                     @if (!in_array($r->name, ['superadmin', 'admin', 'admin_ppa', 'admin_dinsos', 'user', 'guest']))
                                         <option value="{{ $r->name }}" {{ old('role') === $r->name ? 'selected' : '' }}>{{ $r->display_name }}</option>
@@ -94,6 +94,7 @@
                             <label class="fw-bold d-block">Status Akun</label>
                             <div class="d-flex align-items-center" style="min-height: 44px;">
                                 <div class="form-check mb-0">
+                                    <input type="hidden" name="is_active" value="0">
                                     <input class="form-check-input" type="checkbox" name="is_active" id="isActiveCheck" value="1" {{ old('is_active', '1') == '1' ? 'checked' : '' }}>
                                     <label class="form-check-label fw-bold" for="isActiveCheck">
                                         Aktifkan akun segera

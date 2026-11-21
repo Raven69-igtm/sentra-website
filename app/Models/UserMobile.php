@@ -20,6 +20,7 @@ class UserMobile extends Authenticatable
         'email',
         'password',
         'role',
+        'is_active',
         'emerquest',
         'answquest',
         'otp',
@@ -30,7 +31,23 @@ class UserMobile extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'otp',
+        'otp_expiry',
+        'answquest',
+        'fcm_token',
     ];
+
+    public function canAccessMobile(): bool
+    {
+        return $this->is_active !== false
+            && in_array($this->role, Akun::MOBILE_ROLES, true);
+    }
+
+    public function canAccessWeb(): bool
+    {
+        return $this->is_active !== false
+            && in_array($this->role, Akun::WEB_ROLES, true);
+    }
 
     protected $casts = [
         'email_verified_at' => 'datetime',

@@ -4,7 +4,13 @@ namespace Tests\Feature;
 
 use App\Models\Akun;
 use App\Models\ChatMobile;
+use App\Models\DetailPelapor;
+use App\Models\DetailPenerimaManfaat;
+use App\Models\DetailTerlapor;
+use App\Models\Laporan;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /**
@@ -68,6 +74,7 @@ class LivewirePanelTest extends TestCase
             ->assertOk()
             ->assertSee('wire:navigate', false)
             ->assertSee('data-livewire-navigate', false)
+            ->assertSee('data-live-debounce="300"', false)
             ->assertSee('data-live-region="ppa-laporan-proses"', false)
             ->assertSee('data-live-reset', false);
 
@@ -75,13 +82,22 @@ class LivewirePanelTest extends TestCase
         $this->get(route('selesai'))
             ->assertOk()
             ->assertSee('data-livewire-navigate', false)
+            ->assertSee('data-live-debounce="300"', false)
             ->assertSee('data-live-region="ppa-laporan-selesai"', false);
 
         // Laporan cepat PPA.
         $this->get(route('laporan_cepat'))
             ->assertOk()
             ->assertSee('data-livewire-navigate', false)
+            ->assertSee('data-live-debounce="300"', false)
             ->assertSee('data-live-region="ppa-laporan-cepat"', false);
+
+        // Rekapan PPA memakai pencarian teks realtime yang sama.
+        $this->get(route('rekapan'))
+            ->assertOk()
+            ->assertSee('data-livewire-navigate', false)
+            ->assertSee('data-live-debounce="300"', false)
+            ->assertSee('data-live-region="rekapan-data"', false);
 
         // Daftar percakapan: klik dirender instan dari cache yang dikirim
         // bersama halaman, bukan lewat request/soft navigation.
@@ -89,6 +105,63 @@ class LivewirePanelTest extends TestCase
             ->assertOk()
             ->assertSee('data-live-region="ppa-chat-list"', false)
             ->assertSee('id="chat-prefetch"', false);
+    }
+
+    public function test_kolom_laporan_diproses_dan_selesai_selaras_dengan_rekapan(): void
+    {
+        $admin = $this->admin('admin_ppa', 'admin.ppa@sentra.com');
+        $this->actingAs($admin);
+
+        $prosesMarker = 'UJI-PROSES-' . strtoupper(Str::random(8));
+        Laporan::create([
+            'id_akun' => $admin->id_akun,
+            'kategori' => 'Kekerasan Fisik',
+            'status' => 'diproses',
+            'kecamatan' => $prosesMarker,
+        ]);
+        // Trigger before_laporan_insert_id membuat id_laporan sendiri.
+        $prosesId = DB::table('laporan')->where('kecamatan', $prosesMarker)->value('id_laporan');
+        $this->assertNotNull($prosesId, 'Laporan diproses gagal dibuat');
+
+        DetailPelapor::create(['id_laporan' => $prosesId, 'nama' => 'Pelapor Diproses']);
+        DetailPenerimaManfaat::create(['id_laporan' => $prosesId, 'nama' => 'Penerima Diproses']);
+        DetailTerlapor::create(['id_laporan' => $prosesId, 'nama' => 'Terlapor Diproses']);
+
+        $this->get(route('laporan_proses'))
+            ->assertOk()
+            ->assertSee('<th>No</th>', false)
+            ->assertSee('<th>ID Laporan</th>', false)
+            ->assertSee('<th>Kategori</th>', false)
+            ->assertSee('<th>Nama Penerima</th>', false)
+            ->assertSee('<th>Nama Terlapor</th>', false)
+            ->assertSee($prosesId)
+            ->assertSee('Pelapor Diproses')
+            ->assertSee('Penerima Diproses')
+            ->assertSee('Terlapor Diproses');
+
+        $selesaiMarker = 'UJI-SELESAI-' . strtoupper(Str::random(8));
+        Laporan::create([
+            'id_akun' => $admin->id_akun,
+            'kategori' => 'Kekerasan Fisik',
+            'status' => 'selesai',
+            'kecamatan' => $selesaiMarker,
+        ]);
+        $selesaiId = DB::table('laporan')->where('kecamatan', $selesaiMarker)->value('id_laporan');
+        $this->assertNotNull($selesaiId, 'Laporan selesai gagal dibuat');
+
+        DetailPelapor::create(['id_laporan' => $selesaiId, 'nama' => 'Pelapor Selesai']);
+        DetailPenerimaManfaat::create(['id_laporan' => $selesaiId, 'nama' => 'Penerima Selesai']);
+        DetailTerlapor::create(['id_laporan' => $selesaiId, 'nama' => 'Terlapor Selesai']);
+
+        $this->get(route('selesai'))
+            ->assertOk()
+            ->assertSee('<th>ID Laporan</th>', false)
+            ->assertSee('<th>Nama Penerima</th>', false)
+            ->assertSee('<th>Nama Terlapor</th>', false)
+            ->assertSee($selesaiId)
+            ->assertSee('Pelapor Selesai')
+            ->assertSee('Penerima Selesai')
+            ->assertSee('Terlapor Selesai');
     }
 
     public function test_halaman_dinsos_memakai_soft_navigation_dan_live_filter(): void
@@ -189,5 +262,28 @@ class LivewirePanelTest extends TestCase
             ->assertOk()
             ->assertSee('method="POST"', false)
             ->assertSee('_method', false);
+    }
+
+    public function test_logout_superadmin_mengakhiri_sesi_dengan_benar(): void
+    {
+        $superadmin = Akun::where('email', 'superadmin@sentra.com')->first();
+
+        if (! $superadmin) {
+            $superadmin = Akun::create([
+                'nama' => 'Superadmin Uji Logout',
+                'email' => 'superadmin.logout.' . random_int(1000, 9999) . '@sentra.test',
+                'notelp' => '0812000' . random_int(1000, 9999),
+                'password' => 'RahasiaUji123!',
+                'role' => 'superadmin',
+                'is_active' => true,
+            ]);
+        }
+
+        $this->actingAs($superadmin);
+
+        $this->post(route('logout'))
+            ->assertRedirect(route('index'));
+
+        $this->assertGuest();
     }
 }

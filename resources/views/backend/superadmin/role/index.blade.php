@@ -13,22 +13,22 @@
 
     @include('backend.superadmin.components.alerts')
 
-    <div class="card p-2">
+    <div class="card border-0 shadow-sm p-2" style="border-radius: 18px; border: 1px solid #F1F5F9 !important;">
         <div class="card-body p-3">
             <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
                 <div>
-                    <h5 class="fw-bold text-dark mb-1" style="font-size: 1.05rem;">Daftar Peran Pengguna</h5>
+                    <h5 class="fw-bold text-dark mb-1" style="font-size: 1.1rem; color: #0F172A;">Daftar Peran Pengguna</h5>
                     <p class="text-muted mb-0" style="font-size: 0.82rem;">
                         Total {{ $roles->count() }} peran terdaftar pada sistem.
                     </p>
                 </div>
-                <span class="badge badge-soft-green badge-pill-soft mt-2 mt-sm-0" style="font-size: 0.76rem;">
+                <span class="jigate-tag jigate-tag-green" style="font-size: 0.76rem;">
                     <i class="fa fa-shield me-1"></i> {{ $roles->count() }} Role
                 </span>
             </div>
 
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0 table-jigate">
                     <thead>
                         <tr>
                             <th style="width: 50px;">#</th>
@@ -45,37 +45,43 @@
                         @forelse ($roles as $index => $role)
                             <tr>
                                 <td class="text-muted fw-bold">{{ $index + 1 }}</td>
-                                <td><code class="text-muted" style="font-size: 0.8rem;">{{ $role->name }}</code></td>
+                                <td><code class="text-muted" style="font-size: 0.8rem; background: #F1F5F9; padding: 3px 8px; border-radius: 6px;">{{ $role->name }}</code></td>
                                 <td><span class="fw-bold text-dark" style="font-size: 0.88rem;">{{ $role->display_name }}</span></td>
                                 <td class="text-muted" style="font-size: 0.84rem;">{{ $role->description ?? '-' }}</td>
                                 <td class="text-center">
-                                    <span class="badge badge-soft-blue badge-pill-soft">{{ $role->users_count }} Pengguna</span>
+                                    <span class="jigate-tag jigate-tag-blue">{{ $role->users_count }} Pengguna</span>
                                 </td>
                                 <td class="text-center">
                                     @if ($role->name === 'superadmin')
-                                        <span class="badge-pill-soft badge-soft-green">Semua Akses</span>
+                                        <span class="jigate-tag jigate-tag-purple">Semua Akses</span>
                                     @else
-                                        <span class="badge-pill-soft badge-soft-blue">{{ $role->permissions_count }} Izin</span>
+                                        <span class="jigate-tag jigate-tag-cyan">{{ $role->permissions_count }} Izin</span>
                                     @endif
                                 </td>
                                 <td class="text-center">
                                     @if ($role->is_system)
-                                        <span class="badge-pill-soft badge-soft-gray" title="Role bawaan sistem tidak dapat dihapus">Sistem</span>
+                                        <span class="jigate-tag jigate-tag-gray" title="Role bawaan sistem tidak dapat dihapus">Sistem</span>
                                     @else
-                                        <span class="badge-pill-soft badge-soft-amber">Kustom</span>
+                                        <span class="jigate-tag jigate-tag-amber">Kustom</span>
                                     @endif
                                 </td>
                                 <td class="text-end">
                                     <div class="d-inline-flex align-items-center">
-                                        <a href="{{ route('superadmin.roles.edit', $role->id) }}" wire:navigate class="btn btn-oripio-light btn-pill" title="Edit Hak Akses" style="font-size: 0.78rem; padding: 6px 14px;">
-                                            <i class="fa fa-sliders me-1"></i> Atur Akses
-                                        </a>
+                                        @if (in_array($role->name, ['user', 'guest', 'Pelapor Cepat'], true))
+                                            <span class="jigate-tag jigate-tag-gray" title="Role ini hanya digunakan oleh aplikasi mobile">
+                                                <i class="fa fa-mobile-screen-button me-1"></i> Mobile Only
+                                            </span>
+                                        @else
+                                            <a href="{{ route('superadmin.roles.edit', $role->id) }}" wire:navigate class="btn-jigate-outline" title="Edit Hak Akses" style="font-size: 0.78rem; padding: 5px 12px;">
+                                                <i class="fa fa-sliders me-1"></i> Atur Akses
+                                            </a>
+                                        @endif
 
-                                        @if (!$role->is_system)
+                                        @if (!$role->is_system && !in_array($role->name, ['user', 'guest', 'Pelapor Cepat'], true))
                                             <form action="{{ route('superadmin.roles.destroy', $role->id) }}" method="POST" class="d-inline ms-1" onsubmit="return confirm('Apakah Anda yakin ingin menghapus role {{ $role->display_name }}?');">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="btn-circle-action text-danger" title="Hapus Role" style="width: 34px; height: 34px;">
+                                                <button type="submit" class="btn-circle-action text-danger" title="Hapus Role" style="width: 32px; height: 32px;">
                                                     <i class="fa fa-trash" style="font-size: 0.8rem;"></i>
                                                 </button>
                                             </form>

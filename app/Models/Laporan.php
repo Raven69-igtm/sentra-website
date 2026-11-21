@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -33,6 +34,21 @@ class Laporan extends Model
         'pengaduan_bencana' => 'Pengaduan Bencana',
         'permasalahan_sosial' => 'Permasalahan Sosial',
     ];
+
+    /**
+     * Laporan yang termasuk kategori PPA, termasuk laporan mobile yang
+     * tersimpan dengan kategori 'unset' dan belum memiliki layanan PJSRK.
+     */
+    public function scopePpa(Builder $query): Builder
+    {
+        return $query->where(function (Builder $q) {
+            $q->whereIn('kategori', self::PPA_CATEGORIES)
+                ->orWhere(function (Builder $mobile) {
+                    $mobile->where('kategori', 'unset')
+                        ->whereNull('layanan_pjsrk');
+                });
+        });
+    }
 
     protected $fillable = [
         'id_laporan',

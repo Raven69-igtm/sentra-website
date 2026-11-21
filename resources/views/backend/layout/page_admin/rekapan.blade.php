@@ -12,10 +12,45 @@
             'icon' => 'fa-folder-open',
         ])
 
-        {{-- FILTER & EXPORT --}}
+        {{-- FILTER PENCARIAN (server-side, realtime via live-region) --}}
+        <div class="filter-bar">
+            <form method="GET" action="{{ route('rekapan') }}" data-livewire-navigate data-live-debounce="300">
+                <div class="filter-grid">
+                    <div class="filter-field" style="flex: 2 1 260px;">
+                        <label for="searchInput">Pencarian</label>
+                        <input type="text" id="searchInput" name="search" value="{{ request('search') }}"
+                            class="form-control" placeholder="Cari ID laporan, nama, NIK, kategori...">
+                    </div>
+                    <div class="filter-field">
+                        <label for="filterStatus">Status</label>
+                        <select id="filterStatus" name="status" class="form-control">
+                            <option value="">Semua Status</option>
+                            <option value="selesai" {{ request('status') === 'selesai' ? 'selected' : '' }}>Selesai</option>
+                            @unless (Auth::user()->isAdminDinsos())
+                                <option value="dirujuk" {{ request('status') === 'dirujuk' ? 'selected' : '' }}>Dirujuk</option>
+                            @endunless
+                            @if (Auth::user()->isAdminDinsos())
+                                <option value="ditolak" {{ request('status') === 'ditolak' ? 'selected' : '' }}>Ditolak</option>
+                            @endif
+                        </select>
+                    </div>
+                    <div class="filter-field" style="flex: 1 1 100%; min-width: 0;">
+                        <div class="filter-actions" data-live-region="rekapan-actions"
+                            style="flex-wrap: wrap; justify-content: flex-end;">
+                            @if (request()->hasAny(['search', 'status']))
+                                <a href="{{ route('rekapan') }}" data-live-reset class="btn btn-light btn-pill"
+                                    style="white-space: nowrap;">Reset</a>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        {{-- EXPORT EXCEL (form terpisah, tidak ikut live-filter) --}}
         <div class="card mb-4">
             <div class="card-header">
-                <h4 class="card-title mb-1">Filter &amp; Ekspor</h4>
+                <h4 class="card-title mb-1">Ekspor Excel</h4>
                 <p class="mb-0 text-muted" style="font-size: .82rem;">
                     Pilih rentang tanggal lalu unduh rekap dalam format Excel
                 </p>
@@ -23,27 +58,8 @@
             <div class="card-body">
                 <form id="exportForm" method="POST" action="{{ route('rekapan.export') }}">
                     @csrf
-
                     <div class="filter-bar" style="box-shadow: none; border: 0; padding: 0;">
                         <div class="filter-grid">
-                            <div class="filter-field" style="flex: 2 1 260px;">
-                                <label for="searchInput">Cari Pelapor</label>
-                                <input type="text" id="searchInput" class="form-control"
-                                    placeholder="Cari nama / NIK pelapor...">
-                            </div>
-                            <div class="filter-field">
-                                <label for="filterStatus">Status</label>
-                                <select id="filterStatus" name="status" class="form-control">
-                                    <option value="">Semua Status</option>
-                                    <option value="selesai">Selesai</option>
-                                    @unless (Auth::user()->isAdminDinsos())
-                                        <option value="dirujuk">Dirujuk</option>
-                                    @endunless
-                                    @if (Auth::user()->isAdminDinsos())
-                                        <option value="ditolak">Ditolak</option>
-                                    @endif
-                                </select>
-                            </div>
                             <div class="filter-field">
                                 <label for="exportStartDate">Tanggal Awal</label>
                                 <input type="date" id="exportStartDate" name="start_date" class="form-control">
@@ -64,19 +80,19 @@
             </div>
         </div>
 
-        {{-- TABEL REKAPAN --}}
-        <div class="card">
+        {{-- TABEL REKAPAN — area live: filter menukar bagian ini saja --}}
+        <div class="card" data-live-region="rekapan-data">
             <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
                 <div>
                     <h4 class="card-title mb-1">Data Rekapan</h4>
                     <p class="mb-0 text-muted" style="font-size: .82rem;">
-                        Data yang ditampilkan: <span id="dataCount" class="fw-semibold">0</span>
+                        {{ $dataLaporan->count() }} data ditemukan
                     </p>
                 </div>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table id="rekapanTable" class="table table-hover nowrap mb-0" style="width:100%">
+                    <table class="table table-hover nowrap mb-0" style="width:100%">
                         <thead>
                             <tr>
                                 <th>ID Laporan</th>
@@ -98,7 +114,7 @@
                                     <td class="fw-semibold">{{ $p->id_laporan }}</td>
                                     <td>{{ $p->kategori }}</td>
                                     <td>@include('backend.components.status-pill', ['status' => $p->status])</td>
-                                    <td class="text-muted">{{ optional($p->created_at)->format('Y-m-d') }}</td>
+                                    <td class="text-muted">{{ optional($p->created_at)->format('d-m-Y') }}</td>
 
                                     <td>{{ $p->detail_pelapor->nik ?? '-' }}</td>
                                     <td>{{ $p->detail_pelapor->nama ?? '-' }}</td>

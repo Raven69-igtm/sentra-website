@@ -12,6 +12,19 @@ use Illuminate\Validation\Rule;
 
 class SuperadminRoleController extends Controller
 {
+    private const MOBILE_ONLY_ROLES = [
+        'user',
+        'guest',
+        'Pelapor Cepat',
+    ];
+
+    private function abortMobileOnlyRole(Role $role): void
+    {
+        if (in_array($role->name, self::MOBILE_ONLY_ROLES, true)) {
+            abort(403, 'Role aplikasi mobile tidak dapat diatur dari panel Superadmin.');
+        }
+    }
+
     public function index()
     {
         $roles = Role::withCount(['users', 'permissions'])->get();
@@ -28,16 +41,26 @@ class SuperadminRoleController extends Controller
 
     public function store(Request $request)
     {
+        // Normalisasi slug SEBELUM validasi agar aturan unique memeriksa
+        // nilai final yang benar-benar akan disimpan.
+        $request->merge([
+            'name' => Str::slug((string) $request->input('name'), '_'),
+        ]);
+
         $validated = $request->validate([
-            'name' => 'required|string|max:50|alpha_dash|unique:roles,name',
+            'name' => 'required|string|max:50|regex:/^[a-z0-9_]+$/|unique:roles,name',
             'display_name' => 'required|string|max:100',
             'description' => 'nullable|string|max:255',
             'permissions' => 'nullable|array',
             'permissions.*' => 'exists:permissions,id',
         ]);
 
+        if (in_array($validated['name'], self::MOBILE_ONLY_ROLES, true)) {
+            return back()->withInput()->with('error', 'Role aplikasi mobile tidak dapat dibuat atau diatur melalui panel Superadmin.');
+        }
+
         $role = Role::create([
-            'name' => Str::slug($validated['name'], '_'),
+            'name' => $validated['name'],
             'display_name' => $validated['display_name'],
             'description' => $validated['description'] ?? null,
             'is_system' => false,
@@ -56,6 +79,7 @@ class SuperadminRoleController extends Controller
     public function edit($id)
     {
         $role = Role::with('permissions')->findOrFail($id);
+        $this->abortMobileOnlyRole($role);
         $permissions = Permission::all()->groupBy('group');
         $assignedPermissionIds = $role->permissions->pluck('id')->toArray();
 
@@ -65,6 +89,7 @@ class SuperadminRoleController extends Controller
     public function update(Request $request, $id)
     {
         $role = Role::findOrFail($id);
+        $this->abortMobileOnlyRole($role);
 
         $validated = $request->validate([
             'display_name' => 'required|string|max:100',
@@ -88,6 +113,7 @@ class SuperadminRoleController extends Controller
     public function destroy($id)
     {
         $role = Role::withCount('users')->findOrFail($id);
+        $this->abortMobileOnlyRole($role);
 
         if ($role->is_system) {
             return back()->with('error', 'Role sistem bawaan tidak dapat dihapus.');

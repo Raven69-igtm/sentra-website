@@ -11,6 +11,8 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use App\Support\SearchHelper;
+use App\Support\LaporanSearchParser;
 
 class RekapanController extends Controller
 {
@@ -132,12 +134,52 @@ class RekapanController extends Controller
         }
 
         return $query
-            ->when($request->filled('search'), fn ($q) =>
-                $q->whereHas('detail_pelapor', fn ($sub) =>
-                    $sub->where('nama', 'like', "%{$request->search}%")
-                        ->orWhere('nik', 'like', "%{$request->search}%")
-                )
-            )
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $like = '%' . SearchHelper::escapeLike(trim((string) $request->search)) . '%';
+                $parsedDate = LaporanSearchParser::parse((string) $request->search);
+
+                $q->where(function ($w) use ($like, $parsedDate) {
+                    $w->where('id_laporan', 'like', $like)
+                        ->orWhere('kategori', 'like', $like)
+                        ->orWhere('status', 'like', $like)
+                        ->orWhereHas('detail_pelapor', fn ($p) =>
+                            $p->where('nama', 'like', $like)
+                                ->orWhere('nik', 'like', $like)
+                        )
+                        ->orWhereHas('detail_penerima_manfaat', fn ($p) =>
+                            $p->where('nama', 'like', $like)
+                                ->orWhere('nik', 'like', $like)
+                        )
+                        ->orWhereHas('detail_terlapor', fn ($t) =>
+                            $t->where('nama', 'like', $like)
+                                ->orWhere('nik', 'like', $like)
+                        );
+
+                    if (! $parsedDate) {
+                        return;
+                    }
+
+                    switch ($parsedDate['type']) {
+                        case 'date':
+                            $w->orWhereDate('created_at', $parsedDate['date']);
+                            break;
+                        case 'month':
+                            $w->orWhere(function ($monthQuery) use ($parsedDate) {
+                                $monthQuery->whereMonth('created_at', $parsedDate['month']);
+                                if ($parsedDate['year']) {
+                                    $monthQuery->whereYear('created_at', $parsedDate['year']);
+                                }
+                            });
+                            break;
+                        case 'year':
+                            $w->orWhereYear('created_at', $parsedDate['year']);
+                            break;
+                        case 'day':
+                            $w->orWhereRaw('DAY(created_at) = ?', [$parsedDate['day']]);
+                            break;
+                    }
+                });
+            })
             ->when($request->filled('start_date'), fn ($q) =>
                 $q->whereDate('created_at', '>=', $request->start_date)
             )

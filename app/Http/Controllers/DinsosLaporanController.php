@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
 use App\Models\Laporan;
+use App\Support\SearchHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -111,8 +112,11 @@ class DinsosLaporanController extends Controller
     {
         $laporan = $this->scopedQuery()->where('id_laporan', $id)->firstOrFail();
 
-        if (in_array($laporan->status, ['selesai', 'ditolak'], true)) {
-            return $this->errorResponse('Laporan yang sudah selesai/ditolak tidak dapat diproses.');
+        // Status yang boleh masuk/menetap di proses. Laporan "dirujuk" adalah
+        // rujukan PPA yang hanya dibaca di panel Dinsos, jadi tidak boleh
+        // diubah lewat endpoint ini.
+        if (!in_array($laporan->status, ['dikirim', 'diterima', 'diproses'], true)) {
+            return $this->errorResponse('Laporan ini tidak dapat diproses dari status saat ini.');
         }
 
         $statusLama = $laporan->status;
@@ -128,8 +132,10 @@ class DinsosLaporanController extends Controller
     {
         $laporan = $this->scopedQuery()->where('id_laporan', $id)->firstOrFail();
 
-        if (!in_array($laporan->status, ['diproses', 'diterima'], true)) {
-            return $this->errorResponse('Laporan harus diverifikasi terlebih dahulu sebelum diselesaikan.');
+        // Selesaikan hanya dari status "diproses". Status "diterima" masih
+        // menunggu verifikasi, sehingga harus melewati verifikasi/proses dulu.
+        if ($laporan->status !== 'diproses') {
+            return $this->errorResponse('Laporan harus diverifikasi dan diproses terlebih dahulu sebelum diselesaikan.');
         }
 
         $statusLama = $laporan->status;
@@ -152,8 +158,10 @@ class DinsosLaporanController extends Controller
 
         $laporan = $this->scopedQuery()->where('id_laporan', $id)->firstOrFail();
 
-        if (in_array($laporan->status, ['selesai', 'ditolak'], true)) {
-            return $this->errorResponse('Laporan yang sudah selesai/ditolak tidak dapat ditolak lagi.');
+        // Sama dengan proses(): rujukan PPA tidak boleh ditolak dari panel
+        // Dinsos karena akan mengeluarkannya dari rekap PPA.
+        if (!in_array($laporan->status, ['dikirim', 'diterima', 'diproses'], true)) {
+            return $this->errorResponse('Laporan ini tidak dapat ditolak dari status saat ini.');
         }
 
         $statusLama = $laporan->status;
@@ -175,7 +183,7 @@ class DinsosLaporanController extends Controller
         $search = trim((string) $request->input('search', ''));
 
         if ($search !== '') {
-            $like = '%' . $search . '%';
+            $like = '%' . SearchHelper::escapeLike($search) . '%';
 
             $query->where(function ($q) use ($like) {
                 $q->where('id_laporan', 'like', $like)
@@ -211,20 +219,21 @@ class DinsosLaporanController extends Controller
 
         if ($kecamatan !== '') {
             $lower = mb_strtolower($kecamatan);
+            $likeKecamatan = '%' . SearchHelper::escapeLike($lower) . '%';
 
             // Kecamatan bisa tersimpan di laporan, detail_pjsrk, alamat
             // kejadian, atau alamat pelapor. Semua dicocokkan (tanpa peduli
             // huruf besar/kecil) agar hasil filter sesuai lokasi di tabel.
-            $query->where(function ($q) use ($lower) {
+            $query->where(function ($q) use ($lower, $likeKecamatan) {
                 $q->whereRaw('LOWER(laporan.kecamatan) = ?', [$lower])
                     ->orWhereHas('detail_pjsrk', function ($pjsrk) use ($lower) {
                         $pjsrk->whereRaw('LOWER(kecamatan) = ?', [$lower]);
                     })
-                    ->orWhereHas('detail_kasus', function ($kasus) use ($lower) {
-                        $kasus->whereRaw('LOWER(tempat_kejadian) LIKE ?', ['%' . $lower . '%']);
+                    ->orWhereHas('detail_kasus', function ($kasus) use ($likeKecamatan) {
+                        $kasus->whereRaw('LOWER(tempat_kejadian) LIKE ?', [$likeKecamatan]);
                     })
-                    ->orWhereHas('detail_pelapor', function ($pelapor) use ($lower) {
-                        $pelapor->whereRaw('LOWER(alamat) LIKE ?', ['%' . $lower . '%']);
+                    ->orWhereHas('detail_pelapor', function ($pelapor) use ($likeKecamatan) {
+                        $pelapor->whereRaw('LOWER(alamat) LIKE ?', [$likeKecamatan]);
                     });
             });
         }

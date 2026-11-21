@@ -1,7 +1,7 @@
 {{-- NAV HEADER BRAND & LOGO (MATCHING IMAGE #1) --}}
-<div class="nav-header" style="background: #FFFFFF !important; border-bottom: 1px solid #EBECEF !important; border-right: 1px solid #EBECEF !important;">
+<div class="nav-header" style="background: var(--surface) !important; border-bottom: 1px solid var(--border) !important; border-right: 1px solid var(--border) !important;">
     <a href="{{ route('superadmin.dashboard') }}" wire:navigate class="brand-logo d-flex align-items-center px-3"
-        style="text-decoration: none; width: 100%; background: #FFFFFF !important;">
+        style="text-decoration: none; width: 100%; background: var(--surface) !important;">
         <div class="d-flex align-items-center">
             @if ($appLogo = \App\Models\SystemSetting::get('app_logo'))
                 <img src="{{ asset($appLogo) }}" alt="Logo"
@@ -24,39 +24,39 @@
     {{-- Tombol buka/tutup sidebar dipisah dari link brand agar klik tidak
          memicu navigasi ke dashboard. --}}
     <div class="nav-control" style="cursor: pointer;">
-        <div class="hamburger" style="color: #64748B;">
-            <span class="line" style="background: #64748B;"></span>
-            <span class="line" style="background: #64748B;"></span>
-            <span class="line" style="background: #64748B;"></span>
+        <div class="hamburger" style="color: var(--text-muted);">
+            <span class="line" style="background: var(--text-muted);"></span>
+            <span class="line" style="background: var(--text-muted);"></span>
+            <span class="line" style="background: var(--text-muted);"></span>
         </div>
     </div>
 </div>
 
-{{-- TOPBAR SUPERADMIN (MATCHING IMAGE #1 TOP BAR) --}}
-<div class="header" style="background: #FFFFFF !important; border-bottom: 1px solid #EBECEF !important;">
+{{-- TOPBAR SUPERADMIN (MATCHING JIGATE TOP BAR) --}}
+<div class="header" style="background: var(--surface) !important; border-bottom: 1px solid var(--border) !important;">
     <div class="header-content" style="padding: 0 24px;">
         <nav class="navbar navbar-expand h-100">
             <div class="collapse navbar-collapse justify-content-between h-100">
-                {{-- LEFT: MODERN SEARCH PILL WITH KBD SHORTCUT --}}
+                {{-- LEFT: MODERN PILL SEARCH (MATCHING JIGATE REFERENCE) --}}
                 <div class="header-left d-flex align-items-center">
                 </div>
 
-                {{-- RIGHT UTILITIES: USER PROFILE --}}
+                {{-- RIGHT UTILITIES: NOTIFICATIONS, APPS, USER PROFILE --}}
                 <ul class="navbar-nav header-right d-flex align-items-center mb-0">
                     {{-- USER PROFILE CAPSULE --}}
                     <li class="nav-item dropdown header-profile">
-                        <a class="nav-link d-flex align-items-center" href="#" role="button" data-toggle="dropdown" aria-expanded="false" style="padding: 6px 12px; border-radius: 9999px; background: #F8FAFC; border: 1px solid #E2E8F0;">
+                        <a class="nav-link d-flex align-items-center" href="#" role="button" data-toggle="dropdown" aria-expanded="false" style="padding: 4px 10px; border-radius: 9999px; background: var(--surface-muted); border: 1px solid var(--border);">
                             <div class="position-relative me-2">
-                                <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->nama ?? 'Superadmin Sentra') }}&background=006039&color=fff&bold=true&size=40" alt="Avatar" class="rounded-circle" style="width: 36px; height: 36px; object-fit: cover;">
-                                <span class="position-absolute bottom-0 end-0 p-1 bg-success border border-white rounded-circle" style="width: 9px; height: 9px;"></span>
+                                <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->nama ?? 'Superadmin Sentra') }}&background=059669&color=FFFFFF&bold=true&size=40" alt="Avatar" class="rounded-circle" style="width: 34px; height: 34px; object-fit: cover;">
+                                <span class="position-absolute bottom-0 end-0 p-1 bg-success border border-white rounded-circle" style="width: 8px; height: 8px;"></span>
                             </div>
                             <div class="d-none d-md-block text-start me-2">
-                                <span class="fw-bold text-dark d-block" style="font-size: 0.9rem; line-height: 1.15;">
-                                    {{ Auth::user()->nama ?? 'Sajibur Rahman' }}
+                                <span class="fw-bold text-dark d-block" style="font-size: 0.88rem; line-height: 1.15;">
+                                    {{ Auth::user()->nama ?? 'Superadmin' }}
                                 </span>
-                                <small class="text-muted" style="font-size: 0.75rem;">Superadmin</small>
+                                <small class="text-muted" style="font-size: 0.72rem;">Superadmin</small>
                             </div>
-                            <i class="fa fa-chevron-down text-muted" style="font-size: 0.75rem;"></i>
+                            <i class="fa fa-chevron-down text-muted" style="font-size: 0.7rem;"></i>
                         </a>
                         <div class="dropdown-menu dropdown-menu-right shadow-lg border-0 py-2" style="min-width: 230px; border-radius: 16px;">
                             <div class="px-3 py-2 border-bottom">
@@ -65,12 +65,6 @@
                             </div>
                             <a href="{{ route('superadmin.profile.edit') }}" wire:navigate class="dropdown-item py-2">
                                 <i class="fa fa-user text-muted me-2"></i> Profil Saya
-                            </a>
-                            <a href="{{ route('superadmin.settings.index') }}" wire:navigate class="dropdown-item py-2">
-                                <i class="fa fa-sliders text-muted me-2"></i> Settings
-                            </a>
-                            <a href="{{ route('superadmin.akun.index') }}" wire:navigate class="dropdown-item py-2">
-                                <i class="fa fa-users text-muted me-2"></i> Kelola Akun
                             </a>
                             <div class="dropdown-divider"></div>
                             <form method="POST" action="{{ route('logout') }}" id="superadmin-logout-form">
@@ -89,19 +83,42 @@
 
 <script data-navigate-once>
     function confirmSuperadminLogout() {
+        var rootStyle = getComputedStyle(document.documentElement);
+        var primary = rootStyle.getPropertyValue('--primary').trim();
+        var textMuted = rootStyle.getPropertyValue('--text-muted').trim();
+
         Swal.fire({
             title: 'Konfirmasi Logout',
             text: 'Apakah Anda ingin keluar dari Konsol Superadmin?',
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#006039',
-            cancelButtonColor: '#94A3B8',
+            confirmButtonColor: primary,
+            cancelButtonColor: textMuted,
             confirmButtonText: 'Ya, Logout',
             cancelButtonText: 'Batal',
             reverseButtons: true
         }).then((result) => {
             if (result.isConfirmed) {
-                document.getElementById('superadmin-logout-form').submit();
+                var form = document.getElementById('superadmin-logout-form');
+                if (!form) {
+                    window.location.href = '{{ route("login") }}';
+                    return;
+                }
+
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: new FormData(form),
+                    credentials: 'same-origin',
+                    redirect: 'follow'
+                }).then(function () {
+                    window.location.href = '{{ route("login") }}';
+                }).catch(function () {
+                    window.location.href = '{{ route("login") }}';
+                });
             }
         });
     }

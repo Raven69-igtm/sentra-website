@@ -28,46 +28,125 @@
     <!-- ORIPIO-INSPIRED MODERN CLEAN GREEN THEME -->
     <style>
         :root {
-            --oripio-bg: #F5F7FA;
-            --oripio-card: #FFFFFF;
-            --oripio-primary: #006039;
-            --oripio-primary-hover: #004d2e;
-            --oripio-mint: #10B981;
-            --oripio-mint-light: #E8F7EE;
-            --oripio-mint-subtle: #DCFCE7;
-            --oripio-text-main: #111827;
-            --oripio-text-muted: #64748B;
-            --oripio-border: #EBECEF;
-            --oripio-border-subtle: #F1F3F5;
-            --oripio-radius: 20px;
+            --bg: #F4F6FA;
+            --surface: #FFFFFF;
+            --surface-muted: #F8FAFC;
+            --border: #E6EAF0;
+
+            --text: #0F172A;
+            --text-muted: #64748B;
+
+            --primary: #059669;
+            --primary-hover: #047857;
+            --primary-soft: #ECFDF5;
+            --primary-ink: #065F46;
+
+            --success-bg: #ECFDF5;
+            --success-fg: #047857;
+            --warning-bg: #FEF3C7;
+            --warning-fg: #B45309;
+            --danger-bg: #FEE2E2;
+            --danger-fg: #B91C1C;
+            --info-bg: #E0F2FE;
+            --info-fg: #0369A1;
+
+            --radius: 16px;
+            --shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 8px 24px rgba(15, 23, 42, .06);
+            --shadow-ink: rgba(15, 23, 42, .08);
+
+            --primary-ring: rgba(5, 150, 105, .2);
+            --warning-gradient-start: #F59E0B;
+            --warning-gradient-end: #FBBF24;
+
+            --role-0: var(--primary-ink);
+            --role-1: var(--primary);
+            --role-2: var(--success-fg);
+            --role-3: var(--success-bg);
+            --role-4: var(--primary-soft);
+            --role-5: var(--info-bg);
+            --role-6: var(--info-fg);
+
+            --role-depth-0: #064E3B;
+            --role-depth-1: #065F46;
+            --role-depth-2: #047857;
+            --role-depth-3: #15803D;
+            --role-depth-4: #16A34A;
+            --role-depth-5: #22C55E;
+            --role-depth-6: #4ADE80;
+
+            --oripio-bg: var(--bg);
+            --oripio-card: var(--surface);
+            --oripio-primary: var(--primary);
+            --oripio-primary-hover: var(--primary-hover);
+            --oripio-brand: var(--primary-ink);
+            --oripio-mint: var(--primary);
+            --oripio-mint-light: var(--primary-soft);
+            --oripio-mint-subtle: var(--surface-muted);
+            --oripio-text-main: var(--text);
+            --oripio-text-muted: var(--text-muted);
+            --oripio-border: var(--border);
+            --oripio-border-subtle: var(--surface-muted);
+            --oripio-radius: 18px;
             --oripio-radius-sm: 12px;
             --oripio-pill: 9999px;
-            --oripio-shadow: 0 2px 14px rgba(16, 24, 40, 0.03);
-            --oripio-shadow-hover: 0 8px 24px rgba(16, 24, 40, 0.06);
+            --oripio-shadow: var(--shadow);
+            --oripio-shadow-hover: var(--shadow);
             --oripio-sidebar: 260px;
-            --oripio-header: 76px;
+            --oripio-header: 74px;
         }
 
         body {
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
-            background-color: var(--oripio-bg) !important;
-            color: var(--oripio-text-main) !important;
+            background-color: var(--bg) !important;
+            color: var(--text) !important;
             letter-spacing: -0.01em;
+        }
+
+        :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        .text-dark { color: var(--text) !important; }
+        .text-muted { color: var(--text-muted) !important; }
+        .text-warning { color: var(--warning-fg) !important; }
+        .bg-white { background-color: var(--surface) !important; }
+        .bg-danger { background-color: var(--danger-fg) !important; }
+        .bg-success { background-color: var(--success-fg) !important; }
+        .border { border-color: var(--border) !important; }
+        .border-white { border-color: var(--surface) !important; }
+        .progress { background-color: var(--border) !important; }
+
+        .sa-dashboard .progress-bar.bg-success {
+            background-color: var(--primary) !important;
+        }
+
+        .sa-dashboard .progress-bar.bg-warning {
+            background: linear-gradient(90deg, var(--warning-gradient-start), var(--warning-gradient-end)) !important;
+        }
+
+        .sa-dashboard .card:has(.fa-heartbeat) .col-sm-6:nth-child(3) .sa-metric .text-muted {
+            color: var(--warning-fg) !important;
+        }
+
+        .sa-dashboard .card:has(.fa-sliders-h) .badge-soft-rose {
+            background-color: var(--warning-bg) !important;
+            color: var(--warning-fg) !important;
         }
 
         /* HEADER & NAVBAR */
         .header {
-            background: #FFFFFF !important;
-            border-bottom: 1px solid var(--oripio-border) !important;
+            background: var(--surface) !important;
+            border-bottom: 1px solid var(--border) !important;
             height: var(--oripio-header) !important;
             padding-left: var(--oripio-sidebar);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+            box-shadow: var(--shadow) !important;
         }
 
         .nav-header {
-            background: #FFFFFF !important;
-            border-bottom: 1px solid var(--oripio-border) !important;
-            border-right: 1px solid var(--oripio-border) !important;
+            background: var(--surface) !important;
+            border-bottom: 1px solid var(--border) !important;
+            border-right: 1px solid var(--border) !important;
             height: var(--oripio-header) !important;
             width: var(--oripio-sidebar);
         }
@@ -109,61 +188,198 @@
 
         /* SIDEBAR MODERN LIGHT */
         .quixnav {
-            background: #FFFFFF !important;
-            border-right: 1px solid var(--oripio-border) !important;
+            background: var(--surface) !important;
+            border-right: 1px solid var(--border) !important;
             width: var(--oripio-sidebar);
             top: var(--oripio-header) !important;
             padding-top: 15px;
             box-shadow: none !important;
         }
 
-        /* SIDEBAR MENU — satu geometri untuk ikon & teks.
-           Semua item memakai struktur sama (<i> + <span.nav-text> [+ badge])
-           dengan `gap` tetap. Prefix #main-wrapper dipakai agar seluruh
-           aturan di bawah konsisten menang atas CSS tema (style.css), yang
-           memberi item aktif padding/margin/radius berbeda. */
-        #main-wrapper .quixnav .metismenu {
-            padding: 10px 12px !important;
+        /* Tema memaksa .quixnav menjadi position:absolute saat sidebar
+           ditutup (.menu-toggle). Tanpa override ini, rail ikon ikut
+           bergeser/naik ketika dashboard di-scroll. Kunci posisinya agar
+           sidebar tetap menempel di viewport pada kondisi apa pun. */
+        #main-wrapper .quixnav,
+        #main-wrapper.menu-toggle .quixnav {
+            position: fixed !important;
+            left: 0;
+            bottom: 0;
+            /* tema memberi height:100% (tinggi viewport penuh); dengan top
+               header, sidebar akan melampaui bawah viewport bila tidak
+               diset auto. */
+            height: auto;
         }
 
-        #main-wrapper .quixnav .metismenu > li > a {
+        /* ============================================================
+           SIDEBAR MENU — seluruh gaya dicakup oleh .sidebar-nav.
+           Header/logo/topbar tidak tersentuh. Selector selalu diawali
+           #main-wrapper agar menang atas CSS tema (style.css/quixnav.css).
+           ============================================================ */
+        /* Hanya area menu yang scroll. PerfectScrollbar tetap aktif pada
+           elemen yang sama, tetapi rail bawaan disembunyikan dan diganti
+           scrollbar native tipis agar tidak ada dua scrollbar. */
+        #main-wrapper .sidebar-nav {
+            display: flex !important;
+            flex-direction: column !important;
+            flex: 1 1 auto !important;
+            min-height: 0 !important;
+            padding: 8px 12px 16px !important;
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+            scrollbar-width: thin;
+            scrollbar-color: #CBD5E1 transparent;
+        }
+
+        #main-wrapper .sidebar-nav::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #main-wrapper .sidebar-nav::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #main-wrapper .sidebar-nav::-webkit-scrollbar-thumb {
+            background: #CBD5E1;
+            border-radius: 999px;
+        }
+
+        #main-wrapper .sidebar-nav > .ps__rail-y,
+        #main-wrapper .sidebar-nav > .ps__rail-x {
+            display: none !important;
+        }
+
+        #main-wrapper .sidebar-nav > .metismenu {
+            flex: 1 0 auto !important;
+            min-height: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            list-style: none !important;
+        }
+
+        /* Label seksi rata dengan tepi kiri kotak ikon (12px padding item). */
+        #main-wrapper .sidebar-nav .sidebar-section-label {
+            display: block !important;
+            margin: 24px 0 8px !important;
+            padding: 0 12px !important;
+            color: #64748B !important;
+            font-size: 11px !important;
+            font-weight: 600 !important;
+            line-height: 16px !important;
+            letter-spacing: 0.08em !important;
+            text-transform: uppercase !important;
+            list-style: none !important;
+        }
+
+        #main-wrapper .sidebar-nav .sidebar-section-label--first {
+            margin-top: 16px !important;
+        }
+
+        /* Seksi Account melekat di dasar area menu. */
+        #main-wrapper .sidebar-nav .sidebar-nav__account-start {
+            margin-top: auto !important;
+            padding-top: 8px !important;
+            border-top: 1px solid #E6EAF0 !important;
+        }
+
+        /* Item menu: tinggi 44px, radius 12px, gap ikon-teks 12px. */
+        #main-wrapper .sidebar-nav .metismenu > li > a {
+            position: relative !important;
             display: flex !important;
             align-items: center !important;
             justify-content: flex-start !important;
             gap: 12px !important;
-            padding: 11px 14px !important;
-            margin: 0 0 4px 0 !important;
-            border-radius: var(--oripio-radius-sm) !important;
-            color: #475569 !important;
-            font-size: 0.92rem !important;
+            height: 44px !important;
+            padding: 0 12px !important;
+            margin: 0 0 2px !important;
+            border-radius: 12px !important;
+            background-color: transparent !important;
+            color: #334155 !important;
+            font-size: 14px !important;
             font-weight: 500 !important;
-            line-height: 1.35 !important;
-            transition: background-color 0.2s ease, color 0.2s ease;
+            line-height: 20px !important;
+            text-decoration: none !important;
+            transition: background-color 150ms ease, color 150ms ease !important;
         }
 
-        /* Kotak ikon 20x20, glyph selalu terpusat lewat flex-center sehingga
-           posisi ikon tidak bergantung lebar glyph Font Awesome. Tema memberi
-           ikon `padding: 0 7px; top: -2px` (style.css:10322) — dinetralkan. */
-        #main-wrapper .quixnav .metismenu > li > a > i {
+        #main-wrapper .sidebar-nav .metismenu > li > a:hover,
+        #main-wrapper .sidebar-nav .metismenu > li > a:focus {
+            background-color: #F8FAFC !important;
+            color: #334155 !important;
+            padding: 0 12px !important;
+            margin-right: 0 !important;
+            border-radius: 12px !important;
+        }
+
+        #main-wrapper .sidebar-nav .metismenu > li.mm-active > a {
+            background-color: #ECFDF5 !important;
+            color: #065F46 !important;
+            font-weight: 600 !important;
+            padding: 0 12px !important;
+            margin-right: 0 !important;
+            border-radius: 12px !important;
+        }
+
+        /* Garis aksen aktif di tepi kiri sidebar. */
+        #main-wrapper .sidebar-nav .metismenu > li.mm-active > a::before {
+            content: "";
+            position: absolute;
+            left: -12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 20px;
+            border-radius: 0 3px 3px 0;
+            background-color: #059669;
+        }
+
+        #main-wrapper .sidebar-nav .metismenu > li > a:focus-visible {
+            outline: none !important;
+            outline-offset: 0 !important;
+            box-shadow: 0 0 0 3px rgba(5, 150, 105, .2) !important;
+        }
+
+        /* Ikon: <i> Font Awesome lama dipertahankan sebagai wrapper, glyph
+           font-nya dimatikan dan diganti SVG stroke 1.75. */
+        #main-wrapper .sidebar-nav .metismenu > li > a > i.sidebar-nav__icon {
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
             flex: 0 0 20px !important;
             width: 20px !important;
+            min-width: 20px !important;
             height: 20px !important;
             padding: 0 !important;
             margin: 0 !important;
             position: static !important;
             top: auto !important;
-            font-size: 1rem !important;
-            line-height: 1 !important;
+            font-size: 0 !important;
+            line-height: 0 !important;
             text-align: center !important;
-            color: #94A3B8 !important;
-            transition: color 0.2s ease;
+            color: #64748B !important;
+            transition: color 150ms ease !important;
         }
 
-        /* Teks mengisi sisa ruang → awal teks selalu x = 14 + 20 + 12 = 46px. */
-        #main-wrapper .quixnav .metismenu > li > a .nav-text {
+        #main-wrapper .sidebar-nav .metismenu > li > a > i.sidebar-nav__icon::before {
+            display: none !important;
+        }
+
+        #main-wrapper .sidebar-nav .sidebar-nav__icon svg {
+            display: block !important;
+            width: 20px !important;
+            height: 20px !important;
+            fill: none !important;
+            stroke: currentColor !important;
+            stroke-width: 1.75 !important;
+            stroke-linecap: round !important;
+            stroke-linejoin: round !important;
+        }
+
+        #main-wrapper .sidebar-nav .metismenu > li.mm-active > a > i.sidebar-nav__icon {
+            color: #059669 !important;
+        }
+
+        #main-wrapper .sidebar-nav .metismenu > li > a .nav-text {
             flex: 1 1 auto !important;
             min-width: 0;
             white-space: nowrap;
@@ -172,96 +388,105 @@
             color: inherit !important;
         }
 
-        /* Badge angka menempel kanan dengan jarak tetap 18px dari tepi pil,
-           sama untuk item bercaret (has-arrow) maupun tidak, agar kolom
-           angka rata kanan. */
-        #main-wrapper .quixnav .metismenu > li > a .badge {
+        #main-wrapper .sidebar-nav .metismenu > li > a .badge {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
             flex: 0 0 auto !important;
-            margin: 0 18px 0 auto !important;
-        }
-
-        /* State hover: geometri identik dengan state normal. */
-        #main-wrapper .quixnav .metismenu > li:hover > a,
-        #main-wrapper .quixnav .metismenu > li:focus > a {
-            background-color: #F8FAFC !important;
-            color: var(--oripio-text-main) !important;
-            padding: 11px 14px !important;
-            margin-right: 0 !important;
-            border-radius: var(--oripio-radius-sm) !important;
-        }
-
-        #main-wrapper .quixnav .metismenu > li:hover > a i {
-            color: var(--oripio-primary) !important;
-        }
-
-        /* State aktif: padding & margin disamakan (tema memakai 12px 18px
-           dan margin-right 8px, penyebab ikon menu aktif bergeser 4px). */
-        #main-wrapper .quixnav .metismenu > li.mm-active > a {
-            background-color: var(--oripio-mint-light) !important;
-            color: var(--oripio-primary) !important;
-            font-weight: 700 !important;
-            padding: 11px 14px !important;
-            margin-right: 0 !important;
-            border-radius: var(--oripio-radius-sm) !important;
-        }
-
-        #main-wrapper .quixnav .metismenu > li.mm-active > a i,
-        #main-wrapper .quixnav .metismenu > li.mm-active > a .nav-text {
-            color: var(--oripio-primary) !important;
-        }
-
-        /* Sub-menu (menu anak) — submenu Audit Aktivitas Sistem.
-           Override tema bawaan (sidebar gelap) agar cocok dengan sidebar
-           putih oripio: teks slate, hover mint lembut, aktif hijau primer. */
-        .quixnav .metismenu ul {
-            background: transparent !important;
-            padding: 0 0 6px !important;
-        }
-
-        /* Template asli mengecat ul sub-menu hijau pekat (#059652) saat
-           induknya aktif. Selector persis sama + ditulis setelah CSS
-           template = aturan ini yang menang. */
-        .quixnav .metismenu > li.mm-active ul,
-        .quixnav .metismenu > li.mm-active ul ul {
-            background: transparent !important;
-        }
-
-        .quixnav .metismenu ul li a {
-            display: block !important;
-            color: #64748B !important;
-            font-size: 0.85rem !important;
-            font-weight: 500 !important;
-            /* 46px = padding 14 + kolom ikon 20 + gap 12 → sejajar teks induk */
-            padding: 9px 14px 9px 46px !important;
-            border-radius: var(--oripio-radius-sm) !important;
-            transition: background-color 0.2s ease, color 0.2s ease;
-        }
-
-        .quixnav .metismenu ul li a:hover {
-            background-color: #F8FAFC !important;
-            color: var(--oripio-primary) !important;
-        }
-
-        .quixnav .metismenu ul li a.mm-active {
-            color: var(--oripio-primary) !important;
+            margin: 0 0 0 auto !important;
+            min-width: 26px !important;
+            height: 22px !important;
+            padding: 0 8px !important;
+            border-radius: 999px !important;
+            background-color: #F1F5F9 !important;
+            color: #475569 !important;
+            font-size: 12px !important;
             font-weight: 600 !important;
-            background-color: var(--oripio-mint-light) !important;
+            line-height: 1 !important;
+            font-variant-numeric: tabular-nums !important;
+            box-shadow: none !important;
         }
 
-        .quixnav .metismenu li > a.has-arrow::after {
-            color: #94A3B8;
+        #main-wrapper .sidebar-nav .metismenu > li.mm-active > a .badge {
+            background-color: #FFFFFF !important;
+            color: #065F46 !important;
         }
 
-        /* Label seksi (MAIN MENU / GENERAL) sejajar dengan awal teks menu:
-           12 (padding metismenu) + 46 (14 padding + 20 ikon + 12 gap). */
-        .sidebar-section-label {
-            font-size: 11px !important;
-            text-transform: uppercase !important;
-            letter-spacing: 0.06em !important;
-            font-weight: 700 !important;
-            color: #94A3B8 !important;
-            padding: 16px 12px 6px 46px !important;
-            list-style: none;
+        /* Chevron SVG menggantikan ::after bawaan tema. Rotasi mengikuti
+           aria-expanded / mm-active yang sudah dipakai metisMenu. */
+        #main-wrapper .sidebar-nav .metismenu > li > a.has-arrow::after {
+            content: none !important;
+            display: none !important;
+        }
+
+        #main-wrapper .sidebar-nav .sidebar-nav__chevron {
+            display: block !important;
+            flex: 0 0 16px !important;
+            width: 16px !important;
+            height: 16px !important;
+            color: #64748B;
+            transition: transform 150ms ease !important;
+        }
+
+        #main-wrapper .sidebar-nav .sidebar-nav__chevron svg {
+            display: block !important;
+            width: 16px !important;
+            height: 16px !important;
+            fill: none !important;
+            stroke: currentColor !important;
+            stroke-width: 2 !important;
+            stroke-linecap: round !important;
+            stroke-linejoin: round !important;
+        }
+
+        #main-wrapper .sidebar-nav .metismenu > li > a.has-arrow[aria-expanded="true"] .sidebar-nav__chevron,
+        #main-wrapper .sidebar-nav .metismenu > li.mm-active > a.has-arrow .sidebar-nav__chevron {
+            transform: rotate(90deg);
+        }
+
+        /* Submenu Audit Activity */
+        #main-wrapper .sidebar-nav .metismenu ul,
+        #main-wrapper .sidebar-nav .metismenu > li.mm-active ul,
+        #main-wrapper .sidebar-nav .metismenu > li.mm-active ul ul {
+            background: transparent !important;
+            margin: 0 !important;
+            padding: 2px 0 4px !important;
+        }
+
+        #main-wrapper .sidebar-nav .metismenu ul li a {
+            display: flex !important;
+            align-items: center !important;
+            height: 36px !important;
+            padding: 0 12px 0 44px !important;
+            margin: 0 0 2px !important;
+            border-radius: 10px !important;
+            background-color: transparent !important;
+            color: #475569 !important;
+            font-size: 13px !important;
+            font-weight: 500 !important;
+            line-height: 20px !important;
+            text-decoration: none !important;
+            transition: background-color 150ms ease, color 150ms ease !important;
+        }
+
+        #main-wrapper .sidebar-nav .metismenu ul li a:hover {
+            background-color: #F8FAFC !important;
+            color: #334155 !important;
+        }
+
+        #main-wrapper .sidebar-nav .metismenu ul li a.mm-active {
+            background-color: #ECFDF5 !important;
+            color: #065F46 !important;
+            font-weight: 600 !important;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #main-wrapper .sidebar-nav .metismenu > li > a,
+            #main-wrapper .sidebar-nav .metismenu ul li a,
+            #main-wrapper .sidebar-nav .sidebar-nav__icon,
+            #main-wrapper .sidebar-nav .sidebar-nav__chevron {
+                transition: none !important;
+            }
         }
 
         /* LAYOUT SHELL
@@ -276,7 +501,7 @@
 
         /* CONTENT BODY */
         .content-body {
-            background-color: var(--oripio-bg) !important;
+            background-color: var(--bg) !important;
             margin-left: var(--oripio-sidebar);
             flex: 1 0 auto;
             min-height: 0;
@@ -321,81 +546,73 @@
                 margin-left: 3.75rem;
             }
 
-            #main-wrapper.menu-toggle .quixnav .sidebar-section-label {
-                display: none !important;
-            }
-
-            #main-wrapper.menu-toggle .quixnav .metismenu > li > a .badge {
+            #main-wrapper.menu-toggle .sidebar-nav .sidebar-section-label {
                 display: none !important;
             }
 
             /* ---- Mode ikon-only (sidebar tertutup, desktop) ----
-               Rail selebar 3.75rem (60px). Padding 8px → pil 44px, dan
-               kolom ikon dibuat selebar pil sehingga ikon SELALU tepat
-               di tengah. Flyout hover bawaan tema (a melebar 250px)
-               dibatalkan agar label tidak menembus area konten; label
-               tetap tersedia lewat atribut title (tooltip). */
-            /* ---- Mode ikon-only (sidebar tertutup, desktop) ----
-               Rail 3.75rem (60px). Padding 8px → pil 44px; kolom ikon dibuat
-               selebar pil sehingga ikon SELALU tepat di tengah. Flyout hover
-               bawaan tema (a melebar 250px) dibatalkan agar label tidak
-               menembus area konten; label tetap ada lewat atribut title. */
-            #main-wrapper.menu-toggle .quixnav .metismenu {
-                padding: 10px 8px !important;
+               Rail 3.75rem (60px). Padding 8px → pil 44px; ikon SVG 20px
+               dipusatkan di dalamnya. Label, badge, chevron, dan garis aksen
+               disembunyikan; tooltip tetap memakai atribut title. */
+            #main-wrapper.menu-toggle .sidebar-nav {
+                padding: 8px !important;
             }
 
-            #main-wrapper.menu-toggle .quixnav .metismenu > li > a,
-            #main-wrapper.menu-toggle .quixnav .metismenu > li:hover > a,
-            #main-wrapper.menu-toggle .quixnav .metismenu > li.mm-active > a {
+            #main-wrapper.menu-toggle .sidebar-nav .metismenu > li > a,
+            #main-wrapper.menu-toggle .sidebar-nav .metismenu > li:hover > a,
+            #main-wrapper.menu-toggle .sidebar-nav .metismenu > li.mm-active > a {
                 width: auto !important;
-                padding: 11px 0 !important;
+                height: 44px !important;
+                padding: 0 !important;
                 margin-right: 0 !important;
                 gap: 0 !important;
                 justify-content: center !important;
             }
 
-            /* Ikon mengisi lebar pil (44px) → titik tengah ikon berimpit
-               dengan titik tengah pil, apa pun lebar glyph-nya. */
-            #main-wrapper.menu-toggle .quixnav .metismenu > li > a > i,
-            #main-wrapper.menu-toggle .quixnav .metismenu > li:hover > a > i,
-            #main-wrapper.menu-toggle .quixnav .metismenu > li.mm-active > a > i {
+            #main-wrapper.menu-toggle .sidebar-nav .metismenu > li > a > i.sidebar-nav__icon,
+            #main-wrapper.menu-toggle .sidebar-nav .metismenu > li:hover > a > i.sidebar-nav__icon,
+            #main-wrapper.menu-toggle .sidebar-nav .metismenu > li.mm-active > a > i.sidebar-nav__icon {
                 flex: 0 0 44px !important;
                 width: 44px !important;
                 min-width: 44px !important;
-                height: 22px !important;
+                height: 44px !important;
+                padding: 0 !important;
                 margin: 0 !important;
-                font-size: 1.05rem !important;
+                font-size: 0 !important;
+                line-height: 0 !important;
             }
 
-            #main-wrapper.menu-toggle .quixnav .metismenu > li > a .nav-text,
-            #main-wrapper.menu-toggle .quixnav .metismenu > li > a .badge {
+            #main-wrapper.menu-toggle .sidebar-nav .metismenu > li > a .nav-text,
+            #main-wrapper.menu-toggle .sidebar-nav .metismenu > li > a .badge,
+            #main-wrapper.menu-toggle .sidebar-nav .sidebar-nav__chevron,
+            #main-wrapper.menu-toggle .sidebar-nav .metismenu > li.mm-active > a::before {
                 display: none !important;
             }
 
             /* Mode ikon-only: sub-menu ikut disembunyikan agar tidak
                menembus area konten. */
-            #main-wrapper.menu-toggle .quixnav .metismenu ul {
+            #main-wrapper.menu-toggle .sidebar-nav .metismenu ul {
                 display: none !important;
             }
         }
 
         /* CARDS */
         .card {
-            background: var(--oripio-card) !important;
-            border: 1px solid var(--oripio-border) !important;
+            background: var(--surface) !important;
+            border: 1px solid var(--border) !important;
             border-radius: var(--oripio-radius) !important;
-            box-shadow: var(--oripio-shadow) !important;
+            box-shadow: var(--shadow) !important;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         .card:hover {
-            box-shadow: var(--oripio-shadow-hover) !important;
+            box-shadow: var(--shadow) !important;
             transform: translateY(-2px);
         }
 
         .card-header {
             background: transparent !important;
-            border-bottom: 1px solid var(--oripio-border-subtle) !important;
+            border-bottom: 1px solid var(--border) !important;
             padding: 20px 24px !important;
         }
 
@@ -524,37 +741,37 @@
         }
 
         .btn-oripio-primary {
-            background-color: var(--oripio-primary) !important;
-            color: #FFFFFF !important;
+            background-color: var(--primary) !important;
+            color: var(--surface) !important;
             border: none !important;
         }
 
         .btn-oripio-primary:hover {
-            background-color: var(--oripio-primary-hover) !important;
-            color: #FFFFFF !important;
+            background-color: var(--primary-hover) !important;
+            color: var(--surface) !important;
             transform: translateY(-1px);
         }
 
         .btn-oripio-light {
-            background-color: #F1F5F9 !important;
-            color: var(--oripio-text-main) !important;
-            border: 1px solid #E2E8F0 !important;
+            background-color: var(--surface) !important;
+            color: var(--primary-ink) !important;
+            border: 1px solid var(--primary) !important;
         }
 
         .btn-oripio-light:hover {
-            background-color: #E2E8F0 !important;
-            color: var(--oripio-text-main) !important;
+            background-color: var(--primary-soft) !important;
+            color: var(--primary-ink) !important;
         }
 
         .btn-oripio-dark {
-            background-color: #0F172A !important;
-            color: #FFFFFF !important;
+            background-color: var(--primary-ink) !important;
+            color: var(--surface) !important;
             border: none !important;
         }
 
         .btn-oripio-dark:hover {
-            background-color: #1E293B !important;
-            color: #FFFFFF !important;
+            background-color: var(--primary-hover) !important;
+            color: var(--surface) !important;
             transform: translateY(-1px);
         }
 
@@ -569,39 +786,39 @@
         }
 
         .badge-soft-green {
-            background-color: #DCFCE7 !important;
-            color: #059669 !important;
+            background-color: var(--success-bg) !important;
+            color: var(--success-fg) !important;
         }
 
         .badge-soft-rose {
-            background-color: #FEE2E2 !important;
-            color: #DC2626 !important;
+            background-color: var(--danger-bg) !important;
+            color: var(--danger-fg) !important;
         }
 
         .badge-soft-blue {
-            background-color: #E0F2FE !important;
-            color: #0284C7 !important;
+            background-color: var(--info-bg) !important;
+            color: var(--info-fg) !important;
         }
 
         .badge-soft-amber {
-            background-color: #FEF3C7 !important;
-            color: #D97706 !important;
+            background-color: var(--warning-bg) !important;
+            color: var(--warning-fg) !important;
         }
 
         .badge-soft-gray {
-            background-color: #F1F5F9 !important;
-            color: #64748B !important;
+            background-color: var(--surface-muted) !important;
+            color: var(--text-muted) !important;
         }
 
         /* MODERN SEARCH BAR */
         .search-pill-wrapper {
-            background-color: #F1F5F9;
+            background-color: var(--surface-muted);
             border-radius: var(--oripio-pill);
             padding: 8px 16px;
             display: flex;
             align-items: center;
             gap: 10px;
-            border: 1px solid #E2E8F0;
+            border: 1px solid var(--border);
             width: 320px;
             max-width: 100%;
             transition: all 0.2s ease;
@@ -613,9 +830,9 @@
         }
 
         .search-pill-wrapper:focus-within {
-            background-color: #FFFFFF;
-            border-color: var(--oripio-mint);
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+            background-color: var(--surface);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-ring);
         }
 
         .search-pill-wrapper input {
@@ -626,27 +843,27 @@
             background: transparent;
             outline: none;
             font-size: 0.88rem;
-            color: var(--oripio-text-main);
+            color: var(--text);
             margin-left: 0;
             padding: 0;
             line-height: 1.4;
         }
 
         .search-pill-wrapper input::placeholder {
-            color: #94A3B8;
+            color: var(--text-muted);
             opacity: 1;
         }
 
         .kbd-shortcut {
             flex: 0 0 auto;
-            background: #FFFFFF;
-            border: 1px solid #CBD5E1;
+            background: var(--surface);
+            border: 1px solid var(--border);
             border-radius: 6px;
             padding: 3px 7px;
             font-size: 0.72rem;
             font-weight: 600;
             line-height: 1;
-            color: #64748B;
+            color: var(--text-muted);
             white-space: nowrap;
         }
 
@@ -655,19 +872,122 @@
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: #FFFFFF;
-            border: 1px solid #E2E8F0;
+            background: var(--surface);
+            border: 1px solid var(--border);
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            color: #475569;
+            color: var(--text-muted);
             transition: all 0.2s ease;
         }
 
         .btn-circle-action:hover {
-            background: #F8FAFC;
-            color: var(--oripio-primary);
-            border-color: #CBD5E1;
+            background: var(--surface-muted);
+            color: var(--primary);
+            border-color: var(--border);
+        }
+
+        /* JIGATE DESIGN SYSTEM EXTENSIONS */
+        .stat-card-jigate {
+            background: var(--surface) !important;
+            border: 1px solid var(--surface-muted) !important;
+            border-radius: 18px !important;
+            padding: 22px 24px !important;
+            box-shadow: var(--shadow) !important;
+            transition: all 0.2s ease;
+            height: 100%;
+        }
+
+        .stat-card-jigate:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow) !important;
+        }
+
+        .stat-icon-badge {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+        }
+
+        .stat-icon-peach { background: var(--warning-bg); color: var(--warning-fg); }
+        .stat-icon-mint { background: var(--primary-soft); color: var(--success-fg); }
+        .stat-icon-purple { background: var(--info-bg); color: var(--info-fg); }
+        .stat-icon-amber { background: var(--warning-bg); color: var(--warning-fg); }
+        .stat-icon-cyan { background: var(--info-bg); color: var(--primary); }
+
+        .btn-jigate-primary {
+            background-color: var(--primary) !important;
+            color: var(--surface) !important;
+            border: none !important;
+            border-radius: 12px !important;
+            font-weight: 600 !important;
+            padding: 10px 20px !important;
+            font-size: 0.88rem !important;
+            box-shadow: var(--shadow) !important;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            text-decoration: none !important;
+        }
+
+        .btn-jigate-primary:hover {
+            background-color: var(--primary-hover) !important;
+            color: var(--surface) !important;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow) !important;
+        }
+
+        .btn-jigate-outline {
+            background-color: var(--surface) !important;
+            color: var(--text-muted) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 10px !important;
+            font-weight: 600 !important;
+            padding: 8px 16px !important;
+            font-size: 0.84rem !important;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+            text-decoration: none !important;
+        }
+
+        .btn-jigate-outline:hover {
+            background-color: var(--surface-muted) !important;
+            color: var(--text) !important;
+            border-color: var(--border) !important;
+        }
+
+        .jigate-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.74rem;
+            font-weight: 600;
+            padding: 3px 9px;
+            border-radius: 6px;
+            white-space: nowrap;
+        }
+
+        .jigate-tag-purple { background: var(--info-bg); color: var(--info-fg); border: 1px solid var(--border); }
+        .jigate-tag-blue { background: var(--info-bg); color: var(--primary-hover); border: 1px solid var(--border); }
+        .jigate-tag-amber { background: var(--warning-bg); color: var(--warning-fg); border: 1px solid var(--border); }
+        .jigate-tag-green { background: var(--success-bg); color: var(--success-fg); border: 1px solid var(--border); }
+        .jigate-tag-cyan { background: var(--info-bg); color: var(--info-fg); border: 1px solid var(--border); }
+        .jigate-tag-gray { background: var(--surface-muted); color: var(--text-muted); border: 1px solid var(--border); }
+
+        .custom-checkbox-jigate {
+            width: 17px;
+            height: 17px;
+            border-radius: 4px;
+            border: 1.5px solid var(--border);
+            cursor: pointer;
+            accent-color: var(--primary);
         }
 
         /* DATA TABLE REFINEMENT */
@@ -676,17 +996,17 @@
             text-transform: uppercase !important;
             letter-spacing: 0.05em !important;
             font-weight: 700 !important;
-            color: #94A3B8 !important;
-            border-bottom: 1px solid var(--oripio-border) !important;
+            color: var(--text-muted) !important;
+            border-bottom: 1px solid var(--border) !important;
             padding: 14px 12px !important;
-            background: #FAFBFD !important;
+            background: var(--surface-muted) !important;
             white-space: nowrap !important;
         }
 
         .table tbody td {
             padding: 14px 12px !important;
             vertical-align: middle !important;
-            border-bottom: 1px solid var(--oripio-border-subtle) !important;
+            border-bottom: 1px solid var(--border) !important;
             font-size: 0.88rem !important;
         }
 
@@ -724,7 +1044,7 @@
         }
 
         .table-hover tbody tr:hover {
-            background-color: #F8FAFC !important;
+            background-color: var(--surface-muted) !important;
         }
 
         .table-bordered {
@@ -738,12 +1058,12 @@
         }
 
         .table-striped tbody tr:nth-of-type(odd) {
-            background-color: #FAFBFD !important;
+            background-color: var(--surface-muted) !important;
         }
 
         .thead-primary th {
-            background: #F8FAFC !important;
-            color: #64748B !important;
+            background: var(--surface-muted) !important;
+            color: var(--text-muted) !important;
         }
 
         /* ============================================================
@@ -807,8 +1127,8 @@
             flex: 0 0 48px;
             margin-right: 14px;
             border-radius: 14px;
-            background: var(--oripio-mint-light);
-            color: var(--oripio-primary);
+            background: var(--primary-soft);
+            color: var(--primary);
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -820,12 +1140,12 @@
             font-size: 1.5rem;
             font-weight: 800;
             letter-spacing: -0.03em;
-            color: var(--oripio-text-main);
+            color: var(--text);
         }
 
         .page-head-subtitle {
             font-size: 0.9rem;
-            color: var(--oripio-text-muted);
+            color: var(--text-muted);
             line-height: 1.5;
         }
 
@@ -841,10 +1161,10 @@
         .custom-select {
             min-height: 44px;
             padding: 10px 14px;
-            border: 1px solid #E2E8F0;
+            border: 1px solid var(--border);
             border-radius: 12px;
-            background-color: #FFFFFF;
-            color: var(--oripio-text-main);
+            background-color: var(--surface);
+            color: var(--text);
             font-size: 0.88rem;
             box-shadow: none;
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -853,12 +1173,12 @@
         .form-control:focus,
         .form-select:focus,
         .custom-select:focus {
-            border-color: var(--oripio-mint);
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-ring);
         }
 
         .form-control::placeholder {
-            color: #94A3B8;
+            color: var(--text-muted);
         }
 
         textarea.form-control {
@@ -868,8 +1188,8 @@
 
         .form-control:disabled,
         .form-control[readonly] {
-            background-color: #F8FAFC;
-            color: #64748B;
+            background-color: var(--surface-muted);
+            color: var(--text-muted);
         }
 
         .form-group label,
@@ -877,7 +1197,7 @@
             margin-bottom: 6px;
             font-size: 0.84rem;
             font-weight: 700;
-            color: #334155;
+            color: var(--text);
         }
 
         .form-text,
@@ -889,25 +1209,25 @@
             width: 18px;
             height: 18px;
             margin-top: 2px;
-            border-color: #CBD5E1;
+            border-color: var(--border);
         }
 
         .form-check-input:checked {
-            background-color: var(--oripio-primary);
-            border-color: var(--oripio-primary);
+            background-color: var(--primary);
+            border-color: var(--primary);
         }
 
         .form-check-label {
             padding-left: 4px;
             font-size: 0.86rem;
-            color: #334155;
+            color: var(--text);
         }
 
         .input-group-text {
-            border: 1px solid #E2E8F0;
+            border: 1px solid var(--border);
             border-radius: 12px;
-            background: #F8FAFC;
-            color: #64748B;
+            background: var(--surface-muted);
+            color: var(--text-muted);
         }
 
         /* ============================================================
@@ -927,91 +1247,91 @@
         }
 
         .btn-primary {
-            background-color: var(--oripio-primary) !important;
-            border-color: var(--oripio-primary) !important;
-            color: #FFFFFF !important;
+            background-color: var(--primary) !important;
+            border-color: var(--primary) !important;
+            color: var(--surface) !important;
         }
 
         .btn-primary:hover,
         .btn-primary:focus {
-            background-color: var(--oripio-primary-hover) !important;
-            border-color: var(--oripio-primary-hover) !important;
+            background-color: var(--primary-hover) !important;
+            border-color: var(--primary-hover) !important;
         }
 
         .btn-outline-primary {
-            color: var(--oripio-primary) !important;
-            border-color: var(--oripio-primary) !important;
+            color: var(--primary) !important;
+            border-color: var(--primary) !important;
         }
 
         .btn-outline-primary:hover,
         .btn-outline-primary:focus {
-            background-color: var(--oripio-primary) !important;
-            border-color: var(--oripio-primary) !important;
-            color: #FFFFFF !important;
+            background-color: var(--primary) !important;
+            border-color: var(--primary) !important;
+            color: var(--surface) !important;
         }
 
         .btn-secondary {
-            background-color: #F1F5F9 !important;
-            border-color: #E2E8F0 !important;
-            color: #475569 !important;
+            background-color: var(--surface-muted) !important;
+            border-color: var(--border) !important;
+            color: var(--text-muted) !important;
         }
 
         .btn-secondary:hover,
         .btn-secondary:focus {
-            background-color: #E2E8F0 !important;
-            border-color: #CBD5E1 !important;
-            color: #334155 !important;
+            background-color: var(--border) !important;
+            border-color: var(--border) !important;
+            color: var(--text) !important;
         }
 
         .btn-outline-secondary {
-            color: #475569 !important;
-            border-color: #E2E8F0 !important;
+            color: var(--text-muted) !important;
+            border-color: var(--border) !important;
         }
 
         .btn-outline-secondary:hover,
         .btn-outline-secondary:focus {
-            background-color: #F1F5F9 !important;
-            border-color: #CBD5E1 !important;
-            color: #334155 !important;
+            background-color: var(--surface-muted) !important;
+            border-color: var(--border) !important;
+            color: var(--text) !important;
         }
 
         .btn-info {
-            background-color: #0284C7 !important;
-            border-color: #0284C7 !important;
-            color: #FFFFFF !important;
+            background-color: var(--primary) !important;
+            border-color: var(--primary) !important;
+            color: var(--surface) !important;
         }
 
         .btn-info:hover,
         .btn-info:focus {
-            background-color: #0369A1 !important;
-            border-color: #0369A1 !important;
+            background-color: var(--primary-hover) !important;
+            border-color: var(--primary-hover) !important;
         }
 
         .btn-outline-info {
-            color: #0284C7 !important;
-            border-color: #BAE6FD !important;
+            color: var(--primary) !important;
+            border-color: var(--border) !important;
         }
 
         .btn-outline-info:hover,
         .btn-outline-info:focus {
-            background-color: #E0F2FE !important;
-            color: #0369A1 !important;
+            background-color: var(--info-bg) !important;
+            color: var(--primary-hover) !important;
         }
 
         .btn-danger {
-            background-color: #DC2626 !important;
-            border-color: #DC2626 !important;
+            background-color: var(--danger-fg) !important;
+            border-color: var(--danger-fg) !important;
         }
 
         .btn-outline-danger {
-            color: #DC2626 !important;
-            border-color: #FECACA !important;
+            color: var(--danger-fg) !important;
+            border-color: var(--border) !important;
         }
 
         .btn-outline-danger:hover,
         .btn-outline-danger:focus {
-            background-color: #FEE2E2 !important;
-            color: #B91C1C !important;
+            background-color: var(--danger-bg) !important;
+            color: var(--danger-fg) !important;
         }
 
         /* ============================================================
@@ -1026,39 +1346,39 @@
         }
 
         .badge-primary {
-            background-color: #E0F2FE !important;
-            color: #0369A1 !important;
+            background-color: var(--info-bg) !important;
+            color: var(--info-fg) !important;
         }
 
         .badge-success {
-            background-color: #DCFCE7 !important;
-            color: #059669 !important;
+            background-color: var(--success-bg) !important;
+            color: var(--success-fg) !important;
         }
 
         .badge-warning {
-            background-color: #FEF3C7 !important;
-            color: #B45309 !important;
+            background-color: var(--warning-bg) !important;
+            color: var(--warning-fg) !important;
         }
 
         .badge-info {
-            background-color: #E0F2FE !important;
-            color: #0369A1 !important;
+            background-color: var(--info-bg) !important;
+            color: var(--info-fg) !important;
         }
 
         .badge-secondary {
-            background-color: #F1F5F9 !important;
-            color: #64748B !important;
+            background-color: var(--surface-muted) !important;
+            color: var(--text-muted) !important;
         }
 
         .badge-light {
-            background-color: #F8FAFC !important;
-            color: #475569 !important;
+            background-color: var(--surface-muted) !important;
+            color: var(--text-muted) !important;
         }
 
         .badge-outline-primary {
             background-color: transparent !important;
-            color: var(--oripio-primary) !important;
-            border: 1px solid #A7F3D0;
+            color: var(--primary) !important;
+            border: 1px solid var(--primary);
         }
 
         .badge-lg {
@@ -1077,37 +1397,37 @@
         .pagination .page-link {
             margin: 0 3px;
             padding: 8px 13px;
-            border: 1px solid #E2E8F0;
+            border: 1px solid var(--border);
             border-radius: 10px !important;
-            color: #475569;
+            color: var(--text-muted);
             font-size: 0.83rem;
             font-weight: 600;
-            background: #FFFFFF;
+            background: var(--surface);
         }
 
         .pagination .page-link:hover {
-            background: #F8FAFC;
-            border-color: #CBD5E1;
-            color: var(--oripio-primary);
+            background: var(--surface-muted);
+            border-color: var(--border);
+            color: var(--primary);
         }
 
         .pagination .page-item.active .page-link {
-            background: var(--oripio-primary);
-            border-color: var(--oripio-primary);
-            color: #FFFFFF;
+            background: var(--primary);
+            border-color: var(--primary);
+            color: var(--surface);
         }
 
         .pagination .page-item.disabled .page-link {
-            color: #CBD5E1;
-            background: #FFFFFF;
-            border-color: #F1F5F9;
+            color: var(--border);
+            background: var(--surface);
+            border-color: var(--surface-muted);
         }
 
         /* ============================================================
            NAV TABS
            ============================================================ */
         .nav-tabs {
-            border-bottom: 1px solid var(--oripio-border);
+            border-bottom: 1px solid var(--border);
             gap: 4px;
         }
 
@@ -1115,19 +1435,19 @@
             padding: 10px 16px;
             border: 0;
             border-radius: 10px;
-            color: #64748B;
+            color: var(--text-muted);
             font-size: 0.86rem;
             font-weight: 600;
         }
 
         .nav-tabs .nav-link:hover {
-            background: #F8FAFC;
-            color: var(--oripio-text-main);
+            background: var(--surface-muted);
+            color: var(--text);
         }
 
         .nav-tabs .nav-link.active {
-            background: var(--oripio-mint-light);
-            color: var(--oripio-primary);
+            background: var(--primary-soft);
+            color: var(--primary);
         }
 
         /* ============================================================
@@ -1144,18 +1464,18 @@
         }
 
         .app-alert-success {
-            background: #DCFCE7;
-            color: #065F46;
+            background: var(--success-bg);
+            color: var(--primary-ink);
         }
 
         .app-alert-danger {
-            background: #FEE2E2;
-            color: #991B1B;
+            background: var(--danger-bg);
+            color: var(--danger-fg);
         }
 
         .app-alert-info {
-            background: #E0F2FE;
-            color: #075985;
+            background: var(--info-bg);
+            color: var(--info-fg);
         }
 
         .app-alert .close {
@@ -1177,13 +1497,13 @@
         }
 
         .alert-info {
-            background-color: #E0F2FE;
-            color: #075985;
+            background-color: var(--info-bg);
+            color: var(--info-fg);
         }
 
         .alert-danger {
-            background-color: #FEE2E2;
-            color: #991B1B;
+            background-color: var(--danger-bg);
+            color: var(--danger-fg);
         }
 
         .modal-content {
@@ -1198,9 +1518,9 @@
 
         .dropdown-menu {
             padding: 8px;
-            border: 1px solid var(--oripio-border);
+            border: 1px solid var(--border);
             border-radius: 14px;
-            box-shadow: 0 12px 30px rgba(16, 24, 40, 0.08);
+            box-shadow: var(--shadow);
         }
 
         .dropdown-item {
@@ -1212,12 +1532,12 @@
 
         .dropdown-item:hover,
         .dropdown-item:focus {
-            background-color: #F8FAFC;
-            color: var(--oripio-primary);
+            background-color: var(--surface-muted);
+            color: var(--primary);
         }
 
         .dropdown-divider {
-            border-color: var(--oripio-border-subtle);
+            border-color: var(--border);
         }
 
         /* ============================================================
@@ -1225,7 +1545,7 @@
            ============================================================ */
         .perm-card {
             height: auto;
-            border: 1px solid var(--oripio-border) !important;
+            border: 1px solid var(--border) !important;
             border-radius: 16px !important;
             box-shadow: none !important;
             overflow: hidden;
@@ -1256,8 +1576,8 @@
 
         .perm-card .card-header {
             padding: 14px 18px !important;
-            background: #FAFBFD !important;
-            border-bottom: 1px solid var(--oripio-border-subtle) !important;
+            background: var(--surface-muted) !important;
+            border-bottom: 1px solid var(--border) !important;
         }
 
         .perm-card .card-body {
@@ -1272,7 +1592,7 @@
         }
 
         .perm-card .form-check:hover {
-            background: #F8FAFC;
+            background: var(--surface-muted);
         }
 
         .perm-card .form-check-input {
@@ -1367,6 +1687,29 @@
         html.superadmin-navigated #main-wrapper {
             opacity: 1 !important;
         }
+
+        /* ============================================================
+           LIVE FILTER — loading state & indikator pencarian realtime.
+           Hanya area hasil yang diredupkan; form filter tetap aktif agar
+           pengguna dapat melanjutkan mengetik.
+           ============================================================ */
+        .live-search-loading {
+            display: none;
+        }
+
+        html.live-filter-loading .live-search-loading {
+            display: inline-flex !important;
+            align-items: center;
+        }
+
+        html.live-filter-loading [data-live-region] {
+            opacity: 0.55;
+            transition: opacity 120ms ease;
+        }
+
+        html.live-filter-loading [data-live-region="audit-meta"] {
+            opacity: 1;
+        }
     </style>
     @livewireStyles
 </head>
@@ -1408,6 +1751,7 @@
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js" data-navigate-once></script>
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap4.min.js" data-navigate-once></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.3/sweetalert2.all.min.js" data-navigate-once></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts" data-navigate-once></script>
     @stack('scripts')
     <script src="{{ asset('admin/assets_2/vendor/global/global.min.js') }}" data-navigate-once></script>
     {{-- quixnav-init.js sengaja tidak ditandai: ia harus jalan ulang agar atribut
@@ -1558,6 +1902,7 @@
                 if (preloader) preloader.style.display = 'none';
 
                 reinitSuperadmin();
+
             });
 
             // ============ LIVE FILTER (tanpa refresh) ============
@@ -1576,6 +1921,9 @@
                     url.searchParams.set(key, value);
                 });
 
+                // Setiap perubahan kata kunci/filter selalu kembali ke halaman 1.
+                url.searchParams.delete('page');
+
                 return url.pathname + url.search;
             }
 
@@ -1587,16 +1935,58 @@
                 }
             }
 
+            function syncLiveFormFromUrl(url) {
+                var form = document.querySelector('form[data-livewire-navigate]');
+                if (!form) return;
+
+                var params = new URL(url, window.location.origin).searchParams;
+
+                form.querySelectorAll('input[name], select[name]').forEach(function (field) {
+                    if (field.type === 'submit' || field.type === 'button') return;
+
+                    var value = params.get(field.name);
+                    if (value === null) {
+                        if (field.tagName === 'SELECT') {
+                            field.value = '';
+                        } else {
+                            field.value = '';
+                        }
+                    } else {
+                        field.value = value;
+                    }
+                });
+            }
+
             var liveRegionToken = 0;
+
+            function startLiveLoading() {
+                document.documentElement.classList.add('live-filter-loading');
+                document.querySelectorAll('[data-live-region]').forEach(function (el) {
+                    el.setAttribute('aria-busy', 'true');
+                });
+            }
+
+            function stopLiveLoading() {
+                document.documentElement.classList.remove('live-filter-loading');
+                document.querySelectorAll('[data-live-region]').forEach(function (el) {
+                    el.removeAttribute('aria-busy');
+                });
+            }
 
             function partialLoad(url) {
                 var token = ++liveRegionToken;
+
+                startLiveLoading();
 
                 fetch(url, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
                     credentials: 'same-origin'
                 })
                     .then(function (response) {
+                        if (response.status === 419 || response.status === 401) {
+                            window.location.href = '{{ route("login") }}';
+                            return '';
+                        }
                         if (!response.ok) throw new Error('HTTP ' + response.status);
                         return response.text();
                     })
@@ -1621,13 +2011,19 @@
 
                         // Selaraskan URL address bar tanpa menambah riwayat.
                         try { window.history.replaceState(window.history.state, '', url); } catch (e) {}
+                        syncLiveFormFromUrl(url);
                     })
-                    .catch(function () { fallbackLiveNavigate(url); });
+                    .catch(function () { fallbackLiveNavigate(url); })
+                    .finally(function () {
+                        // Jangan hentikan indikator jika sudah ada request lebih baru.
+                        if (token === liveRegionToken) stopLiveLoading();
+                    });
             }
 
             function pageHasLiveRegions() {
                 return !!document.querySelector('[data-live-region]');
             }
+
 
             // Submit (tombol Filter / Enter) pada halaman live → update parsial.
             document.addEventListener('submit', function (event) {
@@ -1679,20 +2075,34 @@
                 }, delay));
             }
 
+            function liveDebounceDelay(form) {
+                var delay = parseInt(form.getAttribute('data-live-debounce') || '300', 10);
+
+                return isNaN(delay) ? 300 : Math.max(0, delay);
+            }
+
             document.addEventListener('input', function (event) {
                 var el = event.target;
                 var form = el && el.closest ? el.closest('form[data-livewire-navigate]') : null;
                 if (!form) return;
                 if (el.name) lastLiveInputName = el.name;
-                queueLiveFilterSubmit(form, 450);
+                queueLiveFilterSubmit(form, liveDebounceDelay(form));
+            });
+
+            document.addEventListener('search', function (event) {
+                var el = event.target;
+                var form = el && el.closest ? el.closest('form[data-livewire-navigate]') : null;
+                if (!form) return;
+                if (el.name) lastLiveInputName = el.name;
+                queueLiveFilterSubmit(form, liveDebounceDelay(form));
             });
 
             document.addEventListener('change', function (event) {
                 var el = event.target;
                 var form = el && el.closest ? el.closest('form[data-livewire-navigate]') : null;
                 if (!form) return;
-                // Dropdown & tanggal langsung diterapkan; input teks didebounce singkat.
-                queueLiveFilterSubmit(form, el.tagName === 'SELECT' || el.type === 'date' ? 0 : 150);
+                // Dropdown & tanggal langsung diterapkan; input teks memakai debounce.
+                queueLiveFilterSubmit(form, el.tagName === 'SELECT' || el.type === 'date' ? 0 : liveDebounceDelay(form));
             });
 
             // Klik pagination di dalam area live → update parsial juga (tanpa reload).
@@ -1700,6 +2110,18 @@
             document.addEventListener('click', function (event) {
                 if (!event.target || typeof event.target.closest !== 'function') return;
                 var link = event.target.closest('[data-live-region] .pagination a[href]');
+                if (!link) return;
+
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                partialLoad(link.href);
+            }, true);
+
+            // Tautan di dalam area live yang bertanda data-live-link (mis. chip
+            // filter aktif) juga diperbarui parsial tanpa reload halaman.
+            document.addEventListener('click', function (event) {
+                if (!event.target || typeof event.target.closest !== 'function') return;
+                var link = event.target.closest('[data-live-region] a[data-live-link][href]');
                 if (!link) return;
 
                 event.preventDefault();
@@ -1753,6 +2175,7 @@
             } else {
                 initMotion();
             }
+
         })();
     </script>
 </body>

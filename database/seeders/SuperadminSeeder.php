@@ -62,15 +62,6 @@ class SuperadminSeeder extends Seeder
             ]
         );
 
-        $roleAdmin = Role::updateOrCreate(
-            ['name' => 'admin'],
-            [
-                'display_name' => 'Admin Operasional',
-                'description' => 'Petugas operasional yang menangani laporan, rekapan, dan konsultasi chat.',
-                'is_system' => true,
-            ]
-        );
-
         Role::updateOrCreate(
             ['name' => 'user'],
             [
@@ -91,13 +82,6 @@ class SuperadminSeeder extends Seeder
 
         // Assign all permissions to superadmin
         $roleSuperadmin->permissions()->sync(Permission::pluck('id')->toArray());
-
-        // Assign operational permissions to admin
-        $adminPermissions = Permission::whereIn('name', [
-            'laporan.view', 'laporan.process', 'laporan.rujuk',
-            'chat.manage', 'rekapan.export'
-        ])->pluck('id')->toArray();
-        $roleAdmin->permissions()->sync($adminPermissions);
 
         // 3. SEED DEFAULT SUPERADMIN ACCOUNT
         $existingSuperadmin = Akun::where('email', 'superadmin@sentra.com')->first();

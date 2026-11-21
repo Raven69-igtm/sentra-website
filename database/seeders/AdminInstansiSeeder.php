@@ -77,6 +77,7 @@ class AdminInstansiSeeder extends Seeder
             $superadmin->update([
                 'nama' => 'Superadmin Sentra',
                 'role' => 'superadmin',
+                'kode_akun' => 'spadmin111',
                 'is_active' => true,
             ]);
         } else {
@@ -86,6 +87,7 @@ class AdminInstansiSeeder extends Seeder
                 'password' => 'Superadmin123!',
                 'notelp' => '081299998888',
                 'role' => 'superadmin',
+                'kode_akun' => 'spadmin111',
                 'is_active' => true,
             ]);
         }
@@ -99,6 +101,7 @@ class AdminInstansiSeeder extends Seeder
             $adminPPA->email = 'admin.ppa@sentra.com';
             $adminPPA->nama = 'Admin PPA (Sentra)';
             $adminPPA->role = 'admin_ppa';
+            $adminPPA->kode_akun = 'adminppa233';
             $adminPPA->password = 'AdminPPA123!';
             $adminPPA->is_active = true;
             $adminPPA->save();
@@ -109,6 +112,7 @@ class AdminInstansiSeeder extends Seeder
                 'password' => 'AdminPPA123!',
                 'notelp' => '081234567890',
                 'role' => 'admin_ppa',
+                'kode_akun' => 'adminppa233',
                 'is_active' => true,
             ]);
         }
@@ -119,6 +123,8 @@ class AdminInstansiSeeder extends Seeder
             $adminDinsos->update([
                 'nama' => 'Admin Dinsos',
                 'role' => 'admin_dinsos',
+                'kode_akun' => 'admindinsos433',
+                'password' => 'Dinsos123!',
                 'is_active' => true,
             ]);
         } else {
@@ -128,6 +134,7 @@ class AdminInstansiSeeder extends Seeder
                 'password' => 'Dinsos123!',
                 'notelp' => '081234567899',
                 'role' => 'admin_dinsos',
+                'kode_akun' => 'admindinsos433',
                 'is_active' => true,
             ]);
         }

@@ -29,6 +29,11 @@ class ActivityLog extends Model
         'user_agent',
     ];
 
+    public function akun()
+    {
+        return $this->belongsTo(Akun::class, 'akun_id', 'id_akun');
+    }
+
     public const TYPES = [
         'login'          => 'Login Sistem',
         'logout'         => 'Logout Sistem',
@@ -36,6 +41,137 @@ class ActivityLog extends Model
         'dokumen'        => 'Pengunggahan Dokumen',
         'data'           => 'Perubahan Data Administratif',
     ];
+
+    public const ROLE_LABELS = [
+        'superadmin'    => 'Superadmin',
+        'admin'         => 'Admin PPA',
+        'admin_ppa'     => 'Admin PPA',
+        'admin_dinsos'  => 'Admin Dinsos',
+        'user'          => 'User / Pelapor',
+        'guest'         => 'Guest',
+        'Pelapor Cepat' => 'Guest / Pelapor Cepat',
+    ];
+
+    public const STATUSES = [
+        'berhasil' => 'Berhasil',
+        'gagal'    => 'Gagal',
+    ];
+
+    public static function typeLabel(?string $type): string
+    {
+        if ($type === null || $type === '') {
+            return '-';
+        }
+
+        return self::TYPES[$type] ?? ucfirst(str_replace('_', ' ', $type));
+    }
+
+    public static function roleLabel(?string $role): string
+    {
+        if ($role === null || $role === '') {
+            return '-';
+        }
+
+        return self::ROLE_LABELS[$role] ?? ucfirst(str_replace('_', ' ', $role));
+    }
+
+    public static function statusLabel(?string $status): string
+    {
+        if ($status === null || $status === '') {
+            return '-';
+        }
+
+        return self::STATUSES[$status] ?? ucfirst($status);
+    }
+
+    public static function moduleLabel(?string $module): string
+    {
+        if ($module === null || $module === '') {
+            return '-';
+        }
+
+        return ucfirst(str_replace('_', ' ', $module));
+    }
+
+    /**
+     * Key activity_type yang labelnya cocok dengan keyword.
+     *
+     * @return array<int, string>
+     */
+    public static function typeKeysForKeyword(string $keyword): array
+    {
+        $needle = mb_strtolower($keyword);
+
+        return array_values(array_filter(array_keys(self::TYPES), function (string $key) use ($needle) {
+            return str_contains(mb_strtolower($key), $needle)
+                || str_contains(mb_strtolower(self::TYPES[$key]), $needle);
+        }));
+    }
+
+    /**
+     * Key module yang key/labelnya cocok dengan keyword.
+     *
+     * @return array<int, string>
+     */
+    public static function moduleKeysForKeyword(string $keyword): array
+    {
+        $needle = mb_strtolower($keyword);
+        $slugNeedle = str_replace([' ', '-'], '_', $needle);
+
+        $modules = self::query()
+            ->whereNotNull('module')
+            ->distinct()
+            ->pluck('module');
+
+        return $modules
+            ->filter(function ($module) use ($needle, $slugNeedle) {
+                $module = (string) $module;
+
+                return str_contains(mb_strtolower($module), $needle)
+                    || str_contains(mb_strtolower($module), $slugNeedle)
+                    || str_contains(mb_strtolower(self::moduleLabel($module)), $needle);
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Key role yang labelnya cocok dengan keyword.
+     *
+     * @return array<int, string>
+     */
+    public static function roleKeysForKeyword(string $keyword): array
+    {
+        $needle = mb_strtolower($keyword);
+        $slugNeedle = str_replace([' ', '-'], '_', $needle);
+
+        $keys = [];
+
+        foreach (self::ROLE_LABELS as $key => $label) {
+            if (str_contains(mb_strtolower($key), $needle)
+                || str_contains(mb_strtolower($label), $needle)
+                || str_contains(mb_strtolower($key), $slugNeedle)) {
+                $keys[] = $key;
+            }
+        }
+
+        return array_values(array_unique($keys));
+    }
+
+    /**
+     * Key status yang labelnya cocok dengan keyword.
+     *
+     * @return array<int, string>
+     */
+    public static function statusKeysForKeyword(string $keyword): array
+    {
+        $needle = mb_strtolower($keyword);
+
+        return array_values(array_filter(array_keys(self::STATUSES), function (string $key) use ($needle) {
+            return str_contains(mb_strtolower($key), $needle)
+                || str_contains(mb_strtolower(self::STATUSES[$key]), $needle);
+        }));
+    }
 
     /**
      * Catat aktivitas ke tabel activity_logs.

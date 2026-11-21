@@ -50,6 +50,15 @@
             display: none !important;
         }
 
+        .live-search-loading {
+            display: none;
+        }
+
+        html.live-filter-loading .live-search-loading {
+            display: inline-flex !important;
+            align-items: center;
+        }
+
         html.instansi-navigated #main-wrapper {
             opacity: 1 !important;
         }
@@ -317,6 +326,8 @@
                     url.searchParams.set(key, value);
                 });
 
+                url.searchParams.delete('page');
+
                 return url.pathname + url.search;
             }
 
@@ -330,8 +341,23 @@
 
             var liveRegionToken = 0;
 
+            function startAdminLiveLoading() {
+                document.documentElement.classList.add('live-filter-loading');
+                document.querySelectorAll('[data-live-region]').forEach(function(el) {
+                    el.setAttribute('aria-busy', 'true');
+                });
+            }
+
+            function stopAdminLiveLoading() {
+                document.documentElement.classList.remove('live-filter-loading');
+                document.querySelectorAll('[data-live-region]').forEach(function(el) {
+                    el.removeAttribute('aria-busy');
+                });
+            }
+
             function partialLoad(url) {
                 var token = ++liveRegionToken;
+                startAdminLiveLoading();
 
                 fetch(url, {
                         headers: {
@@ -376,6 +402,11 @@
                     })
                     .catch(function() {
                         fallbackLiveNavigate(url);
+                    })
+                    .finally(function() {
+                        if (token === liveRegionToken) {
+                            stopAdminLiveLoading();
+                        }
                     });
             }
 
@@ -446,7 +477,7 @@
                 var form = el && el.closest ? el.closest('form[data-livewire-navigate]') : null;
                 if (!form) return;
                 if (el.name) lastLiveInputName = el.name;
-                queueLiveFilterSubmit(form, 450);
+                queueLiveFilterSubmit(form, 300);
             });
 
             document.addEventListener('change', function(event) {
@@ -454,7 +485,7 @@
                 var form = el && el.closest ? el.closest('form[data-livewire-navigate]') : null;
                 if (!form) return;
                 // Dropdown & tanggal langsung diterapkan; input teks didebounce singkat.
-                queueLiveFilterSubmit(form, el.tagName === 'SELECT' || el.type === 'date' ? 0 : 150);
+                queueLiveFilterSubmit(form, el.tagName === 'SELECT' || el.type === 'date' ? 0 : 300);
             });
 
             // Pagination dan tombol Reset di dalam area live → update parsial juga.

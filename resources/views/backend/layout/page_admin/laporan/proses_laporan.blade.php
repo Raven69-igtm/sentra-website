@@ -11,7 +11,7 @@
 
         {{-- Filter server-side: otomatis diterapkan lewat live filter. --}}
         <div class="filter-bar mb-4">
-            <form method="GET" action="{{ route('laporan_proses') }}" data-livewire-navigate>
+            <form method="GET" action="{{ route('laporan_proses') }}" data-livewire-navigate data-live-debounce="300">
                 <div class="filter-grid">
                     <div class="filter-field" style="flex: 2 1 280px;">
                         <label for="searchNama">Cari Pelapor / No. Tiket</label>
@@ -35,10 +35,6 @@
                              setelah filter parsial tanpa reload. --}}
                         <div class="filter-actions" data-live-region="ppa-laporan-proses-actions"
                             style="flex-wrap: wrap; justify-content: flex-end;">
-                            <button type="submit" class="btn btn-instansi-primary btn-pill"
-                                style="white-space: nowrap;">
-                                <i class="fa fa-filter"></i> Filter
-                            </button>
                             @if (request()->hasAny(['search', 'status']))
                                 <a href="{{ route('laporan_proses') }}" data-live-reset class="btn btn-light btn-pill"
                                     style="white-space: nowrap;">Reset</a>
@@ -64,10 +60,13 @@
                         <thead>
                             <tr>
                                 <th>No</th>
-                                <th>Nama Pelapor</th>
-                                <th>Status</th>
+                                <th>ID Laporan</th>
                                 <th>Kategori</th>
+                                <th>Status</th>
                                 <th>Tanggal Laporan</th>
+                                <th>Nama Pelapor</th>
+                                <th>Nama Penerima</th>
+                                <th>Nama Terlapor</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -75,12 +74,15 @@
                             @forelse ($laporan as $index => $data)
                                 <tr>
                                     <th>{{ $index + 1 }}</th>
-                                    <td>{{ $data->detail_pelapor->nama ?? '-' }}</td>
+                                    <td class="fw-semibold">{{ $data->id_laporan }}</td>
+                                    <td>{{ $data->kategori != 'unset' ? $data->kategori : '-' }}</td>
                                     <td>
                                         @include('backend.components.status-pill', ['status' => $data->status])
                                     </td>
-                                    <td>{{ $data->kategori != 'unset' ? $data->kategori : '-' }}</td>
                                     <td>{{ $data->created_at->format('d-m-Y') }}</td>
+                                    <td>{{ $data->detail_pelapor->nama ?? '-' }}</td>
+                                    <td>{{ $data->detail_penerima_manfaat->nama ?? '-' }}</td>
+                                    <td>{{ $data->detail_terlapor->nama ?? '-' }}</td>
                                     <td>
                                         <div class="action-group">
                                             {{-- Form Proses --}}
@@ -126,7 +128,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6">
+                                    <td colspan="9">
                                         <div class="empty-state">
                                             <div class="empty-icon"><i class="fa fa-folder-open"></i></div>
                                             <p class="mb-0">Tidak ada laporan yang sesuai dengan filter.</p>

@@ -1,4 +1,4 @@
-<div class="footer" style="background: #FFFFFF; border-top: 1px solid #EBECEF;">
+<div class="footer" style="background: var(--surface); border-top: 1px solid var(--border);">
     <div class="copyright text-center py-3">
         <p class="mb-0 text-muted" style="font-size: 0.82rem;">
             <strong class="text-dark">{{ \App\Models\SystemSetting::get('app_name', 'SENTRA') }} Superadmin Console</strong>

@@ -14,7 +14,7 @@
 
         {{-- Filter server-side: otomatis diterapkan lewat live filter. --}}
         <div class="filter-bar mb-4">
-            <form method="GET" action="{{ route('laporan_cepat') }}" data-livewire-navigate>
+            <form method="GET" action="{{ route('laporan_cepat') }}" data-livewire-navigate data-live-debounce="300">
                 <div class="filter-grid">
                     <div class="filter-field" style="flex: 2 1 280px;">
                         <label for="searchNama">Cari Pelapor / No. Tiket</label>
@@ -36,10 +36,6 @@
                              setelah filter parsial tanpa reload. --}}
                         <div class="filter-actions" data-live-region="ppa-laporan-cepat-actions"
                             style="flex-wrap: wrap; justify-content: flex-end;">
-                            <button type="submit" class="btn btn-instansi-primary btn-pill"
-                                style="white-space: nowrap;">
-                                <i class="fa fa-filter"></i> Filter
-                            </button>
                             @if (request()->hasAny(['search', 'status']))
                                 <a href="{{ route('laporan_cepat') }}" data-live-reset class="btn btn-light btn-pill"
                                     style="white-space: nowrap;">Reset</a>

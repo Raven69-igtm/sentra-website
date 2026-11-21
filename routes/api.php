@@ -12,19 +12,22 @@ use App\Http\Controllers\PjsrkControllerMobile;
 
 
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+Route::middleware(['auth:sanctum', 'mobile.account'])->group(function () {
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+
+    Route::put('auth/edit/{id}', [AkunControllerMobile::class, 'update']);
+    Route::delete('auth/delete/{id}', [AkunControllerMobile::class, 'delete']);
+    Route::post('auth/updatenomor', [AkunControllerMobile::class, 'updatenomor']);
+    Route::post('auth/ubahpassword', [AkunControllerMobile::class, 'updatepassword']);
+});
 
 Route::get('auth/getdata', [AkunControllerMobile::class, 'index']);
 Route::post('auth/register', [AkunControllerMobile::class, 'register']);
 Route::post('auth/login', [AkunControllerMobile::class, 'login']);
 Route::post('auth/biometric', [AkunControllerMobile::class, 'loginBiometric']);
 Route::post('auth/email', [AkunControllerMobile::class, 'loginWithEmail']);
-Route::put('auth/edit/{id}', [AkunControllerMobile::class, 'update']);
-Route::delete('auth/delete/{id}', [AkunControllerMobile::class, 'delete']);
-Route::post('auth/updatenomor', [AkunControllerMobile::class, 'updatenomor']);
-Route::post('auth/ubahpassword', [AkunControllerMobile::class, 'updatepassword']);
 Route::post('auth/get-emergency-question', [AkunControllerMobile::class, 'getEmergencyQuestion']);
 Route::post('auth/emergency-check', [AkunControllerMobile::class, 'emergencyCheck']);
 

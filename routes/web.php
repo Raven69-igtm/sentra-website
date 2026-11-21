@@ -25,7 +25,6 @@ use App\Http\Controllers\Superadmin\SuperadminAuditController;
 use App\Http\Controllers\DinsosDashboardController;
 use App\Http\Controllers\DinsosLaporanController;
 use App\Http\Controllers\DinsosLaporanCepatController;
-use App\Models\ActivityLog;
 
 // =======================
 // ROUTE GUEST (BELUM LOGIN)
@@ -153,10 +152,10 @@ Route::controller(LaporanCepatController::class)->middleware('role:admin')->grou
         // Akun
         Route::post('/akun/{id}/reset-password', [SuperadminAkunController::class, 'resetPassword'])->name('akun.reset-password');
         Route::post('/akun/{id}/toggle-status', [SuperadminAkunController::class, 'toggleStatus'])->name('akun.toggle-status');
-        Route::resource('akun', SuperadminAkunController::class);
+        Route::resource('akun', SuperadminAkunController::class)->except(['show']);
 
         // Role & Permission
-        Route::resource('roles', SuperadminRoleController::class);
+        Route::resource('roles', SuperadminRoleController::class)->except(['show']);
 
         // Konfigurasi Sistem
         Route::get('/settings', [SuperadminSettingController::class, 'index'])->name('settings.index');
@@ -180,7 +179,9 @@ Route::controller(LaporanCepatController::class)->middleware('role:admin')->grou
 
     // Logout
     Route::post('/logout', function () {
-        ActivityLog::record('logout', 'Logout dari panel sistem.');
+        if (Auth::check()) {
+            Auth::user()->forceFill(['last_logout_at' => now()])->save();
+        }
 
         Auth::logout();
         request()->session()->invalidate();

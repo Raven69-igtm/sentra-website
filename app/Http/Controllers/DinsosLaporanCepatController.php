@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Laporan;
+use App\Support\SearchHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -46,7 +47,7 @@ class DinsosLaporanCepatController extends Controller
 
         // Pencarian lintas tiket, judul, nama pelapor, dan lokasi kejadian.
         if ($request->filled('search')) {
-            $search = '%' . trim($request->search) . '%';
+            $search = '%' . SearchHelper::escapeLike(trim((string) $request->search)) . '%';
             $query->where(function ($q) use ($search) {
                 $q->where('id_laporan', 'like', $search)
                     ->orWhere('judul', 'like', $search)

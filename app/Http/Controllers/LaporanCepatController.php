@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Laporan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Support\SearchHelper;
+use App\Support\LaporanSearchParser;
 
 /**
  * Halaman Admin PPA → Laporan Cepat.
@@ -38,9 +40,10 @@ class LaporanCepatController extends Controller
         $search = trim((string) $request->input('search', ''));
 
         if ($search !== '') {
-            $like = '%' . $search . '%';
+            $like = '%' . SearchHelper::escapeLike($search) . '%';
+            $parsedDate = LaporanSearchParser::parse($search);
 
-            $query->where(function ($q) use ($like) {
+            $query->where(function ($q) use ($like, $parsedDate) {
                 $q->where('id_laporan', 'like', $like)
                     ->orWhere('judul', 'like', $like)
                     ->orWhereHas('detail_pelapor', function ($pelapor) use ($like) {
@@ -49,6 +52,30 @@ class LaporanCepatController extends Controller
                     ->orWhereHas('detail_kasus', function ($kasus) use ($like) {
                         $kasus->where('tempat_kejadian', 'like', $like);
                     });
+
+                if (! $parsedDate) {
+                    return;
+                }
+
+                switch ($parsedDate['type']) {
+                    case 'date':
+                        $q->orWhereDate('created_at', $parsedDate['date']);
+                        break;
+                    case 'month':
+                        $q->orWhere(function ($monthQuery) use ($parsedDate) {
+                            $monthQuery->whereMonth('created_at', $parsedDate['month']);
+                            if ($parsedDate['year']) {
+                                $monthQuery->whereYear('created_at', $parsedDate['year']);
+                            }
+                        });
+                        break;
+                    case 'year':
+                        $q->orWhereYear('created_at', $parsedDate['year']);
+                        break;
+                    case 'day':
+                        $q->orWhereRaw('DAY(created_at) = ?', [$parsedDate['day']]);
+                        break;
+                }
             });
         }
 

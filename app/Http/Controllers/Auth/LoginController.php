@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Models\ActivityLog;
+use App\Models\Akun;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class LoginController extends Controller
 {
@@ -29,7 +31,7 @@ class LoginController extends Controller
 
         if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($throttleKey, $maxAttempts)) {
             $seconds = \Illuminate\Support\Facades\RateLimiter::availableIn($throttleKey);
-            ActivityLog::record('login', "Percobaan login ditolak: terlalu banyak percobaan gagal (email: {$credentials['email']}).", null, null, 'gagal');
+            $this->recordFailedLogin('throttled');
             return back()->withErrors([
                 'login' => "Terlalu banyak percobaan login salah. Akun ditangguhkan sementara selama {$seconds} detik.",
             ]);
@@ -43,16 +45,16 @@ class LoginController extends Controller
             // Cek status aktif
             if (isset($user->is_active) && !$user->is_active) {
                 Auth::logout();
-                ActivityLog::record('login', "Percobaan login ditolak: akun dinonaktifkan ({$user->nama}).", null, null, 'gagal', $user);
+                $this->recordFailedLogin('inactive', $user);
                 return back()->withErrors([
                     'login' => 'Akun Anda dinonaktifkan. Silakan hubungi Superadmin.',
                 ]);
             }
 
             // Cek role: hanya admin (admin, admin_ppa, admin_dinsos) dan superadmin yang boleh masuk web panel
-            if (!in_array($user->role, ['admin', 'admin_ppa', 'admin_dinsos', 'superadmin'], true)) {
+            if (! $user->canAccessWeb()) {
                 Auth::logout(); // Logout langsung
-                ActivityLog::record('login', "Percobaan login ditolak: role tidak diizinkan masuk panel web ({$user->role}).", null, null, 'gagal', $user);
+                $this->recordFailedLogin('role', $user);
                 return back()->withErrors([
                     'login' => 'Akses hanya khusus staf dan admin.',
                 ]);
@@ -60,7 +62,12 @@ class LoginController extends Controller
 
             $request->session()->regenerate();
 
-            ActivityLog::record('login', 'Login berhasil ke panel ' . ActivityLog::instansiForRole($user->role) . '.', null, null, 'berhasil', $user);
+            // Login berhasil tidak dicatat ke activity_logs (terlalu bising);
+            // metadata login disimpan langsung pada akun.
+            $user->forceFill([
+                'last_login_at' => now(),
+                'last_login_ip' => $request->ip(),
+            ])->save();
 
             if ($user->role === 'superadmin') {
                 // Penanda sekali-pakai: animasi pembuka brand (mask reveal)
@@ -80,10 +87,33 @@ class LoginController extends Controller
 
         \Illuminate\Support\Facades\RateLimiter::hit($throttleKey, 60);
 
-        ActivityLog::record('login', "Percobaan login gagal: email atau password salah (email: {$request->email}).", null, null, 'gagal');
+        $this->recordFailedLogin('credentials');
 
         return back()->withErrors([
             'login' => 'Email atau password Anda salah.',
         ]);
+    }
+
+    /**
+     * Catat login gagal dengan deduplikasi 5 menit per email + IP + alasan.
+     */
+    private function recordFailedLogin(string $reason, ?Akun $user = null): void
+    {
+        $email = mb_strtolower((string) ($user->email ?? request()->input('email')));
+        $ip = (string) request()->ip();
+        $cacheKey = 'audit:login-failed:' . sha1($reason . '|' . $email . '|' . $ip);
+
+        if (! Cache::add($cacheKey, true, now()->addMinutes(5))) {
+            return;
+        }
+
+        $description = match ($reason) {
+            'throttled' => "Percobaan login ditolak: terlalu banyak percobaan gagal (email: {$email}).",
+            'inactive'  => "Percobaan login ditolak: akun dinonaktifkan ({$user->nama}).",
+            'role'      => "Percobaan login ditolak: role tidak diizinkan masuk panel web ({$user->role}).",
+            default     => "Percobaan login gagal: email atau password salah (email: {$email}).",
+        };
+
+        ActivityLog::record('login', $description, null, null, 'gagal', $user);
     }
 }

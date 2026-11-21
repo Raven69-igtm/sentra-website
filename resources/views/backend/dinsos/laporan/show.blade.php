@@ -646,7 +646,7 @@
                                     </form>
                                 @endif
 
-                                @if (in_array($laporan->status, ['diproses', 'diterima'], true))
+                                @if ($laporan->status === 'diproses')
                                     <form method="POST"
                                         action="{{ route('dinsos.laporan.selesai', $laporan->id_laporan) }}">
                                         @csrf

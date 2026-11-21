@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\UserMobile;
+use App\Models\Akun;
 use DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -19,7 +20,10 @@ class AuthControllerMobile extends Controller
             'password' => 'required'
         ]);
 
-        $user = UserMobile::where('notelp', $credentials['notelp'])->first();
+        $user = UserMobile::where('notelp', $credentials['notelp'])
+            ->whereIn('role', Akun::MOBILE_ROLES)
+            ->where('is_active', true)
+            ->first();
 
         if (!$user || !Hash::check($credentials['password'], $user->password)) {
             return response()->json(['message' => 'No Telp atau password salah'], 401);
@@ -28,7 +32,7 @@ class AuthControllerMobile extends Controller
         return response()->json([
             'message' => 'Login berhasil',
             'user' => $user,
-            'token' => $user->createToken('mobile')->plainTextToken,
+            'token' => $user->createToken('mobile', ['mobile'])->plainTextToken,
         ]);
     }
 
@@ -43,6 +47,7 @@ class AuthControllerMobile extends Controller
 
         $data['password'] = Hash::make($data['password']);
         $data['role'] = 'user'; // Selalu set sebagai user, tidak bisa diubah dari client
+        $data['is_active'] = true;
         
         $user = UserMobile::create($data);
 
@@ -54,7 +59,10 @@ class AuthControllerMobile extends Controller
     {
         $request->validate(['notelp' => 'required']);
 
-        $user = UserMobile::where('notelp', $request->notelp)->first();
+        $user = UserMobile::where('notelp', $request->notelp)
+            ->whereIn('role', Akun::MOBILE_ROLES)
+            ->where('is_active', true)
+            ->first();
         if (!$user) {
             return response()->json(['message' => 'No Telp tidak ditemukan'], 404);
         }
@@ -75,6 +83,8 @@ class AuthControllerMobile extends Controller
         ]);
 
         $user = UserMobile::where('notelp', $data['notelp'])
+            ->whereIn('role', Akun::MOBILE_ROLES)
+            ->where('is_active', true)
             ->where('otp', $data['otp'])
             ->where('otp_expiry', '>', now())
             ->first();
@@ -84,6 +94,7 @@ class AuthControllerMobile extends Controller
         }
 
         $user->update(['password' => Hash::make($data['password']), 'otp' => null, 'otp_expiry' => null]);
+        $user->tokens()->delete();
 
         return response()->json(['message' => 'Password berhasil direset']);
     }
@@ -100,6 +111,8 @@ class AuthControllerMobile extends Controller
         try {
             $user = DB::table('akun')
                 ->where('notelp', $data['notelp'])
+                ->whereIn('role', Akun::MOBILE_ROLES)
+                ->where('is_active', true)
                 ->where('answquest', $data['answer'])
                 ->first();
 

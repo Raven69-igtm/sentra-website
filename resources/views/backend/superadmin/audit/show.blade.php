@@ -34,14 +34,14 @@
             <div class="d-flex flex-wrap align-items-center gap-3">
                 <div>
                     <span class="text-muted d-block mb-1" style="font-size: 0.76rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;">Jenis Aktivitas</span>
-                    <span class="badge-pill-soft badge-soft-blue badge-lg">{{ \App\Models\ActivityLog::TYPES[$activity->activity_type] ?? ucfirst($activity->activity_type) }}</span>
+                    <span class="badge-pill-soft badge-soft-blue badge-lg">{{ \App\Models\ActivityLog::typeLabel($activity->activity_type) }}</span>
                 </div>
                 <div>
                     <span class="text-muted d-block mb-1" style="font-size: 0.76rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;">Status Aktivitas</span>
                     @if ($activity->status === 'berhasil')
                         <span class="badge-pill-soft badge-soft-green badge-lg"><i class="fa fa-check me-1"></i> Berhasil</span>
                     @else
-                        <span class="badge-pill-soft badge-soft-red badge-lg"><i class="fa fa-times me-1"></i> {{ ucfirst($activity->status) }}</span>
+                        <span class="badge-pill-soft badge-soft-red badge-lg"><i class="fa fa-times me-1"></i> {{ \App\Models\ActivityLog::statusLabel($activity->status) }}</span>
                     @endif
                 </div>
             </div>
@@ -71,7 +71,7 @@
                         </div>
                         <div class="info-row">
                             <span class="info-label">Role</span>
-                            <span class="info-value">{{ $activity->role }}</span>
+                            <span class="info-value">{{ \App\Models\ActivityLog::roleLabel($activity->role) }}</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">Instansi</span>
@@ -79,7 +79,7 @@
                         </div>
                         <div class="info-row">
                             <span class="info-label">ID Akun</span>
-                            <span class="info-value">{{ $activity->akun_id ?? '-' }}</span>
+                            <span class="info-value">{{ $activity->akun?->kode_akun ?: ($activity->akun_id ?? '-') }}</span>
                         </div>
                     </div>
                 </div>
@@ -100,7 +100,7 @@
                     <div class="info-list">
                         <div class="info-row">
                             <span class="info-label">Modul</span>
-                            <span class="info-value">{{ $activity->module ? ucfirst($activity->module) : '-' }}</span>
+                            <span class="info-value">{{ \App\Models\ActivityLog::moduleLabel($activity->module) }}</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">Referensi</span>

@@ -168,6 +168,14 @@ a {
     transition: width 0.2s ease;
 }
 
+/* style.css menimpa posisi sidebar menjadi absolute saat .menu-toggle
+   (sidebar tertutup). Kunci rail agar tetap menempel di viewport dan tidak
+   ikut bergeser saat area dashboard di-scroll. */
+#main-wrapper .quixnav,
+#main-wrapper.menu-toggle .quixnav {
+    position: fixed !important;
+}
+
 #main-wrapper .quixnav .quixnav-scroll {
     overflow-y: auto;
     overflow-x: hidden;

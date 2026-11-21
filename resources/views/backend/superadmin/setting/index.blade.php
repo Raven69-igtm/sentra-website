@@ -921,6 +921,7 @@
                             <label class="fw-bold">Gambar Pendukung</label>
                             <input type="file" name="gambar" class="form-control" accept="image/*">
                             <small class="text-muted">Opsional, maksimal 2 MB.</small>
+                            <small class="text-danger gambar-error d-none" data-gambar-error></small>
                         </div>
                     </div>
                     <div class="col-12">
@@ -1039,6 +1040,49 @@
 
 <script>
     (function () {
+        var maxSize = 2 * 1024 * 1024;
+        var message = 'Ukuran gambar pendukung maksimal 2 MB.';
+
+        document.querySelectorAll('input[type="file"][name="gambar"]').forEach(function (input) {
+            var form = input.closest('form');
+            var error = input.parentElement.querySelector('[data-gambar-error]');
+
+            function validateImage() {
+                var file = input.files && input.files[0];
+                var invalid = file && file.size > maxSize;
+
+                input.setCustomValidity(invalid ? message : '');
+                input.dataset.invalid = invalid ? '1' : '0';
+
+                if (error) {
+                    error.textContent = invalid ? message : '';
+                    error.classList.toggle('d-none', !invalid);
+                }
+
+                if (invalid) {
+                    input.value = '';
+                    input.setCustomValidity(message);
+                }
+
+                return !invalid;
+            }
+
+            input.addEventListener('change', validateImage);
+
+            if (form) {
+                form.addEventListener('submit', function (event) {
+                    if (input.dataset.invalid === '1') {
+                        event.preventDefault();
+                        input.reportValidity();
+                    }
+                });
+            }
+        });
+    })();
+</script>
+
+<script>
+    (function () {
         var counters = {};
 
         document.querySelectorAll('[data-repeater]').forEach(function (root) {
@@ -1111,6 +1155,7 @@
                                 <label class="fw-bold">Gambar Pendukung</label>
                                 <input type="file" name="gambar" class="form-control" accept="image/*">
                                 <small class="text-muted">Kosongkan bila gambar tidak diubah. Maksimal 2 MB.</small>
+                                <small class="text-danger gambar-error d-none" data-gambar-error></small>
 
                                 @if ($item->gambar && file_exists(public_path('uploads/informasi/' . $item->gambar)))
                                     <div class="d-flex align-items-center mt-2">

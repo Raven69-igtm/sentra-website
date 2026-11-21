@@ -34,7 +34,7 @@
                         <div class="form-group mb-0">
                             <label class="fw-bold">Nama Slug (Identitas Sistem) <span class="text-danger">*</span></label>
                             <input type="text" name="name" class="form-control" value="{{ old('name') }}" required placeholder="Contoh: konselor_ahli">
-                            <small class="text-muted">Gunakan huruf kecil, angka, atau garis bawah tanpa spasi.</small>
+                            <small class="text-muted">Spasi/huruf besar akan dinormalisasi otomatis menjadi huruf kecil dan garis bawah. Contoh: "Konselor Ahli" menjadi <code>konselor_ahli</code>.</small>
                         </div>
                     </div>
                     <div class="col-md-6">

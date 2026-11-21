@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\UserMobile;
+use App\Models\Akun;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -12,10 +13,24 @@ use Log;
 
 class AkunControllerMobile extends Controller
 {
-    // Ambil semua akun
+    // Ambil semua akun (hanya field non-sensitif)
     public function index()
     {
-        $data = DB::table('akun')->get();
+        $data = DB::table('akun')
+            ->select([
+                'id_akun',
+                'nama',
+                'notelp',
+                'email',
+                'jenis_kelamin',
+                'alamat',
+                'role',
+                'is_active',
+                'created_at',
+                'updated_at',
+            ])
+            ->get();
+
         return response()->json($data);
     }
 
@@ -27,20 +42,19 @@ class AkunControllerMobile extends Controller
             'password' => 'required'
         ]);
 
-        $user = UserMobile::where('notelp', $credentials['notelp'])->first();
-        Log::info($credentials);  // Log data credentials untuk pengecekan
+        $user = UserMobile::where('notelp', $credentials['notelp'])
+            ->whereIn('role', Akun::MOBILE_ROLES)
+            ->where('is_active', true)
+            ->first();
 
         if (!$user || !Hash::check($credentials['password'], $user->password)) {
-            Log::info($user); // Log user yang ditemukan untuk pengecekan
-
             return response()->json(['message' => 'No Telp atau password salah'], 401);
-
         }
 
         return response()->json([
             'message' => 'Login berhasil',
             'user' => $user,
-            'token' => $user->createToken('mobile')->plainTextToken,
+            'token' => $user->createToken('mobile', ['mobile'])->plainTextToken,
         ]);
     }
     public function emergencyCheck(Request $request)
@@ -51,6 +65,8 @@ class AkunControllerMobile extends Controller
         ]);
 
         $user = UserMobile::where('notelp', $data['notelp'])
+            ->whereIn('role', Akun::MOBILE_ROLES)
+            ->where('is_active', true)
             ->where('answquest', $data['answer'])
             ->first();
 
@@ -68,6 +84,8 @@ class AkunControllerMobile extends Controller
 
         $akun = DB::table('akun')
             ->where('notelp', $request->notelp)
+            ->whereIn('role', Akun::MOBILE_ROLES)
+            ->where('is_active', true)
             ->select('emerquest')
             ->first();
 
@@ -91,16 +109,17 @@ class AkunControllerMobile extends Controller
         ]);
 
         Log::info('Email login attempt:', ['email' => $credentials['email']]);
-        $user = UserMobile::where('email', $credentials['email'])->first();
+        $user = UserMobile::where('email', $credentials['email'])
+            ->whereIn('role', Akun::MOBILE_ROLES)
+            ->where('is_active', true)
+            ->first();
         if (!$user) {
-            Log::info('User not found for email:', ['email' => $credentials['email']]);
-            return response()->json(['message' => 'Email tidak ditemukan'], 404);
+            return response()->json(['message' => 'Email atau akun tidak valid'], 401);
         }
-        Log::info('User found:', ['user' => $user]);
         return response()->json([
             'message' => 'Login dengan email berhasil',
             'user' => $user,
-            'token' => $user->createToken('mobile')->plainTextToken,
+            'token' => $user->createToken('mobile', ['mobile'])->plainTextToken,
         ], 200);
     }
     //Login Biometric
@@ -112,19 +131,19 @@ class AkunControllerMobile extends Controller
 
         Log::info('Biometric login attempt:', ['notelp' => $credentials['notelp']]);
 
-        $user = UserMobile::where('notelp', $credentials['notelp'])->first();
+        $user = UserMobile::where('notelp', $credentials['notelp'])
+            ->whereIn('role', Akun::MOBILE_ROLES)
+            ->where('is_active', true)
+            ->first();
 
         if (!$user) {
-            Log::info('User not found for notelp:', ['notelp' => $credentials['notelp']]);
-            return response()->json(['message' => 'Nomor telepon tidak ditemukan'], 404);
+            return response()->json(['message' => 'Nomor telepon atau akun tidak valid'], 401);
         }
-
-        Log::info('User found:', ['user' => $user]);
 
         return response()->json([
             'message' => 'Login biometrik berhasil',
             'user' => $user,
-            'token' => $user->createToken('mobile')->plainTextToken,
+            'token' => $user->createToken('mobile', ['mobile'])->plainTextToken,
         ], 200);
     }
 
@@ -135,7 +154,6 @@ class AkunControllerMobile extends Controller
             'notelp' => 'required|string|max:15',
             'nama' => 'required|string|max:50',
             'password' => 'required|string|min:6',
-            'role' => 'in:user,admin,guest',
             'emerquest' => 'nullable|string|max:100',
             'answquest' => 'nullable|string|max:100',
             'gender' => 'nullable|string|max:100',
@@ -145,12 +163,14 @@ class AkunControllerMobile extends Controller
         DB::beginTransaction();
 
         try {
-            // Insert akun baru dan dapatkan ID
+            // Insert akun baru dan dapatkan ID. Role tidak boleh ditentukan
+            // klien: akun mobile selalu dibuat sebagai 'user'.
             $newAccountId = DB::table('akun')->insertGetId([
                 'notelp' => $request->notelp,
                 'nama' => $request->nama,
                 'password' => Hash::make($request->password),
-                'role' => $request->role ?? 'guest',
+                'role' => 'user',
+                'is_active' => true,
                 'emerquest' => $request->emerquest,
                 'answquest' => $request->answquest,
                 'jenis_kelamin' => $request->gender,
@@ -207,6 +227,12 @@ class AkunControllerMobile extends Controller
     // Update akun
     public function update(Request $request, $id)
     {
+        $authUser = $request->user('sanctum');
+
+        if (!$authUser || (string) $authUser->getKey() !== (string) $id) {
+            return response()->json(['message' => 'Anda tidak berhak mengubah akun ini'], 403);
+        }
+
         $akun = DB::table('akun')->where('id_akun', $id)->first();
         if (!$akun) {
             return response()->json(['message' => 'Akun tidak ditemukan'], 404);
@@ -219,11 +245,12 @@ class AkunControllerMobile extends Controller
             'jenis_kelamin' => 'nullable|string|max:100',
             'alamat' => 'nullable|string|max:100',
             'password' => 'nullable|string|min:6',
-            'role' => 'nullable|in:user,admin,guest',
             'emerquest' => 'nullable|string|max:100',
             'answquest' => 'nullable|string|max:100',
         ]);
 
+        // Role tidak pernah diambil dari input klien agar tidak bisa
+        // dinaikkan (privilege escalation) lewat endpoint mobile.
         DB::table('akun')->where('id_akun', $id)->update([
             'notelp' => $request->notelp ?? $akun->notelp,
             'nama' => $request->nama ?? $akun->nama,
@@ -231,7 +258,6 @@ class AkunControllerMobile extends Controller
             'jenis_kelamin' => $request->jenis_kelamin ?? $akun->jenis_kelamin,
             'alamat' => $request->alamat ?? $akun->alamat,
             'password' => $request->password ? Hash::make($request->password) : $akun->password,
-            'role' => $request->role ?? $akun->role,
             'emerquest' => $request->emerquest ?? $akun->emerquest,
             'answquest' => $request->answquest ?? $akun->answquest,
             'updated_at' => now(),
@@ -241,14 +267,27 @@ class AkunControllerMobile extends Controller
     }
 
     // Hapus akun
-    public function delete($id)
+    public function delete(Request $request, $id)
     {
+        $authUser = $request->user('sanctum');
+
+        if (!$authUser || (string) $authUser->getKey() !== (string) $id) {
+            return response()->json(['message' => 'Anda tidak berhak menghapus akun ini'], 403);
+        }
+
         $akun = DB::table('akun')->where('id_akun', $id)->first();
         if (!$akun) {
             return response()->json(['message' => 'Akun tidak ditemukan'], 404);
         }
 
+        // Cabut token sebelum akun dihapus.
+        DB::table('personal_access_tokens')
+            ->whereIn('tokenable_type', [UserMobile::class, Akun::class])
+            ->where('tokenable_id', $akun->id_akun)
+            ->delete();
+
         DB::table('akun')->where('id_akun', $id)->delete();
+
         return response()->json(['message' => 'Akun berhasil dihapus']);
     }
     // Fungsi untuk update nomor telepon setelah verifikasi jawabannya
@@ -261,18 +300,22 @@ class AkunControllerMobile extends Controller
             'answquest' => 'required|string|max:100', 
         ]);
 
-        $akun = DB::table('akun')->where('notelp', $request->notelp_lama)->first();
+        $authUser = $request->user('sanctum');
 
-        if (!$akun) {
-            return response()->json(['message' => 'Nomor telepon lama tidak ditemukan'], 404);
+        if (!$authUser) {
+            return response()->json(['message' => 'Tidak terautentikasi'], 401);
         }
 
-        if ($akun->answquest !== $request->answquest) {
+        // Hanya boleh mengubah nomor milik akun yang sedang login.
+        if ((string) $authUser->notelp !== (string) $request->notelp_lama) {
+            return response()->json(['message' => 'Anda tidak berhak mengubah nomor ini'], 403);
+        }
+
+        if ($authUser->answquest !== $request->answquest) {
             return response()->json(['message' => 'Jawaban pertanyaan darurat salah'], 401);
         }
 
-        
-        DB::table('akun')->where('id_akun', $akun->id_akun)->update([
+        DB::table('akun')->where('id_akun', $authUser->getKey())->update([
             'notelp' => $request->notelp_baru,
             'updated_at' => now(),
         ]);
@@ -284,24 +327,38 @@ class AkunControllerMobile extends Controller
     {
         // Validasi input
         $request->validate([
-            'notelp' => 'required|string|max:15',        // Nomor telepon yang digunakan untuk update password
+            'notelp' => 'nullable|string|max:15',        // Opsional, harus cocok dengan akun login
             'password' => 'required|string|min:6',       // Password baru
             'password2' => 'required|string|min:6|same:password', // Konfirmasi password
         ]);
 
-        // Cari akun berdasarkan nomor telepon
-        $akun = DB::table('akun')->where('notelp', $request->notelp)->first();
+        $authUser = $request->user('sanctum');
 
-        // Cek apakah akun ditemukan
-        if (!$akun) {
-            return response()->json(['message' => 'Nomor telepon tidak ditemukan'], 404);
+        if (!$authUser) {
+            return response()->json(['message' => 'Tidak terautentikasi'], 401);
         }
 
-        // Update password akun dengan hash yang baru
-        DB::table('akun')->where('id_akun', $akun->id_akun)->update([
-            'password' => Hash::make($request->password), // Menggunakan Hash untuk mengamankan password
-            'updated_at' => now(), // Waktu update
+        // Jika klien mengirim nomor, pastikan itu nomor akun yang login.
+        if ($request->filled('notelp') && (string) $authUser->notelp !== (string) $request->notelp) {
+            return response()->json(['message' => 'Anda tidak berhak mengubah password akun ini'], 403);
+        }
+
+        DB::table('akun')->where('id_akun', $authUser->getKey())->update([
+            'password' => Hash::make($request->password),
+            'updated_at' => now(),
         ]);
+
+        // Cabut token lain agar sesi lama tidak bisa dipakai lagi.
+        $currentToken = $authUser->currentAccessToken();
+        $tokens = DB::table('personal_access_tokens')
+            ->whereIn('tokenable_type', [UserMobile::class, Akun::class])
+            ->where('tokenable_id', $authUser->getKey());
+
+        if ($currentToken && isset($currentToken->id)) {
+            $tokens->where('id', '!=', $currentToken->id);
+        }
+
+        $tokens->delete();
 
         return response()->json(['message' => 'Password berhasil diperbarui']);
     }

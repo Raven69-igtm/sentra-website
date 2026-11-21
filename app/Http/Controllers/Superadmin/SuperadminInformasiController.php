@@ -24,7 +24,7 @@ class SuperadminInformasiController extends Controller
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), $this->rules());
+        $validator = Validator::make($request->all(), $this->rules(), $this->messages());
 
         if ($validator->fails()) {
             return $this->backToSettings()->withErrors($validator)->withInput();
@@ -59,7 +59,7 @@ class SuperadminInformasiController extends Controller
 
     public function update(Request $request, Informasi $informasi)
     {
-        $validator = Validator::make($request->all(), $this->rules());
+        $validator = Validator::make($request->all(), $this->rules(), $this->messages());
 
         if ($validator->fails()) {
             return $this->backToSettings()->withErrors($validator)->withInput();
@@ -120,6 +120,18 @@ class SuperadminInformasiController extends Controller
             'deskripsi'    => ['required', 'string'],
             'gambar'       => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
             'hapus_gambar' => ['nullable', 'boolean'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function messages(): array
+    {
+        return [
+            'gambar.image' => 'File yang dipilih harus berupa gambar.',
+            'gambar.mimes' => 'Format gambar harus JPG, JPEG, PNG, GIF, atau WEBP.',
+            'gambar.max'   => 'Ukuran gambar pendukung maksimal 2 MB.',
         ];
     }
 

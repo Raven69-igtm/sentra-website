@@ -54,10 +54,6 @@
                              setelah filter parsial tanpa reload. --}}
                         <div class="filter-actions" data-live-region="dinsos-laporan-cepat-actions"
                             style="flex-wrap: wrap; justify-content: flex-end;">
-                            <button type="submit" class="btn btn-instansi-primary btn-pill"
-                                style="white-space: nowrap;">
-                                <i class="fa fa-filter"></i> Filter
-                            </button>
                             @if (request()->hasAny(['search', 'layanan', 'status']))
                                 <a href="{{ route('dinsos.laporan_cepat') }}" data-live-reset class="btn btn-light btn-pill"
                                     style="white-space: nowrap;">Reset</a>
