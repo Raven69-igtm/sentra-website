@@ -41,6 +41,10 @@ class ChatController extends Controller
             'sender_id' => (int) $chat->sender_id,
             'receiver_id' => (int) $chat->receiver_id,
             'message' => $chat->message,
+            'replied_to_id' => $chat->replied_to_id ? (int) $chat->replied_to_id : null,
+            // Teks pesan yang dibalas, supaya panel web bisa menampilkan
+            // kutipan seperti di aplikasi mobile.
+            'replied_message' => $chat->repliedTo?->message,
             'sent_at' => Carbon::parse($chat->sent_at)->toIso8601String(),
         ];
     }
@@ -64,11 +68,12 @@ class ChatController extends Controller
 
         $ids = $userIds->all();
 
-        $chats = ChatMobile::where(function ($q) use ($adminId, $ids) {
-            $q->where('sender_id', $adminId)->whereIn('receiver_id', $ids);
-        })->orWhere(function ($q) use ($adminId, $ids) {
-            $q->where('receiver_id', $adminId)->whereIn('sender_id', $ids);
-        })->orderBy('sent_at', 'asc')->get();
+        $chats = ChatMobile::with('repliedTo')
+            ->where(function ($q) use ($adminId, $ids) {
+                $q->where('sender_id', $adminId)->whereIn('receiver_id', $ids);
+            })->orWhere(function ($q) use ($adminId, $ids) {
+                $q->where('receiver_id', $adminId)->whereIn('sender_id', $ids);
+            })->orderBy('sent_at', 'asc')->get();
 
         $prefetch = [];
 
@@ -121,6 +126,44 @@ class ChatController extends Controller
         })->filter()->values();
     }
 
+    /**
+     * Terbitkan (atau pakai ulang dari sesi) token Sanctum khusus WebSocket
+     * untuk admin panel web agar koneksi WS terautentikasi secara kriptografis.
+     */
+    private function wsTokenFor(Request $request): string
+    {
+        $admin = Auth::user();
+        if (! $admin || ! method_exists($admin, 'createToken')) {
+            return '';
+        }
+
+        $sessionKey = 'sentra_ws_token_' . $admin->getKey();
+        $cached = (string) $request->session()->get($sessionKey, '');
+
+        if ($cached !== '' && str_contains($cached, '|')) {
+            [$tokenId, $plain] = explode('|', $cached, 2);
+            $exists = DB::table('personal_access_tokens')
+                ->where('id', (int) $tokenId)
+                ->where('token', hash('sha256', $plain))
+                ->where('tokenable_id', $admin->getKey())
+                ->exists();
+            if ($exists) {
+                return $cached;
+            }
+        }
+
+        // Hapus token WS lama agar tabel tidak menumpuk.
+        DB::table('personal_access_tokens')
+            ->where('tokenable_id', $admin->getKey())
+            ->where('name', 'web-chat-ws')
+            ->delete();
+
+        $plainTextToken = $admin->createToken('web-chat-ws', ['ws'])->plainTextToken;
+        $request->session()->put($sessionKey, $plainTextToken);
+
+        return $plainTextToken;
+    }
+
     public function index(Request $request)
     {
         if ($deny = $this->denyAdminDinsos($request)) {
@@ -130,8 +173,9 @@ class ChatController extends Controller
         $adminId = Auth::id();
         $users = $this->getConversationList($adminId);
         $chatPrefetch = $this->getChatPrefetch($adminId, $users->pluck('id_akun'));
+        $wsToken = $this->wsTokenFor($request);
 
-        return view('backend.layout.page_admin.chat', compact('users', 'adminId', 'chatPrefetch'));
+        return view('backend.layout.page_admin.chat', compact('users', 'adminId', 'chatPrefetch', 'wsToken'));
     }
 
     public function show(Request $request, $userId)
@@ -147,11 +191,12 @@ class ChatController extends Controller
             ->where('is_read', 0)
             ->update(['is_read' => 1]);
 
-        $chats = ChatMobile::where(function ($q) use ($adminId, $userId) {
-            $q->where('sender_id', $adminId)->where('receiver_id', $userId);
-        })->orWhere(function ($q) use ($adminId, $userId) {
-            $q->where('sender_id', $userId)->where('receiver_id', $adminId);
-        })->orderBy('sent_at', 'asc')->get();
+        $chats = ChatMobile::with('repliedTo')
+            ->where(function ($q) use ($adminId, $userId) {
+                $q->where('sender_id', $adminId)->where('receiver_id', $userId);
+            })->orWhere(function ($q) use ($adminId, $userId) {
+                $q->where('sender_id', $userId)->where('receiver_id', $adminId);
+            })->orderBy('sent_at', 'asc')->get();
 
         $user = UserMobile::where('id_akun', $userId)->first();
 
@@ -171,6 +216,7 @@ class ChatController extends Controller
             'chats' => $chats,
             'adminId' => $adminId,
             'chatPrefetch' => $this->getChatPrefetch($adminId, $conversations->pluck('id_akun')),
+            'wsToken' => $this->wsTokenFor($request),
         ]);
     }
 
@@ -182,7 +228,9 @@ class ChatController extends Controller
 
         $enabled = (string) \App\Models\SystemSetting::get('enable_chat_consultation', '1');
         if ($enabled === '0') {
-            if ($request->ajax()) {
+            // Klien JSON (mis. postJson/polling) belum tentu mengirim header
+            // X-Requested-With, jadi expectsJson() juga harus dipertimbangkan.
+            if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Layanan konsultasi chat sedang dinonaktifkan sementara oleh Superadmin.'
@@ -194,16 +242,20 @@ class ChatController extends Controller
         $request->validate([
             'receiver_id' => 'required|exists:akun,id_akun',
             'message' => 'required|string|max:5000',
+            'replied_to_id' => 'nullable|exists:chats,id_chat',
         ]);
 
         $chat = ChatMobile::create([
             'sender_id' => Auth::id(),
             'receiver_id' => $request->receiver_id,
             'message' => $request->message,
+            'replied_to_id' => $request->replied_to_id,
         ]);
 
-        if ($request->ajax()) {
-            return response()->json(['success' => true, 'chat' => $chat]);
+        if ($request->expectsJson() || $request->ajax()) {
+            $chat->refresh();
+
+            return response()->json(['success' => true, 'chat' => $this->serializeChat($chat)]);
         }
 
         return redirect()->route('chat.show', $request->receiver_id);
@@ -222,11 +274,12 @@ class ChatController extends Controller
             ->where('is_read', 0)
             ->update(['is_read' => 1]);
 
-        $chats = ChatMobile::where(function ($q) use ($adminId, $userId) {
-            $q->where('sender_id', $adminId)->where('receiver_id', $userId);
-        })->orWhere(function ($q) use ($adminId, $userId) {
-            $q->where('sender_id', $userId)->where('receiver_id', $adminId);
-        })->orderBy('sent_at', 'asc')->get();
+        $chats = ChatMobile::with('repliedTo')
+            ->where(function ($q) use ($adminId, $userId) {
+                $q->where('sender_id', $adminId)->where('receiver_id', $userId);
+            })->orWhere(function ($q) use ($adminId, $userId) {
+                $q->where('sender_id', $userId)->where('receiver_id', $adminId);
+            })->orderBy('sent_at', 'asc')->get();
 
         return response()->json([
             'chats' => $chats->map(fn ($chat) => $this->serializeChat($chat))->values(),

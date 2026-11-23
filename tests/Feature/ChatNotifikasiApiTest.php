@@ -81,7 +81,7 @@ class ChatNotifikasiApiTest extends TestCase
             'sent_at' => now(),
         ]);
 
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['mobile']);
 
         $response = $this->getJson('/api/notifications?user_id=' . $user->id_akun);
         $response->assertOk();
@@ -107,7 +107,7 @@ class ChatNotifikasiApiTest extends TestCase
         $idLaporan = $this->buatLaporan($user, null);
         $notif = $this->notifUserDariLaporan($idLaporan, $user);
 
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['mobile']);
 
         $this->patchJson("/api/notifications/{$notif->id_notif}/read")
             ->assertOk()
@@ -124,7 +124,7 @@ class ChatNotifikasiApiTest extends TestCase
         $idLaporan = $this->buatLaporan($user, null);
         $notif = $this->notifUserDariLaporan($idLaporan, $user);
 
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['mobile']);
 
         $this->deleteJson("/api/notifications/{$notif->id_notif}")
             ->assertOk()
@@ -152,7 +152,7 @@ class ChatNotifikasiApiTest extends TestCase
         $pemilik = $this->buatAkun();
         $lain = $this->buatAkun();
 
-        Sanctum::actingAs($lain);
+        Sanctum::actingAs($lain, ['mobile']);
 
         $this->getJson('/api/notifications?user_id=' . $pemilik->id_akun)
             ->assertStatus(403);
@@ -163,7 +163,7 @@ class ChatNotifikasiApiTest extends TestCase
         $pengirim = $this->buatAkun();
         $admin = $this->adminPpa();
 
-        Sanctum::actingAs($pengirim);
+        Sanctum::actingAs($pengirim, ['mobile']);
 
         $response = $this->postJson('/api/chats', [
             'sender_id' => $admin->id_akun,
@@ -184,7 +184,9 @@ class ChatNotifikasiApiTest extends TestCase
         $this->assertDatabaseHas('notifikasi', [
             'id_akun' => $admin->id_akun,
             'judul' => 'Pesan Baru',
-            'tipe' => 'user',
+            // Penerima akun admin → notifikasi harus bertipe 'admin' agar
+            // muncul di lonceng panel admin.
+            'tipe' => 'admin',
         ]);
     }
 
@@ -230,6 +232,8 @@ class ChatNotifikasiApiTest extends TestCase
     {
         $user = $this->buatAkun();
         $idLaporan = $this->buatLaporan($user, null);
+
+        Sanctum::actingAs($this->adminPpa());
 
         $response = $this->postJson('/api/report-update', [
             'id_laporan' => $idLaporan,

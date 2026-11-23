@@ -26,7 +26,9 @@ class LaporanControllerMobile extends Controller
             'detailPenerimaManfaat',
             'detailKasus',
             'detailPjsrk',
-            'informasiAnak'
+            // Relasi informasi anak berada di bawah penerima manfaat
+            // (satu penerima bisa memiliki lebih dari satu anak).
+            'detailPenerimaManfaat.informasi_anak',
         ])
             ->where('id_laporan', $data['id_laporan'])
             ->first();
@@ -48,10 +50,15 @@ class LaporanControllerMobile extends Controller
     // POST LAPORAN
     public function postReport(Request $request)
     {
+        $authUser = $request->user('sanctum') ?? $request->user();
+        if (!$authUser) {
+            return response()->json(['success' => false, 'message' => 'Tidak terautentikasi.'], 401);
+        }
+
         $data = $request->validate([
-            'id_akun' => 'required|exists:akun,id_akun',
+            'id_akun' => 'nullable|integer',
             'kategori' => 'required|string',
-            'status' => 'required|in:dikirim,diterima,diproses,selesai',
+            'status' => 'nullable|in:dikirim,diterima',
             'judul' => 'nullable|string|max:150',
             'kecamatan' => 'nullable|string|max:100',
             'layanan_pjsrk' => 'nullable|in:rehabilitasi_sosial,pengaduan_bencana,permasalahan_sosial',
@@ -62,6 +69,10 @@ class LaporanControllerMobile extends Controller
             'informasi_anak' => 'sometimes|array'
         ]);
 
+        // Identitas pelapor selalu berasal dari token Sanctum, bukan payload.
+        $idAkun = (int) $authUser->id_akun;
+        $statusAwal = $data['status'] ?? 'dikirim';
+
         $layananPjsrk = $data['layanan_pjsrk'] ?? match ($data['kategori']) {
             'Penelantaran' => 'rehabilitasi_sosial',
             'Lainnya' => 'permasalahan_sosial',
@@ -70,27 +81,42 @@ class LaporanControllerMobile extends Controller
 
         $judul = $data['judul'] ?? null;
         $kecamatan = $data['kecamatan'] ?? ($data['detail_kasus']['tempat_kejadian'] ?? null);
+        $tempatLahir = $data['detail_penerima_manfaat']['Tempat_lahir']
+            ?? $data['detail_penerima_manfaat']['tempat_lahir']
+            ?? '-';
 
         DB::beginTransaction();
 
         try {
+            // Ambil daftar id_laporan sebelumnya milik akun ini untuk menghindari
+            // race condition pembacaan id yang dibuat trigger BEFORE INSERT.
+            $idSebelumnya = DB::table('laporan')
+                ->where('id_akun', $idAkun)
+                ->pluck('id_laporan')
+                ->all();
+
             // 1. Insert laporan utama
             DB::table('laporan')->insert([
-                'id_akun' => $data['id_akun'],
+                'id_akun' => $idAkun,
                 'judul' => $judul,
                 'kecamatan' => $kecamatan,
                 'kategori' => $data['kategori'],
                 'layanan_pjsrk' => $layananPjsrk,
-                'status' => $data['status'],
+                'status' => $statusAwal,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
-            // 2. Ambil laporan terbaru
+            // 2. Ambil baris laporan yang baru dibuat berdasarkan selisih id.
             $laporanTerbaru = DB::table('laporan')
-                ->where('id_akun', $data['id_akun'])
-                ->orderBy('created_at', 'desc')
+                ->where('id_akun', $idAkun)
+                ->when($idSebelumnya !== [], fn ($q) => $q->whereNotIn('id_laporan', $idSebelumnya))
+                ->orderByDesc('id_laporan')
                 ->first();
+
+            if (!$laporanTerbaru) {
+                throw new \RuntimeException('Laporan gagal dibuat.');
+            }
 
             $id_laporan = $laporanTerbaru->id_laporan;
 
@@ -109,7 +135,7 @@ class LaporanControllerMobile extends Controller
                 'id_laporan' => $id_laporan,
                 'nik' => Crypt::encryptString($data['detail_penerima_manfaat']['nik']),
                 'nama' => $data['detail_penerima_manfaat']['nama'],
-                'Tempat_lahir' => $data['detail_penerima_manfaat']['Tempat_lahir'],
+                'Tempat_lahir' => $tempatLahir,
                 'tanggal_lahir' => $data['detail_penerima_manfaat']['tanggal_lahir'],
                 'umur' => $data['detail_penerima_manfaat']['umur'],
                 'jenis_kelamin' => $data['detail_penerima_manfaat']['jenis_kelamin'],
@@ -179,23 +205,27 @@ class LaporanControllerMobile extends Controller
 
             DB::commit();
 
+            // Kembalikan model Eloquent agar field terenkripsi (nik, notelp) terdekripsi otomatis.
+            $detailPenerima = DetailPenerimaManfaat::find($id_penerima);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Laporan berhasil dikirim',
                 'data' => [
                     'laporan' => $laporanTerbaru,
-                    'detail_penerima' => DB::table('detail_penerima_manfaat')->where('id_penerima', $id_penerima)->first(),
+                    'detail_penerima' => $detailPenerima,
                     'informasi_anak' => DB::table('informasi_anak')->where('id_penerima', $id_penerima)->get()
                 ]
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json([
+            Log::error('Gagal membuat laporan mobile: ' . $e->getMessage());
+            return response()->json(array_filter([
                 'success' => false,
                 'message' => 'Gagal membuat laporan',
-                'error' => $e->getMessage(),
-            ], 500);
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], fn ($v) => $v !== null), 500);
         }
     }
 
@@ -236,23 +266,31 @@ class LaporanControllerMobile extends Controller
     }
 
     // AMBIL SEMUA LAPORAN BERDASARKAN USER
-    public function getUserReports($id_akun)
+    public function getUserReports(Request $request, $id_akun)
     {
+        $authUser = $request->user('sanctum') ?? $request->user();
+        if (!$authUser || (int) $authUser->id_akun !== (int) $id_akun) {
+            return response()->json(['message' => 'Anda tidak berhak mengakses laporan akun ini'], 403);
+        }
 
-        $laporan = LaporanMobile::where('id_akun', $id_akun)
-            ->with(['detailPelapor', 'detailTerlapor', 'detailPenerimaManfaat', 'detailKasus', 'detailPjsrk', 'informasiAnak'])
+        $laporan = LaporanMobile::where('id_akun', $authUser->id_akun)
+            ->with(['detailPelapor', 'detailTerlapor', 'detailPenerimaManfaat', 'detailKasus', 'detailPjsrk', 'detailPenerimaManfaat.informasi_anak'])
             ->get();
 
         return response()->json(['message' => 'Laporan ditemukan', 'laporan' => $laporan]);
     }
 
     // AMBIL SEMUA LAPORAN BERDASARKAN USER DAN KATEGORI
-    public function getUserReportsByCategory($id_akun, $status)
+    public function getUserReportsByCategory(Request $request, $id_akun, $status)
     {
+        $authUser = $request->user('sanctum') ?? $request->user();
+        if (!$authUser || (int) $authUser->id_akun !== (int) $id_akun) {
+            return response()->json(['message' => 'Anda tidak berhak mengakses laporan akun ini'], 403);
+        }
 
-        $laporan = LaporanMobile::where('id_akun', $id_akun)
+        $laporan = LaporanMobile::where('id_akun', $authUser->id_akun)
             ->where('status', $status)
-            ->with(['detailPelapor', 'detailTerlapor', 'detailPenerimaManfaat', 'detailKasus', 'detailPjsrk', 'informasiAnak'])
+            ->with(['detailPelapor', 'detailTerlapor', 'detailPenerimaManfaat', 'detailKasus', 'detailPjsrk', 'detailPenerimaManfaat.informasi_anak'])
             ->get();
 
         return response()->json(['message' => 'Laporan ditemukan', 'laporan' => $laporan]);
@@ -271,9 +309,10 @@ class LaporanControllerMobile extends Controller
             'id_akun.exists' => 'Akun pelapor tidak ditemukan. Silakan login ulang.',
         ]);
 
-        // Laporan Cepat boleh dikirim tanpa login: laporan tanpa akun
-        // diatribusikan ke akun penampung ber-role guest.
-        $idAkun = $validated['id_akun'] ?? $this->akunAnonim()->id_akun;
+        // Laporan Cepat boleh dikirim tanpa login: bila pengguna membawa token
+        // Sanctum valid, pakai id_akun dari token; jika anonim, pakai akun guest.
+        $authUser = $request->user('sanctum');
+        $idAkun = $authUser ? (int) $authUser->id_akun : $this->akunAnonim()->id_akun;
 
         // Satu timestamp dipakai untuk insert dan pembacaan ulang, supaya
         // pencarian id_laporan tidak meleset saat detik berganti.
@@ -314,10 +353,13 @@ class LaporanControllerMobile extends Controller
                 'no_telp' =>Crypt::encryptString( $validated['no_telp']),
             ]);
 
-            // Insert ke tabel detail_kasus
+            // Insert ke tabel detail_kasus. Laporan cepat tidak meminta jam
+            // kejadian, jadi waktu kiriman dipakai sebagai waktu kejadian agar
+            // kolom ini tidak kosong di detail laporan.
             DB::table('detail_kasus')->insert([
                 'id_laporan' => $id_laporan,
-                'tanggal' => Carbon::now()->format('Y-m-d'),
+                'tanggal' => $now->format('Y-m-d'),
+                'waktu_kejadian' => $now->format('H:i:s'),
                 'tempat_kejadian' => '-',
                 'kronologi' => $validated['deskripsi']
             ]);
@@ -334,12 +376,13 @@ class LaporanControllerMobile extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Gagal membuat laporan cepat: ' . $e->getMessage());
 
-            return response()->json([
+            return response()->json(array_filter([
                 'success' => false,
                 'message' => 'Gagal membuat laporan cepat.',
-                'error' => $e->getMessage(),
-            ], 500);
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], fn ($v) => $v !== null), 500);
         }
     }
     /**
@@ -366,8 +409,17 @@ class LaporanControllerMobile extends Controller
 
     public function Search(Request $request)
     {
+        $authUser = $request->user('sanctum') ?? $request->user();
+        if (!$authUser) {
+            return response()->json(['message' => 'Tidak terautentikasi'], 401);
+        }
+
         $keyword = $request->query('keyword');
-        $idAkun = $request->query('id_akun');
+        $requestedIdAkun = $request->query('id_akun');
+
+        if ($requestedIdAkun !== null && (int) $requestedIdAkun !== (int) $authUser->id_akun) {
+            return response()->json(['message' => 'Anda tidak berhak mencari laporan akun lain'], 403);
+        }
 
         $laporan = LaporanMobile::with([
             'detailPelapor',
@@ -375,9 +427,9 @@ class LaporanControllerMobile extends Controller
             'detailPenerimaManfaat',
             'detailKasus',
             'detailPjsrk',
-            'detailPenerimaManfaat.informasiAnak'
+            'detailPenerimaManfaat.informasi_anak',
         ])
-            ->search($keyword, $idAkun)
+            ->search($keyword, (int) $authUser->id_akun)
             ->get();
 
         return response()->json($laporan);

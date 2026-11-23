@@ -1,4 +1,5 @@
 const { WebSocketServer } = require('ws');
+const crypto = require('crypto');
 const mysql = require('mysql');
 require('dotenv').config();
 
@@ -60,6 +61,51 @@ wss.on('listening', () => {
     console.log(`   For Flutter web in Chrome, use the same URL`);
 });
 
+/**
+ * Verifikasi Bearer token Sanctum ("{id}|{plainText}") terhadap tabel
+ * personal_access_tokens dan akun. Mengembalikan data akun aktif atau null.
+ */
+async function verifySanctumToken(rawToken) {
+    if (typeof rawToken !== 'string' || !rawToken.includes('|')) {
+        return null;
+    }
+
+    const sepIdx = rawToken.indexOf('|');
+    const tokenId = Number(rawToken.slice(0, sepIdx));
+    const plainText = rawToken.slice(sepIdx + 1);
+
+    if (!Number.isInteger(tokenId) || tokenId <= 0 || !plainText) {
+        return null;
+    }
+
+    const hashed = crypto.createHash('sha256').update(plainText).digest('hex');
+
+    const rows = await query(
+        `SELECT pat.tokenable_id, a.id_akun, a.role, a.is_active
+         FROM personal_access_tokens pat
+         INNER JOIN akun a ON a.id_akun = pat.tokenable_id
+         WHERE pat.id = ?
+           AND pat.token = ?
+           AND (pat.expires_at IS NULL OR pat.expires_at > NOW())
+         LIMIT 1`,
+        [tokenId, hashed]
+    );
+
+    if (!rows || rows.length === 0) {
+        return null;
+    }
+
+    const account = rows[0];
+    if (account.is_active === 0 || account.is_active === false) {
+        return null;
+    }
+
+    return {
+        userId: String(account.id_akun),
+        role: String(account.role || 'user'),
+    };
+}
+
 wss.on('connection', (ws, req) => {
     const clientIp = req.socket.remoteAddress;
     console.log(`📲 New connection from ${clientIp}`);
@@ -95,9 +141,19 @@ wss.on('connection', (ws, req) => {
 
         try {
             switch (data.type) {
-                case 'register':
-                    userId = String(data.user_id);
-                    userType = data.user_type || 'unknown';
+                case 'register': {
+                    const verified = await verifySanctumToken(data.token);
+                    if (!verified) {
+                        ws.send(JSON.stringify({
+                            type: 'auth_error',
+                            message: 'Token WebSocket tidak valid atau kedaluwarsa.'
+                        }));
+                        ws.close(4001, 'Unauthorized');
+                        return;
+                    }
+
+                    userId = verified.userId;
+                    userType = verified.role;
                     clients.set(userId, ws);
                     console.log(`✅ User ${userId} registered (${userType})`);
                     
@@ -115,21 +171,37 @@ wss.on('connection', (ws, req) => {
                         user_id: userId
                     }), userId);
                     break;
+                }
 
                 case 'send_message':
-                    await handleSendMessage(data);
+                    if (!userId) {
+                        ws.send(JSON.stringify({ type: 'auth_error', message: 'Harus autentikasi terlebih dahulu.' }));
+                        return;
+                    }
+                    await handleSendMessage(userId, data);
                     break;
 
                 case 'edit_message':
-                    await handleEditMessage(data);
+                    if (!userId) {
+                        ws.send(JSON.stringify({ type: 'auth_error', message: 'Harus autentikasi terlebih dahulu.' }));
+                        return;
+                    }
+                    await handleEditMessage(userId, data);
                     break;
 
                 case 'delete_message':
-                    await handleDeleteMessage(data);
+                    if (!userId) {
+                        ws.send(JSON.stringify({ type: 'auth_error', message: 'Harus autentikasi terlebih dahulu.' }));
+                        return;
+                    }
+                    await handleDeleteMessage(userId, data);
                     break;
 
                 case 'typing':
-                    handleTyping(data);
+                    if (!userId) {
+                        return;
+                    }
+                    handleTyping(userId, data);
                     break;
                 
                 case 'ping':
@@ -143,14 +215,13 @@ wss.on('connection', (ws, req) => {
             console.error('Error handling message:', err.message);
             ws.send(JSON.stringify({
                 type: 'error',
-                message: 'Error processing message',
-                details: err.message
+                message: 'Error processing message'
             }));
         }
     });
 
     ws.on('close', () => {
-        if (userId) {
+        if (userId && clients.get(userId) === ws) {
             clients.delete(userId);
             console.log(`👋 User ${userId} disconnected`);
             
@@ -182,11 +253,12 @@ wss.on('close', () => {
     clearInterval(heartbeatInterval);
 });
 
-async function handleSendMessage(data) {
-    const { sender_id, receiver_id, message, replied_to_id } = data;
+async function handleSendMessage(authenticatedUserId, data) {
+    const { receiver_id, message, replied_to_id } = data;
+    const sender_id = authenticatedUserId;
     
-    if (!sender_id || !receiver_id || !message) {
-        console.error('Missing required fields for send_message');
+    if (!sender_id || !receiver_id || !message || String(sender_id) === String(receiver_id)) {
+        console.error('Invalid fields for send_message');
         return;
     }
 
@@ -225,7 +297,7 @@ async function handleSendMessage(data) {
     }
 }
 
-async function handleEditMessage(data) {
+async function handleEditMessage(authenticatedUserId, data) {
     const { id_chat, new_message } = data;
     
     if (!id_chat || !new_message) {
@@ -234,7 +306,16 @@ async function handleEditMessage(data) {
     }
 
     try {
-        await query('UPDATE chats SET message = ? WHERE id_chat = ?', [new_message, id_chat]);
+        const updateResult = await query(
+            'UPDATE chats SET message = ? WHERE id_chat = ? AND sender_id = ?',
+            [new_message, id_chat, authenticatedUserId]
+        );
+
+        if (!updateResult || updateResult.affectedRows === 0) {
+            console.warn(`Unauthorized or missing edit_message attempt by user ${authenticatedUserId} for chat ${id_chat}`);
+            return;
+        }
+
         const [updated] = await query('SELECT * FROM chats WHERE id_chat = ?', [id_chat]);
         
         if (!updated) {
@@ -259,7 +340,7 @@ async function handleEditMessage(data) {
     }
 }
 
-async function handleDeleteMessage(data) {
+async function handleDeleteMessage(authenticatedUserId, data) {
     const { id_chat } = data;
     
     if (!id_chat) {
@@ -268,14 +349,17 @@ async function handleDeleteMessage(data) {
     }
 
     try {
-        const [chat] = await query('SELECT * FROM chats WHERE id_chat = ?', [id_chat]);
+        const [chat] = await query(
+            'SELECT * FROM chats WHERE id_chat = ? AND sender_id = ?',
+            [id_chat, authenticatedUserId]
+        );
         
         if (!chat) {
-            console.error('Message not found for delete');
+            console.warn(`Unauthorized or missing delete_message attempt by user ${authenticatedUserId} for chat ${id_chat}`);
             return;
         }
 
-        await query('DELETE FROM chats WHERE id_chat = ?', [id_chat]);
+        await query('DELETE FROM chats WHERE id_chat = ? AND sender_id = ?', [id_chat, authenticatedUserId]);
 
         const payload = JSON.stringify({
             type: 'message_deleted',
@@ -292,8 +376,9 @@ async function handleDeleteMessage(data) {
     }
 }
 
-function handleTyping(data) {
-    const { senderId, receiverId, isTyping } = data;
+function handleTyping(authenticatedUserId, data) {
+    const { receiverId, isTyping } = data;
+    const senderId = authenticatedUserId;
     
     if (!senderId || !receiverId) {
         console.error('Missing required fields for typing indicator');

@@ -9,25 +9,39 @@ use Illuminate\Support\Facades\DB;
 
 class ChatControllerMobile extends Controller
 {
+    /**
+     * Pastikan pengguna yang login hanya boleh mengakses datanya sendiri.
+     */
+    private function me(Request $request): int
+    {
+        return (int) $request->user()->id_akun;
+    }
+
+    private function forbidden(string $message = 'Anda tidak berhak mengakses percakapan ini.')
+    {
+        return response()->json([
+            'success' => false,
+            'message' => $message,
+        ], 403);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
             'receiver_id' => 'required|exists:akun,id_akun',
             'message' => 'required|string',
             'replied_to_id' => 'nullable|exists:chats,id_chat',
-            'sender_id' => 'nullable|exists:akun,id_akun',
         ]);
 
-        // Aplikasi mobile mengirim pesan dengan Bearer token, bukan sender_id.
-        // Identitas token dipakai lebih dulu; sender_id hanya fallback untuk
-        // klien lama agar pesan tidak tercatat atas akun yang salah.
-        $senderId = $request->user('sanctum')?->id_akun ?? ($validated['sender_id'] ?? null);
+        // Identitas pengirim selalu dari token Sanctum, bukan dari payload,
+        // agar pengguna tidak bisa mengirim pesan atas nama akun lain.
+        $senderId = $this->me($request);
 
-        if (!$senderId) {
+        if ($senderId === (int) $validated['receiver_id']) {
             return response()->json([
                 'success' => false,
-                'message' => 'Pengirim tidak teridentifikasi. Silakan login ulang.',
-            ], 401);
+                'message' => 'Tidak dapat mengirim pesan ke akun sendiri.',
+            ], 422);
         }
 
         $chat = ChatMobile::create([
@@ -54,6 +68,10 @@ class ChatControllerMobile extends Controller
 
     public function getChats($userId, Request $request)
     {
+        if ((int) $userId !== $this->me($request)) {
+            return $this->forbidden();
+        }
+
         try {
             $query = ChatMobile::where(function ($q) use ($userId) {
                 $q->where('sender_id', $userId)
@@ -93,16 +111,26 @@ class ChatControllerMobile extends Controller
         }
     }
 
-    public function markAsRead($chatId)
+    public function markAsRead(Request $request, $chatId)
     {
         $chat = ChatMobile::where('id_chat', $chatId)->firstOrFail();
+
+        // Hanya penerima pesan yang boleh menandainya sudah dibaca.
+        if ((int) $chat->receiver_id !== $this->me($request)) {
+            return $this->forbidden();
+        }
+
         $chat->update(['is_read' => 1]);
 
         return response()->json($chat);
     }
 
-    public function getConversations($userId)
+    public function getConversations($userId, Request $request)
     {
+        if ((int) $userId !== $this->me($request)) {
+            return $this->forbidden();
+        }
+
         try {
             $uId = intval($userId);
             $subQuery = DB::raw("(
@@ -146,21 +174,38 @@ class ChatControllerMobile extends Controller
         $request->validate(['message' => 'required|string']);
 
         $chat = ChatMobile::where('id_chat', $chatId)->firstOrFail();
+
+        // Hanya pengirim yang boleh mengubah isi pesannya.
+        if ((int) $chat->sender_id !== $this->me($request)) {
+            return $this->forbidden('Anda tidak berhak mengubah pesan ini.');
+        }
+
         $chat->update(['message' => $request->message]);
 
         return response()->json($chat);
     }
 
-    public function destroy($chatId)
+    public function destroy(Request $request, $chatId)
     {
         $chat = ChatMobile::where('id_chat', $chatId)->firstOrFail();
+
+        if ((int) $chat->sender_id !== $this->me($request)) {
+            return $this->forbidden('Anda tidak berhak menghapus pesan ini.');
+        }
+
         $chat->delete();
 
         return response()->json(['message' => 'Chat deleted']);
     }
 
-    public function destroyConversation($senderId, $receiverId)
+    public function destroyConversation(Request $request, $senderId, $receiverId)
     {
+        $me = $this->me($request);
+
+        if ($me !== (int) $senderId && $me !== (int) $receiverId) {
+            return $this->forbidden();
+        }
+
         ChatMobile::where(function ($q) use ($senderId, $receiverId) {
             $q->where('sender_id', $senderId)->where('receiver_id', $receiverId);
         })->orWhere(function ($q) use ($senderId, $receiverId) {

@@ -37,10 +37,20 @@ class DetailPenerimaManfaat extends Model
         return $this->belongsTo(Rekapan::class, 'id_laporan', 'id_laporan');
     }
 
-    // Relasi ke informasi anak
+    // Relasi ke informasi anak. Nama snake_case adalah nama kanonis yang
+    // dipakai API mobile (detail_penerima_manfaat.informasi_anak).
     public function informasi_anak()
     {
         return $this->hasMany(InformasiAnak::class, 'id_penerima', 'id_penerima');
+    }
+
+    /**
+     * Alias camelCase untuk kode lama yang masih memakai
+     * `detailPenerimaManfaat.informasiAnak`.
+     */
+    public function informasiAnak()
+    {
+        return $this->informasi_anak();
     }
     // NIK
     public function getNikAttribute($value)

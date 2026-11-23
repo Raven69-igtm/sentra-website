@@ -275,13 +275,6 @@
             margin-top: 16px !important;
         }
 
-        /* Seksi Account melekat di dasar area menu. */
-        #main-wrapper .sidebar-nav .sidebar-nav__account-start {
-            margin-top: auto !important;
-            padding-top: 8px !important;
-            border-top: 1px solid #E6EAF0 !important;
-        }
-
         /* Item menu: tinggi 44px, radius 12px, gap ikon-teks 12px. */
         #main-wrapper .sidebar-nav .metismenu > li > a {
             position: relative !important;

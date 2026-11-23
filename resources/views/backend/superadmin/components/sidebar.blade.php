@@ -99,10 +99,10 @@
                 </ul>
             </li>
 
-            {{-- SEKSI 4: ACCOUNT --}}
-            <li class="sidebar-section-label sidebar-nav__account-start">Account</li>
+            {{-- SEKSI 4: ACCOUNT — mengikuti langsung Audit Activity --}}
+            <li class="sidebar-section-label">Settings</li>
             <li class="{{ request()->routeIs('superadmin.settings.*') ? 'mm-active' : '' }}">
-                <a href="{{ route('superadmin.settings.index') }}" wire:navigate aria-expanded="false" title="Account Settings" @if (request()->routeIs('superadmin.settings.*')) aria-current="page" @endif>
+                <a href="{{ route('superadmin.settings.index') }}" wire:navigate aria-expanded="false" title="Configuration Settings" @if (request()->routeIs('superadmin.settings.*')) aria-current="page" @endif>
                     <i class="fa fa-cog sidebar-nav__icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
                             <path d="M4 7h9" />
@@ -113,7 +113,7 @@
                             <circle cx="9" cy="17" r="2" />
                         </svg>
                     </i>
-                    <span class="nav-text">Account Settings</span>
+                    <span class="nav-text">Configuration Settings</span>
                 </a>
             </li>
         </ul>

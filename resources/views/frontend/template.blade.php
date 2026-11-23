@@ -15,7 +15,7 @@
         <link href="{{ asset($appLogo) }}" rel="apple-touch-icon">
     @else
         <link href="{{ asset('landingpage/assets/img/logo-sentra.png') }}" rel="icon">
-        <link href="{{ asset('landingpage/assets/img/logo-sentr.png') }}" rel="apple-touch-icon">
+        <link href="{{ asset('landingpage/assets/img/logo-sentra.png') }}" rel="apple-touch-icon">
     @endif
 
     <!-- Fonts -->

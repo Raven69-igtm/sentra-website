@@ -1,11 +1,20 @@
 <?php
+
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Crypt;
 
+/**
+ * Model laporan khusus endpoint mobile.
+ *
+ * Catatan: model detail (DetailPelapor, DetailTerlapor,
+ * DetailPenerimaManfaat, DetailKasus, InformasiAnak) TIDAK lagi
+ * didefinisikan ulang di file ini. Sebelumnya definisi duplikat di sini
+ * menimpa model asli di app/Models sehingga accessor dekripsi NIK/no. telepon
+ * dan relasi informasi anak hilang saat dipakai endpoint mobile.
+ */
 class LaporanMobile extends Model
 {
     use HasFactory;
@@ -50,7 +59,7 @@ class LaporanMobile extends Model
                     $q2->where('tempat_kejadian', 'like', "%{$keyword}%")
                         ->orWhere('kronologi', 'like', "%{$keyword}%");
                 })
-                ->orWhereHas('detailPenerimaManfaat.informasiAnak', function ($q2) use ($keyword) {
+                ->orWhereHas('detailPenerimaManfaat.informasi_anak', function ($q2) use ($keyword) {
                     $q2->where('nama', 'like', "%{$keyword}%")
                         ->orWhere('pendidikan', 'like', "%{$keyword}%")
                         ->orWhere('agama', 'like', "%{$keyword}%")
@@ -83,97 +92,4 @@ class LaporanMobile extends Model
     {
         return $this->hasOne(DetailPjsrk::class, 'id_laporan', 'id_laporan');
     }
-
-    public function informasiAnak()
-    {
-        return $this->hasOne(InformasiAnak::class, 'id_penerima', 'id_penerima');
-    }
-}
-
-class DetailPelapor extends Model
-{
-    use HasFactory;
-
-    protected $table = 'detail_pelapor';
-    public $timestamps = false;
-    protected $fillable = ['id_laporan', 'nik', 'nama', 'alamat', 'hubungan_dengan_korban', 'no_telp'];
-
-    public function scopeSearch($query, $keyword)
-    {
-        return $query->where(function ($q) use ($keyword) {
-            $q->where('nama', 'like', "%{$keyword}%")
-                ->orWhereHas('detailPelapor', function ($q) use ($keyword) {
-                    $q->where('nama', 'like', "%{$keyword}%");
-                })
-                ->orWhereHas('detailTerlapor', function ($q) use ($keyword) {
-                    $q->where('nama', 'like', "%{$keyword}%");
-                })
-                ->orWhereHas('detailPenerimaManfaat', function ($q) use ($keyword) {
-                    $q->where('nama', 'like', "%{$keyword}%");
-                })
-                ->orWhereHas('detailKasus', function ($q) use ($keyword) {
-                    $q->where('deskripsi', 'like', "%{$keyword}%");
-                })
-                ->orWhereHas('informasiAnak', function ($q) use ($keyword) {
-                    $q->where('nama_anak', 'like', "%{$keyword}%");
-                });
-        });
-
-        // Enkripsi sudah ditangani di DetailPelapor.php
-    }
-}
-
-class DetailTerlapor extends Model
-{
-    use HasFactory;
-    protected $table = 'detail_terlapor';
-    public $timestamps = false;
-    protected $fillable = ['id_laporan', 'nik', 'nama', 'umur', 'alamat', 'jenis_kelamin', 'hubungan_dengan_korban', 'informasi_tambahan'];
-
-    // Getter dan Setter untuk nik
-    public function getNikAttribute($value)
-    {
-        try {
-            return Crypt::decryptString($value);
-        } catch (\Exception $e) {
-            return $value;
-        }
-    }
-
-    public function setNikAttribute($value)
-    {
-        $this->attributes['nik'] = Crypt::encryptString($value);
-    }
-}
-
-class DetailPenerimaManfaat extends Model
-{
-    use HasFactory;
-    protected $primaryKey = 'id_penerima';
-    protected $table = 'detail_penerima_manfaat';
-    public $timestamps = false;
-    protected $fillable = ['id_laporan', 'nik', 'nama', 'Tempat_lahir', 'tanggal_lahir', 'umur', 'jenis_kelamin', 'pekerjaan', 'agama', 'alamat', 'pendidikan', 'hubungan_dengan_terlapor', 'notelp', 'informasi_tambahan'];
-
-    public function informasiAnak()
-    {
-        return $this->hasOne(InformasiAnak::class, 'id_penerima', 'id_penerima');
-    }
-
-    // Enkripsi sudah ditangani di DetailPenerimaManfaat.php
-}
-
-class DetailKasus extends Model
-{
-    use HasFactory;
-    protected $table = 'detail_kasus';
-    public $timestamps = false;
-    protected $fillable = ['id_laporan', 'tanggal', 'tempat_kejadian', 'kronologi'];
-}
-
-class InformasiAnak extends Model
-{
-    use HasFactory;
-    protected $table = 'informasi_anak';
-    public $timestamps = false;
-    protected $fillable = ['id_penerima', 'nama', 'tanggal_lahir', 'umur', 'jenis_kelamin', 'pendidikan', 'agama', 'status'];
 }

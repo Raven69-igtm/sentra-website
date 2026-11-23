@@ -143,31 +143,40 @@ class NotifikasiBell extends Component
 
     /**
      * Notifikasi laporan baru menyimpan id laporan di awal judul:
-     * "12 - Laporan Baru: ...". Format lama ini dipertahankan agar
-     * notifikasi yang sudah ada tetap dapat diproses.
+     * "RKN499021670 - Laporan Baru". ID laporan sekarang berupa string
+     * (bukan angka), jadi parser tidak boleh memakai ctype_digit lagi.
      */
-    private function laporanIdDari(Notifikasi $notifikasi): ?int
+    private function laporanIdDari(Notifikasi $notifikasi): ?string
     {
-        if (! str_contains((string) $notifikasi->judul, 'Laporan Baru')) {
+        $judul = (string) $notifikasi->judul;
+
+        if (! str_contains($judul, 'Laporan Baru')) {
             return null;
         }
 
-        $bagian = explode(' - ', (string) $notifikasi->judul);
+        $bagian = explode(' - ', $judul);
 
-        if (count($bagian) < 2) {
-            return null;
+        if (count($bagian) >= 2) {
+            $id = trim($bagian[0]);
+
+            if ($id !== '') {
+                return $id;
+            }
         }
 
-        $id = trim($bagian[0]);
+        // Fallback: ambil ID berformat RKN... dari judul/pesan.
+        if (preg_match('/\b(RKN\d+)\b/', $judul, $m)) {
+            return $m[1];
+        }
 
-        return ctype_digit($id) ? (int) $id : null;
+        return null;
     }
 
     /**
      * Peta id_notif → id_laporan agar view tidak perlu mem-parsing judul.
      *
      * @param  Collection<int, Notifikasi>  $daftar
-     * @return array<int, int|null>
+     * @return array<int, string|null>
      */
     private function laporanIdsUntuk(Collection $daftar): array
     {

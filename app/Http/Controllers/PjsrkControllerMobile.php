@@ -19,8 +19,13 @@ class PjsrkControllerMobile extends Controller
      */
     public function storeBencana(Request $request)
     {
+        $authUser = $request->user('sanctum') ?? $request->user();
+        if (!$authUser) {
+            return response()->json(['success' => false, 'message' => 'Tidak terautentikasi.'], 401);
+        }
+
         $data = $request->validate([
-            'id_akun' => ['required', 'exists:akun,id_akun'],
+            'id_akun' => ['nullable', 'integer'],
             'jenis_bencana' => ['required', 'string', 'max:100'],
             'waktu_kejadian' => ['required', 'date'],
             'tingkat_dampak' => ['required', 'in:Ringan,Sedang,Berat'],
@@ -40,13 +45,14 @@ class PjsrkControllerMobile extends Controller
             'foto.*' => ['image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
         ]);
 
+        $idAkun = (int) $authUser->id_akun;
         $kejadian = Carbon::parse($data['waktu_kejadian']);
 
         DB::beginTransaction();
 
         try {
             $idLaporan = $this->insertLaporan([
-                'id_akun' => $data['id_akun'],
+                'id_akun' => $idAkun,
                 'judul' => Str::limit(
                     'Pengaduan Bencana - ' . $data['jenis_bencana'] . ' (' . $data['kecamatan'] . ')',
                     150
@@ -92,12 +98,13 @@ class PjsrkControllerMobile extends Controller
             ], 201);
         } catch (\Throwable $e) {
             DB::rollBack();
+            \Log::error('Gagal menyimpan laporan pengaduan bencana: ' . $e->getMessage());
 
-            return response()->json([
+            return response()->json(array_filter([
                 'success' => false,
                 'message' => 'Gagal menyimpan laporan pengaduan bencana.',
-                'error' => $e->getMessage(),
-            ], 500);
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], fn ($v) => $v !== null), 500);
         }
     }
 
@@ -106,8 +113,13 @@ class PjsrkControllerMobile extends Controller
      */
     public function storeRehabilitasi(Request $request)
     {
+        $authUser = $request->user('sanctum') ?? $request->user();
+        if (!$authUser) {
+            return response()->json(['success' => false, 'message' => 'Tidak terautentikasi.'], 401);
+        }
+
         $data = $request->validate([
-            'id_akun' => ['required', 'exists:akun,id_akun'],
+            'id_akun' => ['nullable', 'integer'],
             'jenis_rehabilitasi' => ['required', 'in:Tunawisma,Anak Terlantar'],
             'jumlah_penerima' => ['required', 'integer', 'min:1'],
             'jenis_kelamin' => ['required', 'in:Laki-laki,Perempuan,Campuran'],
@@ -123,13 +135,14 @@ class PjsrkControllerMobile extends Controller
             'foto.*' => ['image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
         ]);
 
+        $idAkun = (int) $authUser->id_akun;
         $rahasia = filter_var($request->input('rahasia', false), FILTER_VALIDATE_BOOLEAN);
 
         DB::beginTransaction();
 
         try {
             $idLaporan = $this->insertLaporan([
-                'id_akun' => $data['id_akun'],
+                'id_akun' => $idAkun,
                 'judul' => Str::limit('Rehabilitasi Sosial - ' . $data['jenis_rehabilitasi'], 150),
                 'kecamatan' => null,
                 'kategori' => 'Penelantaran',
@@ -170,12 +183,13 @@ class PjsrkControllerMobile extends Controller
             ], 201);
         } catch (\Throwable $e) {
             DB::rollBack();
+            \Log::error('Gagal menyimpan laporan rehabilitasi sosial: ' . $e->getMessage());
 
-            return response()->json([
+            return response()->json(array_filter([
                 'success' => false,
                 'message' => 'Gagal menyimpan laporan rehabilitasi sosial.',
-                'error' => $e->getMessage(),
-            ], 500);
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], fn ($v) => $v !== null), 500);
         }
     }
 
@@ -188,8 +202,13 @@ class PjsrkControllerMobile extends Controller
      */
     public function storePermasalahanSosial(Request $request)
     {
+        $authUser = $request->user('sanctum') ?? $request->user();
+        if (!$authUser) {
+            return response()->json(['success' => false, 'message' => 'Tidak terautentikasi.'], 401);
+        }
+
         $data = $request->validate([
-            'id_akun' => ['required', 'exists:akun,id_akun'],
+            'id_akun' => ['nullable', 'integer'],
             'jenis_permasalahan' => ['required', 'string', 'max:100'],
             'judul' => ['required', 'string', 'max:150'],
             'uraian' => ['required', 'string'],
@@ -204,13 +223,14 @@ class PjsrkControllerMobile extends Controller
             'foto.*' => ['image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
         ]);
 
+        $idAkun = (int) $authUser->id_akun;
         $rahasia = filter_var($request->input('rahasia', false), FILTER_VALIDATE_BOOLEAN);
 
         DB::beginTransaction();
 
         try {
             $idLaporan = $this->insertLaporan([
-                'id_akun' => $data['id_akun'],
+                'id_akun' => $idAkun,
                 'judul' => Str::limit($data['judul'], 150),
                 'kecamatan' => $data['kecamatan'] ?? null,
                 'kategori' => 'Lainnya',
@@ -250,12 +270,13 @@ class PjsrkControllerMobile extends Controller
             ], 201);
         } catch (\Throwable $e) {
             DB::rollBack();
+            \Log::error('Gagal menyimpan laporan permasalahan sosial: ' . $e->getMessage());
 
-            return response()->json([
+            return response()->json(array_filter([
                 'success' => false,
                 'message' => 'Gagal menyimpan laporan permasalahan sosial.',
-                'error' => $e->getMessage(),
-            ], 500);
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], fn ($v) => $v !== null), 500);
         }
     }
 
@@ -283,7 +304,9 @@ class PjsrkControllerMobile extends Controller
             'deskripsi' => ['required', 'string'],
         ]);
 
-        $idAkun = $data['id_akun'] ?? $this->akunAnonim()->id_akun;
+        // Gunakan id_akun dari token Sanctum bila login; jika tidak, pakai akun guest.
+        $authUser = $request->user('sanctum');
+        $idAkun = $authUser ? (int) $authUser->id_akun : $this->akunAnonim()->id_akun;
 
         $kategori = match ($data['layanan']) {
             'rehabilitasi_sosial' => 'Penelantaran',
@@ -332,12 +355,13 @@ class PjsrkControllerMobile extends Controller
             ], 201);
         } catch (\Throwable $e) {
             DB::rollBack();
+            \Log::error('Gagal menyimpan laporan cepat PJSRK: ' . $e->getMessage());
 
-            return response()->json([
+            return response()->json(array_filter([
                 'success' => false,
                 'message' => 'Gagal menyimpan laporan cepat.',
-                'error' => $e->getMessage(),
-            ], 500);
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], fn ($v) => $v !== null), 500);
         }
     }
 

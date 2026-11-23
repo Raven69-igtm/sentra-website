@@ -2,6 +2,68 @@
 
 @section('title', 'Chat Konsultasi')
 
+@push('styles')
+    <style>
+        .chat-reply-quote {
+            border-left: 3px solid rgba(0, 0, 0, .18);
+            background: rgba(0, 0, 0, .05);
+            border-radius: 6px;
+            padding: 4px 8px;
+            margin-bottom: 6px;
+            font-size: .8rem;
+            color: #555;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+        .chat-reply-btn {
+            border: 0;
+            background: transparent;
+            color: #6b7280;
+            font-size: .72rem;
+            padding: 2px 0 0;
+            cursor: pointer;
+            display: block;
+        }
+
+        .chat-reply-btn:hover {
+            color: #111827;
+            text-decoration: underline;
+        }
+
+        .chat-reply-preview {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 6px 10px;
+            margin: 0 0 6px;
+            border-left: 3px solid #198754;
+            background: #f1f8f4;
+            border-radius: 6px;
+            font-size: .8rem;
+            color: #374151;
+        }
+
+        .chat-reply-preview-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .chat-reply-cancel {
+            border: 0;
+            background: transparent;
+            font-size: 1.1rem;
+            line-height: 1;
+            color: #6b7280;
+            cursor: pointer;
+        }
+    </style>
+@endpush
+
 @section('admin')
     <div class="container-fluid">
         @include('backend.components.alerts')
@@ -75,10 +137,20 @@
                             @forelse ($chats as $chat)
                                 <div class="chat-bubble {{ $chat->sender_id == $adminId ? 'is-me' : '' }}"
                                     data-chat-id="{{ $chat->id_chat }}">
+                                    @if ($chat->repliedTo)
+                                        <div class="chat-reply-quote">
+                                            {{ \Illuminate\Support\Str::limit($chat->repliedTo->message, 120) }}
+                                        </div>
+                                    @endif
                                     <p>{{ $chat->message }}</p>
                                     <span class="chat-bubble-time">
                                         {{ \Carbon\Carbon::parse($chat->sent_at)->format('H:i') }}
                                     </span>
+                                    <button type="button" class="chat-reply-btn"
+                                        data-reply-id="{{ $chat->id_chat }}"
+                                        data-reply-text="{{ $chat->message }}">
+                                        Balas
+                                    </button>
                                 </div>
                             @empty
                                 <div class="empty-state">
@@ -98,11 +170,18 @@
                         </div>
                     </div>
 
+                    <div id="chat-reply-preview" class="chat-reply-preview d-none">
+                        <span class="chat-reply-preview-text"></span>
+                        <button type="button" id="chat-reply-cancel" class="chat-reply-cancel"
+                            aria-label="Batalkan balasan">&times;</button>
+                    </div>
+
                     <form id="chat-form" class="chat-composer @if (!isset($activeUser)) d-none @endif"
                         method="POST" action="{{ route('chat.send') }}">
                         @csrf
                         <input type="hidden" name="receiver_id" id="chat-receiver"
                             value="{{ isset($activeUser) ? $activeUser->id_akun : '' }}">
+                        <input type="hidden" name="replied_to_id" id="chat-replied-to" value="">
                         <input type="text" name="message" id="chat-input" class="form-control"
                             placeholder="Ketik pesan..." autocomplete="off" required>
                         <button type="submit" class="btn btn-instansi-primary btn-pill" title="Kirim pesan">
@@ -168,8 +247,10 @@
             window.__sentraChatAktif = true;
 
             var adminId = {{ $adminId ?? 'null' }};
+            var wsToken = @json($wsToken ?? '');
             var activeUserId = {{ isset($activeUser) ? (int) $activeUser->id_akun : 'null' }};
             var ws = null;
+            var wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
             var wsHost = window.location.hostname || 'localhost';
             var wsPort = {{ env('WS_PORT', 3021) }};
             var chatFetchUrl = '{{ route('chat.fetch', ['userId' => '__USER__']) }}';
@@ -191,14 +272,54 @@
                 }
             })();
 
+            var replyToId = null;
+
             function normalizeChat(chat) {
                 return {
                     id_chat: chat.id_chat || null,
                     sender_id: chat.sender_id,
                     receiver_id: chat.receiver_id,
                     message: chat.message || '',
+                    replied_to_id: chat.replied_to_id || null,
+                    replied_message: chat.replied_message || null,
                     sent_at: chat.sent_at || new Date().toISOString()
                 };
+            }
+
+            // Cari teks pesan yang dibalas dari cache percakapan. Dipakai
+            // ketika pesan baru datang lewat WebSocket (hanya membawa id).
+            function findMessageById(id) {
+                if (!id) return null;
+
+                var key = String(id);
+
+                for (var userId in chatCache) {
+                    var list = chatCache[userId] || [];
+
+                    for (var i = 0; i < list.length; i++) {
+                        if (String(list[i].id_chat) === key) {
+                            return list[i].message;
+                        }
+                    }
+                }
+
+                return null;
+            }
+
+            function setReply(id, text) {
+                replyToId = id ? String(id) : null;
+
+                var box = $('#chat-reply-preview');
+
+                if (replyToId) {
+                    box.removeClass('d-none');
+                    box.find('.chat-reply-preview-text').text('Membalas: ' + (text || ''));
+                    $('#chat-replied-to').val(replyToId);
+                } else {
+                    box.addClass('d-none');
+                    box.find('.chat-reply-preview-text').text('');
+                    $('#chat-replied-to').val('');
+                }
             }
 
             function formatTime(value) {
@@ -225,8 +346,26 @@
                     bubble.attr('data-chat-id', chat.id_chat);
                 }
 
+                var quoted = chat.replied_message || findMessageById(chat.replied_to_id);
+
+                if (quoted) {
+                    $('<div>').addClass('chat-reply-quote').text(quoted).appendTo(bubble);
+                }
+
                 $('<p>').text(chat.message).appendTo(bubble);
                 $('<span>').addClass('chat-bubble-time').text(formatTime(chat.sent_at)).appendTo(bubble);
+
+                if (chat.id_chat) {
+                    $('<button>')
+                        .attr({
+                            type: 'button',
+                            'class': 'chat-reply-btn',
+                            'data-reply-id': chat.id_chat,
+                            'data-reply-text': chat.message
+                        })
+                        .text('Balas')
+                        .appendTo(bubble);
+                }
 
                 return bubble;
             }
@@ -337,6 +476,7 @@
                 $('#chat-head').removeClass('d-none');
                 $('#chat-receiver').val(key);
                 $('#chat-input').val('');
+                setReply(null, '');
                 $('#chat-form').removeClass('d-none');
                 $('#chat-placeholder').addClass('d-none');
                 $('#chat-messages').removeClass('d-none');
@@ -448,14 +588,15 @@
 
             function connectWebSocket() {
                 try {
-                    ws = new WebSocket('ws://' + wsHost + ':' + wsPort);
+                    ws = new WebSocket(wsProtocol + wsHost + ':' + wsPort);
                     window.__sentraChatSocket = ws;
 
                     ws.onopen = function() {
                         console.log('Admin WebSocket connected');
-                        if (adminId) {
+                        if (adminId && wsToken) {
                             ws.send(JSON.stringify({
                                 type: 'register',
+                                token: wsToken,
                                 user_id: String(adminId),
                                 user_type: 'admin'
                             }));
@@ -493,6 +634,20 @@
 
             connectWebSocket();
 
+            // Tombol "Balas" pada tiap bubble dan pembatalannya.
+            $(document).off('click.sentraChatReply').on('click.sentraChatReply', '.chat-reply-btn', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                setReply($(this).data('reply-id'), $(this).data('reply-text'));
+                $('#chat-input').focus();
+            });
+
+            $(document).off('click.sentraChatReplyCancel').on('click.sentraChatReplyCancel', '#chat-reply-cancel', function(e) {
+                e.preventDefault();
+                setReply(null, '');
+            });
+
             // Delegasi ke document agar form tetap berfungsi setelah panel
             // diubah oleh render cache.
             $(document).off('submit.sentraChat').on('submit.sentraChat', '#chat-form', function(e) {
@@ -501,6 +656,8 @@
                 var input = $('#chat-input');
                 var message = input.val().trim();
                 if (!message || !activeUserId) return;
+
+                var repliedToId = $('#chat-replied-to').val() || null;
 
                 // Serialize dulu: jQuery melewati field yang disabled.
                 var payload = form.serialize();
@@ -512,9 +669,11 @@
                         type: 'send_message',
                         sender_id: adminId,
                         receiver_id: activeUserId,
-                        message: message
+                        message: message,
+                        replied_to_id: repliedToId
                     }));
                     input.val('').prop('disabled', false).focus();
+                    setReply(null, '');
                 } else {
                     $.ajax({
                         url: form.attr('action'),
@@ -532,9 +691,12 @@
                                     sender_id: adminId,
                                     receiver_id: activeUserId,
                                     message: message,
+                                    replied_to_id: repliedToId,
+                                    replied_message: chat.replied_message || null,
                                     sent_at: chat.sent_at || new Date().toISOString()
                                 });
                                 input.val('');
+                                setReply(null, '');
                             }
                         },
                         error: function(xhr) {

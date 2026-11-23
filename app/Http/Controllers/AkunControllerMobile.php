@@ -101,49 +101,34 @@ class AkunControllerMobile extends Controller
             'emerquest' => $akun->emerquest
         ]);
     }
-    //Login google
+    // Login hanya dengan email tanpa verifikasi kredensial dinonaktifkan demi keamanan.
     public function loginWithEmail(Request $request)
     {
-        $credentials = $request->validate([
+        $request->validate([
             'email' => 'required|email',
         ]);
 
-        Log::info('Email login attempt:', ['email' => $credentials['email']]);
-        $user = UserMobile::where('email', $credentials['email'])
-            ->whereIn('role', Akun::MOBILE_ROLES)
-            ->where('is_active', true)
-            ->first();
-        if (!$user) {
-            return response()->json(['message' => 'Email atau akun tidak valid'], 401);
-        }
         return response()->json([
-            'message' => 'Login dengan email berhasil',
-            'user' => $user,
-            'token' => $user->createToken('mobile', ['mobile'])->plainTextToken,
-        ], 200);
+            'message' => 'Login menggunakan email tanpa verifikasi telah dinonaktifkan. Silakan masuk dengan nomor telepon dan kata sandi.',
+        ], 401);
     }
-    //Login Biometric
+
+    // Validasi sesi biometrik memakai token Sanctum aktif (tidak boleh menerbitkan token hanya dari notelp).
     public function loginBiometric(Request $request)
     {
-        $credentials = $request->validate([
-            'notelp' => 'required|string',
-        ]);
+        $authUser = $request->user('sanctum');
 
-        Log::info('Biometric login attempt:', ['notelp' => $credentials['notelp']]);
+        if (!$authUser) {
+            return response()->json(['message' => 'Tidak terautentikasi'], 401);
+        }
 
-        $user = UserMobile::where('notelp', $credentials['notelp'])
-            ->whereIn('role', Akun::MOBILE_ROLES)
-            ->where('is_active', true)
-            ->first();
-
-        if (!$user) {
-            return response()->json(['message' => 'Nomor telepon atau akun tidak valid'], 401);
+        if ($request->filled('notelp') && (string) $authUser->notelp !== (string) $request->notelp) {
+            return response()->json(['message' => 'Nomor telepon tidak sesuai dengan sesi aktif'], 403);
         }
 
         return response()->json([
-            'message' => 'Login biometrik berhasil',
-            'user' => $user,
-            'token' => $user->createToken('mobile', ['mobile'])->plainTextToken,
+            'message' => 'Sesi biometrik valid',
+            'user' => $authUser,
         ], 200);
     }
 
@@ -151,7 +136,7 @@ class AkunControllerMobile extends Controller
     public function register(Request $request)
     {
         $request->validate([
-            'notelp' => 'required|string|max:15',
+            'notelp' => 'required|string|max:15|unique:akun,notelp',
             'nama' => 'required|string|max:50',
             'password' => 'required|string|min:6',
             'emerquest' => 'nullable|string|max:100',
@@ -175,31 +160,54 @@ class AkunControllerMobile extends Controller
                 'answquest' => $request->answquest,
                 'jenis_kelamin' => $request->gender,
                 'alamat' => $request->alamat,
-                'otp' => rand(100000, 999999),
+                'otp' => random_int(100000, 999999),
                 'otp_expiry' => Carbon::now()->addMinutes(5),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
-            // Cari laporan yang terkait dengan nomor telepon dan id_akun = 3 (Guest)
-            $laporan = DB::table('laporan')
-                ->join('detail_pelapor', 'laporan.id_laporan', '=', 'detail_pelapor.id_laporan')
-                ->where('detail_pelapor.no_telp', $request->notelp)
-                ->where('laporan.id_akun', 3)
-                ->select('laporan.id_laporan')
-                ->first();
+            // Klaim seluruh laporan cepat milik akun guest (role guest atau id_akun = 3)
+            // yang nomor telepon pelapornya (setelah dekripsi) cocok dengan pendaftar.
+            $guestAccountIds = DB::table('akun')
+                ->where('role', 'guest')
+                ->orWhere('id_akun', 3)
+                ->pluck('id_akun')
+                ->all();
 
-            // Jika ditemukan laporan, update id_akun
-            if ($laporan) {
-                DB::table('laporan')
-                    ->where('id_laporan', $laporan->id_laporan)
-                    ->update([
+            $claimedIds = [];
+            if (!empty($guestAccountIds)) {
+                $guestReports = DB::table('laporan')
+                    ->join('detail_pelapor', 'laporan.id_laporan', '=', 'detail_pelapor.id_laporan')
+                    ->whereIn('laporan.id_akun', $guestAccountIds)
+                    ->select('laporan.id_laporan', 'detail_pelapor.no_telp')
+                    ->get();
+
+                foreach ($guestReports as $row) {
+                    $decryptedPhone = $row->no_telp;
+                    try {
+                        $decryptedPhone = \Illuminate\Support\Facades\Crypt::decryptString($row->no_telp);
+                    } catch (\Throwable $e) {
+                        // Nilai lama mungkin belum terenkripsi.
+                    }
+
+                    if ((string) $decryptedPhone === (string) $request->notelp) {
+                        $claimedIds[] = $row->id_laporan;
+                    }
+                }
+
+                if (!empty($claimedIds)) {
+                    DB::table('laporan')
+                        ->whereIn('id_laporan', $claimedIds)
+                        ->update([
+                            'id_akun' => $newAccountId,
+                            'updated_at' => now(),
+                        ]);
+
+                    Log::info('Laporan guest diperbarui ke akun baru.', [
                         'id_akun' => $newAccountId,
-                        'updated_at' => now(),
+                        'jumlah' => count($claimedIds),
                     ]);
-
-                // Opsional: Tambahkan log atau notifikasi
-                Log::info("Laporan dengan ID {$laporan->id_laporan} diperbarui dari Guest (3) ke akun baru ({$newAccountId}).");
+                }
             }
 
             DB::commit();
@@ -209,18 +217,19 @@ class AkunControllerMobile extends Controller
                 'message' => 'Akun berhasil ditambahkan',
                 'data' => [
                     'id_akun' => $newAccountId,
-                    'laporan_updated' => $laporan ? true : false,
+                    'laporan_updated' => !empty($claimedIds),
                 ]
             ], 201);
 
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Gagal membuat akun mobile: ' . $e->getMessage());
 
-            return response()->json([
+            return response()->json(array_filter([
                 'success' => false,
                 'message' => 'Gagal membuat akun.',
-                'error' => $e->getMessage(),
-            ], 500);
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], fn ($v) => $v !== null), 500);
         }
     }
 

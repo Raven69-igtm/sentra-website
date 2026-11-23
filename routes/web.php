@@ -95,10 +95,6 @@ Route::controller(LaporanCepatController::class)->middleware('role:admin')->grou
         Route::get('/count', 'getCount')->name('admin.notifikasi.count');
         Route::post('/{id}/read', 'markAsRead')->name('admin.notifikasi.mark-read');
         Route::post('/{id_notif}/terima-laporan/{id_laporan}', 'terimaLaporan')->name('admin.notifikasi.terima-laporan');
-
-        // Route untuk AJAX
-        Route::get('/notifikasi/count', 'getCount')->name('notifikasi.count');
-        Route::get('/notifikasi/get', 'getNotifikasi')->name('notifikasi.get');
     });
 
     // Ganti Password (Dari dalam aplikasi)

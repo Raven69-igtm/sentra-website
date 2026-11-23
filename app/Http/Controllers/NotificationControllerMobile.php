@@ -14,11 +14,13 @@ use Illuminate\Support\Facades\DB;
 
 class NotificationControllerMobile extends Controller
 {
-    protected $fcmUrl = 'https://fcm.googleapis.com/v1/projects/sentra-3e7a6/messages:send';
+    protected $fcmUrl;
     protected $client;
 
     public function __construct()
     {
+        $projectId = config('services.firebase.project_id') ?: 'sentra-3e7a6';
+        $this->fcmUrl = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
         $this->client = new Client();
     }
 
@@ -91,11 +93,21 @@ class NotificationControllerMobile extends Controller
 
     public function newMessage(Request $request)
     {
+        $authUser = $request->user('sanctum');
+
         $validated = $request->validate([
-            'sender_id' => 'required|exists:akun,id_akun',
+            'sender_id' => $authUser ? 'nullable|exists:akun,id_akun' : 'required|exists:akun,id_akun',
             'receiver_id' => 'required|exists:akun,id_akun',
             'message' => 'required|string',
         ]);
+
+        if ($authUser && isset($validated['sender_id'])
+            && (int) $validated['sender_id'] !== (int) $authUser->id_akun) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak boleh mengirim notifikasi atas nama akun lain.',
+            ], 403);
+        }
 
         $this->sendFCMNotification(
             $validated['receiver_id'],
@@ -109,15 +121,31 @@ class NotificationControllerMobile extends Controller
 
     public function reportUpdate(Request $request)
     {
+        $authUser = $request->user('sanctum') ?? $request->user();
+        if (!$authUser) {
+            return response()->json(['message' => 'Tidak terautentikasi.'], 401);
+        }
+
         $validated = $request->validate([
             'id_laporan' => 'required|exists:laporan,id_laporan',
             'user_id' => 'required|exists:akun,id_akun',
-            'status' => 'required|in:dikirim,diterima,diproses,selesai',
+            'status' => 'required|in:dikirim,diterima,diproses,selesai,ditolak,dirujuk',
         ]);
 
         $laporan = Laporan::find($validated['id_laporan']);
         if (!$laporan) {
             return response()->json(['error' => 'Laporan tidak ditemukan'], 404);
+        }
+
+        $isAdmin = method_exists($authUser, 'canAccessWeb')
+            ? $authUser->canAccessWeb()
+            : in_array($authUser->role ?? null, \App\Models\Akun::WEB_ROLES, true);
+
+        if (!$isAdmin && (int) $laporan->id_akun !== (int) $authUser->id_akun) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak berhak mengirim pembaruan status laporan ini.',
+            ], 403);
         }
 
         $title = '';
@@ -139,6 +167,14 @@ class NotificationControllerMobile extends Controller
             case 'selesai':
                 $title = 'Laporan Selesai';
                 $message = "Laporan Anda dengan ID {$validated['id_laporan']} telah selesai diproses.";
+                break;
+            case 'ditolak':
+                $title = 'Laporan Ditolak';
+                $message = "Laporan Anda dengan ID {$validated['id_laporan']} tidak dapat diproses lebih lanjut.";
+                break;
+            case 'dirujuk':
+                $title = 'Laporan Dirujuk';
+                $message = "Laporan Anda dengan ID {$validated['id_laporan']} telah dirujuk ke instansi terkait.";
                 break;
         }
 
@@ -163,12 +199,24 @@ class NotificationControllerMobile extends Controller
 
     public function updateFCMToken(Request $request)
     {
+        $authUser = $request->user('sanctum') ?? $request->user();
+        if (!$authUser) {
+            return response()->json(['message' => 'Tidak terautentikasi.'], 401);
+        }
+
         $validated = $request->validate([
-            'user_id' => 'required|exists:akun,id_akun',
+            'user_id' => 'nullable|integer|exists:akun,id_akun',
             'fcm_token' => 'required|string',
         ]);
 
-        $user = UserMobile::find($validated['user_id']);
+        if (isset($validated['user_id']) && (int) $validated['user_id'] !== (int) $authUser->id_akun) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak boleh mengubah FCM token akun lain.',
+            ], 403);
+        }
+
+        $user = UserMobile::find($authUser->id_akun);
         $user->fcm_token = $validated['fcm_token'];
         $user->save();
 

@@ -18,7 +18,6 @@ class DetailKasus extends Model
         'waktu_kejadian',
         'tempat_kejadian',
         'kronologi',
-        'bukti',
         'id_laporan', // jika relasi laporan diperlukan
     ];
 

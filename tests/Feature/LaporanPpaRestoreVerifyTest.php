@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Akun;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class LaporanPpaRestoreVerifyTest extends TestCase
@@ -74,8 +75,11 @@ class LaporanPpaRestoreVerifyTest extends TestCase
     public function test_payload_form_ppa_asli_tersimpan_seperti_sebelum_qoder(): void
     {
         $penanda = 'Kecamatan Restore ' . uniqid();
+        $payload = $this->payloadAsli($penanda);
+        $akun = Akun::findOrFail($payload['id_akun']);
+        Sanctum::actingAs($akun, ['mobile']);
 
-        $response = $this->postJson('/api/post-report', $this->payloadAsli($penanda));
+        $response = $this->postJson('/api/post-report', $payload);
         $response->assertStatus(200)->assertJsonPath('success', true);
 
         $laporan = DB::table('laporan')->where('kecamatan', $penanda)->first();
@@ -93,14 +97,19 @@ class LaporanPpaRestoreVerifyTest extends TestCase
         $kasus = DB::table('detail_kasus')->where('id_laporan', $laporan->id_laporan)->first();
         $this->assertNotNull($kasus, 'detail_kasus tidak tersimpan');
         $this->assertSame('2026-11-16', $kasus->tanggal);
-        $this->assertNull($kasus->waktu_kejadian, 'Kolom waktu_kejadian dibiarkan kosong seperti perilaku awal');
+        // Form mobile mengirim jam kejadian, dan detail laporan mobile
+        // menampilkannya kembali; karena itu nilainya disimpan.
+        $this->assertSame('10:30:00', $kasus->waktu_kejadian);
     }
 
     public function test_hubungan_dengan_korban_dari_pilihan_pengguna_tersimpan(): void
     {
         $penanda = 'Kecamatan Hubungan ' . uniqid();
+        $payload = $this->payloadAsli($penanda, 'Orang tua');
+        $akun = Akun::findOrFail($payload['id_akun']);
+        Sanctum::actingAs($akun, ['mobile']);
 
-        $this->postJson('/api/post-report', $this->payloadAsli($penanda, 'Orang tua'))
+        $this->postJson('/api/post-report', $payload)
             ->assertStatus(200)
             ->assertJsonPath('success', true);
 
