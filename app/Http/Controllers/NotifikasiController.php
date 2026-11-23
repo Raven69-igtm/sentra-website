@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\ActivityLog;
 use App\Models\Notifikasi;
 use App\Models\Laporan;
+use App\Services\LaporanStatusNotifier;
 use Illuminate\Support\Facades\Auth;
 
 class NotifikasiController extends Controller
@@ -103,8 +104,11 @@ public function terimaLaporan(Request $request, $id_notif, $id_laporan)
         $notifikasi->save();
         \Log::info('Notifikasi updated', ['id_notif' => $id_notif, 'status' => 'dibaca']);
 
-        // Update status laporan
-        $laporan = Laporan::find($id_laporan);
+        // Update status laporan (dibatasi ke instansi admin yang sedang login)
+        $laporan = Laporan::with('akun')
+            ->forUser(Auth::user())
+            ->where('id_laporan', $id_laporan)
+            ->first();
         if (!$laporan) {
             \Log::warning('Laporan tidak ditemukan', ['id_laporan' => $id_laporan]);
             if ($request->ajax()) {
@@ -115,11 +119,13 @@ public function terimaLaporan(Request $request, $id_notif, $id_laporan)
             }
             return redirect()->back()->with('error', 'Laporan tidak ditemukan');
         }
+        $statusLama = $laporan->status;
         $laporan->status = 'diterima';
         $laporan->save();
         \Log::info('Laporan updated', ['id_laporan' => $id_laporan, 'status' => 'diterima']);
 
         ActivityLog::record('laporan_status', "Menerima laporan #{$laporan->id_laporan} melalui notifikasi (→ diterima).", 'laporan', $laporan->id_laporan);
+        LaporanStatusNotifier::notifyStatusChanged($laporan, $statusLama, 'diterima');
 
         if ($request->ajax()) {
             return response()->json([

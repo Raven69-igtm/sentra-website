@@ -356,32 +356,40 @@ a {
     border-color: transparent;
 }
 
+#main-wrapper .topbar-icon-btn .topbar-notif-badge,
 #main-wrapper .topbar-icon-btn .icon-badge {
-    position: absolute;
-    top: -3px;
-    right: -3px;
-    min-width: 18px;
-    height: 18px;
-    padding: 0 5px;
-    border-radius: 999px;
-    background: #dc2626;
-    color: #ffffff;
-    font-size: 0.66rem;
-    font-weight: 700;
-    line-height: 18px;
-    text-align: center;
-    box-shadow: 0 0 0 2px #ffffff;
-}
-
-#main-wrapper .topbar-icon-btn .pulse-css {
     position: absolute;
     top: 2px;
     right: 2px;
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: #dc2626;
-    box-shadow: 0 0 0 2px #ffffff;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #fb4b6a 0%, #e11d48 100%);
+    color: #ffffff;
+    font-family: inherit !important;
+    font-size: 0.62rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(225, 29, 72, 0.35), 0 0 0 1.5px #ffffff;
+    pointer-events: none;
+    z-index: 2;
+}
+
+#main-wrapper .topbar-icon-btn .topbar-notif-badge::before,
+#main-wrapper .topbar-icon-btn .topbar-notif-badge::after,
+#main-wrapper .topbar-icon-btn .icon-badge::before,
+#main-wrapper .topbar-icon-btn .icon-badge::after {
+    content: none !important;
+    display: none !important;
+}
+
+#main-wrapper .topbar-icon-btn .pulse-css {
+    display: none !important;
 }
 
 /* chip profil berbentuk pil */

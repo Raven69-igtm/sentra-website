@@ -65,6 +65,7 @@ Route::controller(LaporanController::class)->middleware('role:admin')->group(fun
     Route::put('/laporan/{id}', 'update')->name('laporan.update');
     Route::delete('/laporan/{id}', 'destroy')->name('laporan.destroy');
     Route::put('/laporan/proseskan/{id}', 'proseskan')->name('laporan.proseskan');
+    Route::put('/laporan/{id}/terima', 'terima')->name('laporan.terima');
     Route::put('/laporan/{id}/selesai', 'selesai')->name('laporan.selesai');
     Route::put('/laporan/{id}/rujuk', 'rujuk')->name('laporan.rujuk');
 });

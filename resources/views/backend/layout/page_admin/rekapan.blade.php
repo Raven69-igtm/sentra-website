@@ -114,7 +114,7 @@
                                     <td class="fw-semibold">{{ $p->id_laporan }}</td>
                                     <td>{{ $p->kategori }}</td>
                                     <td>@include('backend.components.status-pill', ['status' => $p->status])</td>
-                                    <td class="text-muted">{{ optional($p->created_at)->format('d-m-Y') }}</td>
+                                    <td class="text-muted">{{ optional($p->created_at)->format('d-m-Y H:i') }}</td>
 
                                     <td>{{ $p->detail_pelapor->nik ?? '-' }}</td>
                                     <td>{{ $p->detail_pelapor->nama ?? '-' }}</td>

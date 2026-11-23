@@ -24,6 +24,7 @@
                             id="laporan-edit-form">
                             @csrf
                             @method('PUT')
+                            <input type="hidden" name="anak_sync" value="1">
 
                             {{-- DATA LAPORAN --}}
                             <div class="form-section">
@@ -38,47 +39,23 @@
                                     </div>
                                     <div class="col-lg-4">
                                         <div class="form-group">
-                                            <label class="form-label" for="kategori">Kategori Laporan</label>
-                                            <select id="kategori" name="kategori" class="form-control">
-                                                <option value="Kekerasan Fisik"
-                                                    {{ $laporan->kategori == 'Kekerasan Fisik' ? 'selected' : '' }}>
-                                                    Kekerasan Fisik
-                                                </option>
-                                                <option value="Kekerasan Psikis"
-                                                    {{ $laporan->kategori == 'Kekerasan Psikis' ? 'selected' : '' }}>
-                                                    Kekerasan Psikis
-                                                </option>
-                                                <option value="Kekerasan Seksual"
-                                                    {{ $laporan->kategori == 'Kekerasan Seksual' ? 'selected' : '' }}>
-                                                    Kekerasan Seksual
-                                                </option>
-                                                <option value="Penelantaran"
-                                                    {{ $laporan->kategori == 'Penelantaran' ? 'selected' : '' }}>
-                                                    Penelantaran
-                                                </option>
-                                                <option value="Eksploitasi"
-                                                    {{ $laporan->kategori == 'Eksploitasi' ? 'selected' : '' }}>
-                                                    Eksploitasi
-                                                </option>
-                                                <option value="TPPO"
-                                                    {{ $laporan->kategori == 'TPPO' ? 'selected' : '' }}>
-                                                    TPPO
-                                                </option>
-                                                <option value="Lainnya"
-                                                    {{ $laporan->kategori == 'Lainnya' ? 'selected' : '' }}>
-                                                    Lainnya
-                                                </option>
-                                                <option value="unset"
-                                                    {{ $laporan->kategori == 'unset' ? 'selected' : '' }}>
-                                                    -</option>
+                                            <label class="form-label" for="kategori">Kategori Laporan PPA</label>
+                                            <select id="kategori" name="kategori" class="form-control" required>
+                                                <option value="">-- Pilih Kategori PPA --</option>
+                                                @foreach (\App\Models\Laporan::PPA_CATEGORIES as $katPpa)
+                                                    <option value="{{ $katPpa }}"
+                                                        {{ old('kategori', $laporan->kategori) == $katPpa ? 'selected' : '' }}>
+                                                        {{ $katPpa }}
+                                                    </option>
+                                                @endforeach
                                             </select>
                                         </div>
                                     </div>
                                     <div class="col-lg-4">
                                         <div class="form-group">
-                                            <label class="form-label" for="tanggal">Tanggal</label>
-                                            <input type="date" id="tanggal" name="tanggal" class="form-control"
-                                                value="{{ $laporan->created_at->format('Y-m-d') }}" readonly>
+                                            <label class="form-label" for="tanggal">Tanggal &amp; Jam Laporan</label>
+                                            <input type="text" id="tanggal" name="tanggal" class="form-control"
+                                                value="{{ $laporan->created_at->format('d-m-Y H:i') }}" readonly>
                                         </div>
                                     </div>
                                 </div>
@@ -120,11 +97,25 @@
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label class="form-label" for="pelapor_hubungan">Hubungan dengan Korban</label>
-                                            <input type="text" id="pelapor_hubungan" name="pelapor[hubungan]"
-                                                class="form-control"
-                                                value="{{ optional($laporan->detail_pelapor)->hubungan_dengan_korban }}"
-                                                required oninvalid="this.setCustomValidity('Data pelapor wajib diisi')"
+                                            @php
+                                                $hubunganPelapor = old('pelapor.hubungan', optional($laporan->detail_pelapor)->hubungan_dengan_korban);
+                                                $hubunganOptions = \App\Models\Laporan::HUBUNGAN_KORBAN_OPTIONS;
+                                                $isCustomHubungan = $hubunganPelapor && $hubunganPelapor !== '-' && !in_array($hubunganPelapor, $hubunganOptions, true);
+                                            @endphp
+                                            <select id="pelapor_hubungan" name="pelapor[hubungan]" class="form-control" required
+                                                oninvalid="this.setCustomValidity('Hubungan pelapor dengan korban wajib dipilih')"
                                                 oninput="this.setCustomValidity('')">
+                                                <option value="">Pilih hubungan dengan korban</option>
+                                                @foreach ($hubunganOptions as $opsiHub)
+                                                    <option value="{{ $opsiHub }}"
+                                                        {{ $hubunganPelapor === $opsiHub ? 'selected' : '' }}>
+                                                        {{ $opsiHub }}
+                                                    </option>
+                                                @endforeach
+                                                @if ($isCustomHubungan)
+                                                    <option value="{{ $hubunganPelapor }}" selected>{{ $hubunganPelapor }}</option>
+                                                @endif
+                                            </select>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
@@ -133,8 +124,8 @@
                                             <input type="text" id="pelapor_telepon" name="pelapor[telepon]"
                                                 class="form-control"
                                                 value="{{ optional($laporan->detail_pelapor)->no_telp }}" required
-                                                oninvalid="this.setCustomValidity('Nomor telepon salah')"
-                                                oninput="this.setCustomValidity('')" pattern="\d{11,15}"
+                                                oninvalid="this.setCustomValidity('Nomor telepon harus 10-15 digit angka')"
+                                                oninput="this.setCustomValidity('')" pattern="\d{10,15}"
                                                 inputmode="numeric" maxlength="15">
                                         </div>
                                     </div>
@@ -193,12 +184,12 @@
                                             <label class="form-label" for="penerima_jk">Jenis Kelamin</label>
                                             <select id="penerima_jk" name="penerima[jk]" class="form-control penerima-input">
                                                 <option value="">Pilih</option>
-                                                <option value="Laki-laki"
-                                                    {{ optional($laporan->detail_penerima_manfaat)->jk == 'Laki-laki' ? 'selected' : '' }}>
-                                                    Laki-Laki</option>
-                                                <option value="Perempuan"
-                                                    {{ optional($laporan->detail_penerima_manfaat)->jk == 'Perempuan' ? 'selected' : '' }}>
-                                                    Perempuan</option>
+                                                @foreach (\App\Models\Laporan::JENIS_KELAMIN_OPTIONS as $jkOpsi)
+                                                    <option value="{{ $jkOpsi }}"
+                                                        {{ strcasecmp((string) optional($laporan->detail_penerima_manfaat)->jenis_kelamin, $jkOpsi) === 0 ? 'selected' : '' }}>
+                                                        {{ $jkOpsi }}
+                                                    </option>
+                                                @endforeach
                                             </select>
                                         </div>
                                     </div>
@@ -216,9 +207,9 @@
                                             <select id="penerima_agama" name="penerima[agama]"
                                                 class="form-control penerima-input">
                                                 <option value="">Pilih</option>
-                                                @foreach (['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Konghucu', 'lainnya'] as $agama)
+                                                @foreach (\App\Models\Laporan::AGAMA_OPTIONS as $agama)
                                                     <option value="{{ $agama }}"
-                                                        {{ optional($laporan->detail_penerima_manfaat)->agama == $agama ? 'selected' : '' }}>
+                                                        {{ strcasecmp((string) optional($laporan->detail_penerima_manfaat)->agama, $agama) === 0 ? 'selected' : '' }}>
                                                         {{ $agama }}</option>
                                                 @endforeach
                                             </select>
@@ -230,9 +221,9 @@
                                             <select id="penerima_pendidikan" name="penerima[pendidikan]"
                                                 class="form-control penerima-input">
                                                 <option value="">Pilih</option>
-                                                @foreach (['Tidak Sekolah', 'SD', 'SMP', 'SMA', 'Diploma', 'S1', 'S2', 'S3', 'Lainnya'] as $pendidikan)
+                                                @foreach (\App\Models\Laporan::PENDIDIKAN_PENERIMA_OPTIONS as $pendidikan)
                                                     <option value="{{ $pendidikan }}"
-                                                        {{ optional($laporan->detail_penerima_manfaat)->pendidikan == $pendidikan ? 'selected' : '' }}>
+                                                        {{ strcasecmp((string) optional($laporan->detail_penerima_manfaat)->pendidikan, $pendidikan) === 0 ? 'selected' : '' }}>
                                                         {{ $pendidikan }}</option>
                                                 @endforeach
                                             </select>
@@ -261,8 +252,8 @@
                                             <input type="text" id="penerima_telepon" name="penerima[telepon]"
                                                 class="form-control penerima-input"
                                                 value="{{ optional($laporan->detail_penerima_manfaat)->notelp }}"
-                                                oninvalid="this.setCustomValidity('Nomor telepon salah')"
-                                                oninput="this.setCustomValidity('')" pattern="\d{11,15}"
+                                                oninvalid="this.setCustomValidity('Nomor telepon harus 10-15 digit angka')"
+                                                oninput="this.setCustomValidity('')" pattern="(\d{10,15}|-)?"
                                                 inputmode="numeric" maxlength="15">
                                         </div>
                                     </div>
@@ -303,41 +294,41 @@
                                                     </div>
                                                     <div class="col-md-6">
                                                         <div class="form-group">
-                                                            <label class="form-label">Tanggal Lahir</label>
+                                                            <label class="form-label">Tanggal Lahir (Opsional)</label>
                                                             <input type="date" name="anak[{{ $index }}][tanggal]"
-                                                                class="form-control" value="{{ $anak->tanggal_lahir }}"
-                                                                required>
+                                                                class="form-control" value="{{ $anak->tanggal_lahir }}">
                                                         </div>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <div class="form-group">
-                                                            <label class="form-label">Umur</label>
+                                                            <label class="form-label">Umur (Opsional)</label>
                                                             <input type="number" name="anak[{{ $index }}][umur]"
-                                                                class="form-control" value="{{ $anak->umur }}" required>
+                                                                class="form-control" value="{{ $anak->umur }}">
                                                         </div>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <div class="form-group">
-                                                            <label class="form-label">Jenis Kelamin</label>
+                                                            <label class="form-label">Jenis Kelamin (Opsional)</label>
                                                             <select name="anak[{{ $index }}][jenis_kelamin]"
-                                                                class="form-control" required>
-                                                                <option value="Laki-laki"
-                                                                    {{ $anak->jenis_kelamin == 'Laki-laki' ? 'selected' : '' }}>
-                                                                    Laki-Laki</option>
-                                                                <option value="Perempuan"
-                                                                    {{ $anak->jenis_kelamin == 'Perempuan' ? 'selected' : '' }}>
-                                                                    Perempuan</option>
+                                                                class="form-control">
+                                                                <option value="">Pilih</option>
+                                                                @foreach (\App\Models\Laporan::JENIS_KELAMIN_OPTIONS as $jkAnak)
+                                                                    <option value="{{ $jkAnak }}"
+                                                                        {{ strcasecmp((string) $anak->jenis_kelamin, $jkAnak) === 0 ? 'selected' : '' }}>
+                                                                        {{ $jkAnak }}</option>
+                                                                @endforeach
                                                             </select>
                                                         </div>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <div class="form-group">
-                                                            <label class="form-label">Pendidikan</label>
+                                                            <label class="form-label">Pendidikan (Opsional)</label>
                                                             <select name="anak[{{ $index }}][pendidikan]"
-                                                                class="form-control" required>
-                                                                @foreach (['Tidak Sekolah', 'PAUD', 'TK', 'SD', 'SMP', 'SMA', 'Lainnya'] as $pendidikan)
+                                                                class="form-control">
+                                                                <option value="">Pilih</option>
+                                                                @foreach (\App\Models\Laporan::PENDIDIKAN_ANAK_OPTIONS as $pendidikan)
                                                                     <option value="{{ $pendidikan }}"
-                                                                        {{ $anak->pendidikan == $pendidikan ? 'selected' : '' }}>
+                                                                        {{ strcasecmp((string) $anak->pendidikan, $pendidikan) === 0 ? 'selected' : '' }}>
                                                                         {{ $pendidikan }}</option>
                                                                 @endforeach
                                                             </select>
@@ -345,12 +336,13 @@
                                                     </div>
                                                     <div class="col-md-6">
                                                         <div class="form-group">
-                                                            <label class="form-label">Agama</label>
+                                                            <label class="form-label">Agama (Opsional)</label>
                                                             <select name="anak[{{ $index }}][agama]"
-                                                                class="form-control" required>
-                                                                @foreach (['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Konghucu', 'lainnya'] as $agama)
+                                                                class="form-control">
+                                                                <option value="">Pilih</option>
+                                                                @foreach (\App\Models\Laporan::AGAMA_OPTIONS as $agama)
                                                                     <option value="{{ $agama }}"
-                                                                        {{ $anak->agama == $agama ? 'selected' : '' }}>
+                                                                        {{ strcasecmp((string) $anak->agama, $agama) === 0 ? 'selected' : '' }}>
                                                                         {{ $agama }}</option>
                                                                 @endforeach
                                                             </select>
@@ -358,15 +350,15 @@
                                                     </div>
                                                     <div class="col-md-6">
                                                         <div class="form-group">
-                                                            <label class="form-label">Status</label>
+                                                            <label class="form-label">Status (Opsional)</label>
                                                             <select name="anak[{{ $index }}][status]"
-                                                                class="form-control" required>
-                                                                <option value="Anak Kandung"
-                                                                    {{ $anak->status == 'Anak Kandung' ? 'selected' : '' }}>
-                                                                    Anak Kandung</option>
-                                                                <option value="Anak Angkat"
-                                                                    {{ $anak->status == 'Anak Angkat' ? 'selected' : '' }}>
-                                                                    Anak Angkat</option>
+                                                                class="form-control">
+                                                                <option value="">Pilih</option>
+                                                                @foreach (\App\Models\Laporan::STATUS_ANAK_OPTIONS as $statusAnak)
+                                                                    <option value="{{ $statusAnak }}"
+                                                                        {{ strcasecmp((string) $anak->status, $statusAnak) === 0 ? 'selected' : '' }}>
+                                                                        {{ $statusAnak }}</option>
+                                                                @endforeach
                                                             </select>
                                                         </div>
                                                     </div>
@@ -433,12 +425,11 @@
                                             <label class="form-label">Jenis Kelamin</label>
                                             <select name="terlapor[jk]" class="form-control">
                                                 <option value="">Pilih</option>
-                                                <option value="Laki-laki"
-                                                    {{ optional($laporan->detail_terlapor)->jk == 'Laki-laki' ? 'selected' : '' }}>
-                                                    Laki-Laki</option>
-                                                <option value="Perempuan"
-                                                    {{ optional($laporan->detail_terlapor)->jk == 'Perempuan' ? 'selected' : '' }}>
-                                                    Perempuan</option>
+                                                @foreach (\App\Models\Laporan::JENIS_KELAMIN_OPTIONS as $jkTerlapor)
+                                                    <option value="{{ $jkTerlapor }}"
+                                                        {{ strcasecmp((string) optional($laporan->detail_terlapor)->jenis_kelamin, $jkTerlapor) === 0 ? 'selected' : '' }}>
+                                                        {{ $jkTerlapor }}</option>
+                                                @endforeach
                                             </select>
                                         </div>
                                     </div>
@@ -524,30 +515,30 @@
             </div>
             <div class="col-md-6">
                 <div class="form-group">
-                    <label class="form-label">Tanggal Lahir</label>
-                    <input type="date" name="anak[__INDEX__][tanggal]" class="form-control" required>
+                    <label class="form-label">Tanggal Lahir (Opsional)</label>
+                    <input type="date" name="anak[__INDEX__][tanggal]" class="form-control">
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="form-group">
-                    <label class="form-label">Umur</label>
-                    <input type="number" name="anak[__INDEX__][umur]" class="form-control" required>
+                    <label class="form-label">Umur (Opsional)</label>
+                    <input type="number" name="anak[__INDEX__][umur]" class="form-control">
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="form-group">
-                    <label class="form-label">Jenis Kelamin</label>
-                    <select name="anak[__INDEX__][jenis_kelamin]" class="form-control" required>
+                    <label class="form-label">Jenis Kelamin (Opsional)</label>
+                    <select name="anak[__INDEX__][jenis_kelamin]" class="form-control">
                         <option value="">Pilih</option>
-                        <option value="Laki-laki">Laki-Laki</option>
+                        <option value="Laki-laki">Laki-laki</option>
                         <option value="Perempuan">Perempuan</option>
                     </select>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="form-group">
-                    <label class="form-label">Pendidikan</label>
-                    <select name="anak[__INDEX__][pendidikan]" class="form-control" required>
+                    <label class="form-label">Pendidikan (Opsional)</label>
+                    <select name="anak[__INDEX__][pendidikan]" class="form-control">
                         <option value="">Pilih</option>
                         <option value="Tidak Sekolah">Tidak Sekolah</option>
                         <option value="PAUD">PAUD</option>
@@ -561,8 +552,8 @@
             </div>
             <div class="col-md-6">
                 <div class="form-group">
-                    <label class="form-label">Agama</label>
-                    <select name="anak[__INDEX__][agama]" class="form-control" required>
+                    <label class="form-label">Agama (Opsional)</label>
+                    <select name="anak[__INDEX__][agama]" class="form-control">
                         <option value="">Pilih</option>
                         <option value="Islam">Islam</option>
                         <option value="Kristen">Kristen</option>
@@ -570,14 +561,14 @@
                         <option value="Hindu">Hindu</option>
                         <option value="Buddha">Buddha</option>
                         <option value="Konghucu">Konghucu</option>
-                        <option value="lainnya">lainnya</option>
+                        <option value="Lainnya">Lainnya</option>
                     </select>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="form-group">
-                    <label class="form-label">Status</label>
-                    <select name="anak[__INDEX__][status]" class="form-control" required>
+                    <label class="form-label">Status (Opsional)</label>
+                    <select name="anak[__INDEX__][status]" class="form-control">
                         <option value="">Pilih</option>
                         <option value="Anak Kandung">Anak Kandung</option>
                         <option value="Anak Angkat">Anak Angkat</option>
@@ -693,12 +684,12 @@
             });
         }
 
-        // Fungsi validasi form anak
+        // Fungsi validasi form anak (hanya nama yang wajib, sesuai form Mobile)
         function cekFormAnak() {
             const anakInputs = document.querySelectorAll('#anak-wrapper input[required], #anak-wrapper select[required]');
             for (let input of anakInputs) {
                 if (!input.checkValidity()) {
-                    alert('Semua field anak wajib diisi!');
+                    alert('Nama anak wajib diisi!');
                     input.focus();
                     return false;
                 }

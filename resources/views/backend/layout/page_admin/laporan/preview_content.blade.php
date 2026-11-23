@@ -11,7 +11,7 @@
         </div>
         <div class="section-body">
             <div class="row">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="info-item">
                         <label class="info-label">ID Laporan</label>
                         <div class="info-value">
@@ -19,19 +19,41 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="info-item">
-                        <label class="info-label">Kategori Laporan</label>
+                        <label class="info-label">Status Laporan</label>
                         <div class="info-value">
-                            {{ $laporan->kategori != 'unset' ? $laporan->kategori : '-' }}
+                            @include('backend.components.status-pill', ['status' => $laporan->status])
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="info-item">
-                        <label class="info-label">Tanggal</label>
+                        <label class="info-label">Kategori Laporan</label>
                         <div class="info-value">
-                            {{ $laporan->created_at->format('d-m-Y') }}
+                            {{ $laporan->kategori != 'unset' ? $laporan->kategori : 'Belum diklasifikasi' }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="info-item">
+                        <label class="info-label">Tanggal Masuk</label>
+                        <div class="info-value">
+                            {{ $laporan->created_at->format('d-m-Y H:i') }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 mt-2">
+                    <div class="info-item mb-0">
+                        <label class="info-label">Sumber Pelapor</label>
+                        <div class="info-value">
+                            @if ($laporan->isAnonim())
+                                <span class="badge badge-warning">Pelapor Anonim (Laporan Cepat Tanpa Login)</span>
+                                <small class="text-muted ml-2">Hubungi pelapor melalui Nomor Telepon; notifikasi akun tidak dikirim ke pelapor anonim.</small>
+                            @else
+                                <span class="badge badge-success">Akun Mobile Terdaftar</span>
+                                <small class="text-muted ml-2">Perubahan status akan otomatis mengirim notifikasi ke aplikasi mobile pelapor.</small>
+                            @endif
                         </div>
                     </div>
                 </div>

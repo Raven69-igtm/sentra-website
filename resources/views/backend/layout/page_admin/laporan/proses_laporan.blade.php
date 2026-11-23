@@ -5,7 +5,7 @@
 
         @include('backend.components.page-header', [
             'title' => 'Laporan Belum Selesai',
-            'subtitle' => 'Laporan yang sudah diterima dan sedang ditangani petugas',
+            'subtitle' => 'Laporan masuk (dikirim), diterima, diproses, dan dirujuk yang menunggu penyelesaian',
             'icon' => 'fa-clipboard-list',
         ])
 
@@ -22,11 +22,17 @@
                         <label for="filterStatus">Status</label>
                         <select id="filterStatus" name="status" class="form-control">
                             <option value="">Semua Status</option>
+                            <option value="dikirim" {{ request('status') === 'dikirim' ? 'selected' : '' }}>
+                                Dikirim
+                            </option>
                             <option value="diterima" {{ request('status') === 'diterima' ? 'selected' : '' }}>
                                 Diterima
                             </option>
                             <option value="diproses" {{ request('status') === 'diproses' ? 'selected' : '' }}>
                                 Diproses
+                            </option>
+                            <option value="dirujuk" {{ request('status') === 'dirujuk' ? 'selected' : '' }}>
+                                Dirujuk
                             </option>
                         </select>
                     </div>
@@ -79,30 +85,53 @@
                                     <td>
                                         @include('backend.components.status-pill', ['status' => $data->status])
                                     </td>
-                                    <td>{{ $data->created_at->format('d-m-Y') }}</td>
+                                    <td>{{ $data->created_at->format('d-m-Y H:i') }}</td>
                                     <td>{{ $data->detail_pelapor->nama ?? '-' }}</td>
                                     <td>{{ $data->detail_penerima_manfaat->nama ?? '-' }}</td>
                                     <td>{{ $data->detail_terlapor->nama ?? '-' }}</td>
                                     <td>
                                         <div class="action-group">
-                                            {{-- Form Proses --}}
+                                            {{-- Preview cepat via modal AJAX --}}
+                                            <button type="button" class="btn btn-light btn-pill btn-sm preview-btn"
+                                                data-id="{{ $data->id_laporan }}" title="Preview Laporan">
+                                                Preview
+                                            </button>
+
+                                            {{-- Terima laporan baru (khusus status dikirim) --}}
+                                            @if ($data->status === 'dikirim')
+                                                <form id="terima-form-{{ $data->id_laporan }}"
+                                                    action="{{ route('laporan.terima', $data->id_laporan) }}"
+                                                    method="POST" style="display:inline;" class="terima-form">
+                                                    @csrf
+                                                    @method('PUT')
+                                                    <button type="button" class="btn btn-warning btn-pill btn-sm terima-btn"
+                                                        data-id="{{ $data->id_laporan }}"
+                                                        data-nama="{{ $data->detail_pelapor->nama ?? 'Tanpa Nama' }}"
+                                                        title="Terima Laporan">
+                                                        Terima
+                                                    </button>
+                                                </form>
+                                            @endif
+
+                                            {{-- Form Proses / Lengkapi Data --}}
                                             <form action="{{ route('laporan.proseskan', $data->id_laporan) }}"
                                                 method="POST" style="display:inline;" class="proses-form">
                                                 @csrf
                                                 @method('PUT')
                                                 <button type="submit" class="btn btn-instansi-primary btn-pill btn-sm"
-                                                    title="Proses">Proses</button>
+                                                    title="Proses & Edit Laporan">Proses</button>
                                             </form>
 
                                             @unless (Auth::user()->isAdminDinsos())
-                                                {{-- Form Rujuk --}}
+                                                {{-- Form Rujuk (aktif saat status diproses; nonaktif jika sudah dirujuk) --}}
                                                 <form id="rujuk-form-{{ $data->id_laporan }}"
                                                     action="{{ route('laporan.rujuk', $data->id_laporan) }}"
                                                     method="POST" style="display:inline;" class="rujuk-form">
                                                     @csrf
                                                     @method('PUT')
                                                     <button type="button" class="btn btn-instansi-soft btn-pill btn-sm rujuk-btn"
-                                                        {{ $data->status == 'diterima' ? 'disabled title=Proses-Laporan-Dulu' : '' }}
+                                                        {{ $data->status !== 'diproses' ? 'disabled' : '' }}
+                                                        title="{{ $data->status === 'dirujuk' ? 'Sudah Dirujuk' : ($data->status !== 'diproses' ? 'Proses Laporan Dulu' : 'Rujuk Laporan') }}"
                                                         data-id="{{ $data->id_laporan }}"
                                                         data-nama="{{ $data->detail_pelapor->nama ?? 'Tidak Diketahui' }}">
                                                         Rujuk
@@ -110,14 +139,14 @@
                                                 </form>
                                             @endunless
 
-                                            {{-- Form Selesai --}}
+                                            {{-- Form Selesai (aktif setelah diproses atau dirujuk) --}}
                                             <form id="selesai-form-{{ $data->id_laporan }}"
                                                 action="{{ route('laporan.selesai', $data->id_laporan) }}"
                                                 method="POST" style="display:inline;" class="selesai-form">
                                                 @csrf
                                                 @method('PUT')
                                                 <button type="button" class="btn btn-hijau btn-pill btn-sm selesai-btn"
-                                                    {{ $data->status == 'diterima' ? 'disabled title=Proses-Laporan-Dulu' : '' }}
+                                                    {{ !in_array($data->status, ['diproses', 'dirujuk'], true) ? 'disabled title=Proses-Laporan-Dulu' : '' }}
                                                     data-id="{{ $data->id_laporan }}"
                                                     data-nama="{{ $data->detail_pelapor->nama ?? 'Tanpa Nama' }}">
                                                     Selesai
@@ -138,6 +167,32 @@
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal Preview Laporan --}}
+    <div class="modal fade" id="previewModalProses" tabindex="-1" role="dialog"
+        aria-labelledby="previewModalProsesLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="previewModalProsesLabel">Preview Laporan</h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="modalContentProses">
+                    <div class="text-center py-4">
+                        <div class="spinner-border" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                        <p class="mt-2 mb-0">Memuat data laporan...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light btn-pill" data-dismiss="modal">Tutup</button>
                 </div>
             </div>
         </div>
@@ -221,13 +276,13 @@
                             },
                             success: function(response) {
                                 if (response.success) {
-                                    // Hapus row dari tabel karena laporan sudah dirujuk
-                                    row.fadeOut(300, function() {
-                                        $(this).remove();
-                                        updateRowNumbers();
-                                    });
-
+                                    // Laporan dirujuk tetap di daftar aktif agar bisa ditandai Selesai
                                     showMessage(response.message, 'success');
+                                    if (window.sentraLiveRefresh) {
+                                        window.sentraLiveRefresh();
+                                    } else {
+                                        window.location.reload();
+                                    }
                                 } else {
                                     button.prop('disabled', false).text('Rujuk');
                                     showMessage(response.message || 'Terjadi kesalahan', 'error');
@@ -360,8 +415,92 @@
                 });
             });
 
+            // Event listener untuk button preview cepat
+            $(document).off('click.ppaLaporanPreview').on('click.ppaLaporanPreview', '.preview-btn', function(e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                $('#previewModalProses').modal('show');
+                $('#modalContentProses').html(
+                    '<div class="text-center py-4"><div class="spinner-border" role="status"></div><p class="mt-2 mb-0">Memuat data laporan...</p></div>'
+                );
+                $.ajax({
+                    url: '/laporan/preview/' + id,
+                    type: 'GET',
+                    success: function(response) {
+                        $('#modalContentProses').html(response);
+                    },
+                    error: function() {
+                        $('#modalContentProses').html(
+                            '<div class="alert alert-danger mb-0">Gagal memuat detail laporan. Silakan coba lagi.</div>'
+                        );
+                    }
+                });
+            });
+
+            // Event listener untuk button terima (dikirim -> diterima)
+            $(document).off('click.ppaLaporanTerima').on('click.ppaLaporanTerima', '.terima-btn', function(e) {
+                e.preventDefault();
+                if ($(this).prop('disabled')) return;
+
+                var button = $(this);
+                var id = button.data('id');
+                var nama = button.data('nama');
+
+                Swal.fire({
+                    title: 'Terima Laporan',
+                    text: `Terima laporan dari ${nama} (#${id})?`,
+                    icon: 'question',
+                    iconColor: '#059652',
+                    showCancelButton: true,
+                    confirmButtonColor: '#059652',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Ya, Terima',
+                    cancelButtonText: 'Batal',
+                    buttonsStyling: true,
+                    reverseButtons: true
+                }).then((result) => {
+                    if (!result.isConfirmed) return;
+
+                    var form = $('#terima-form-' + id);
+                    var formData = new FormData(form[0]);
+                    button.prop('disabled', true).text('Menerima..');
+
+                    $.ajax({
+                        url: form.attr('action'),
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                showMessage(response.message, 'success');
+                                if (window.sentraLiveRefresh) {
+                                    window.sentraLiveRefresh();
+                                } else {
+                                    window.location.reload();
+                                }
+                            } else {
+                                button.prop('disabled', false).text('Terima');
+                                showMessage(response.message || 'Gagal menerima laporan', 'error');
+                            }
+                        },
+                        error: function(xhr) {
+                            button.prop('disabled', false).text('Terima');
+                            var errorMessage = (xhr.responseJSON && xhr.responseJSON.message)
+                                ? xhr.responseJSON.message
+                                : 'Terjadi kesalahan. Silakan coba lagi.';
+                            showMessage(errorMessage, 'error');
+                        }
+                    });
+                });
+            });
+
             // Event listener untuk button rujuk
-            $(document).off('click.ppaLaporanProses').on('click.ppaLaporanProses', '.rujuk-btn', function(e) {
+            $(document).off('click.ppaLaporanRujuk').on('click.ppaLaporanRujuk', '.rujuk-btn', function(e) {
                 e.preventDefault();
 
                 if ($(this).prop('disabled')) return;
@@ -374,7 +513,7 @@
             });
 
             // Event listener untuk button selesai
-            $(document).off('click.ppaLaporanProses').on('click.ppaLaporanProses', '.selesai-btn', function(e) {
+            $(document).off('click.ppaLaporanSelesai').on('click.ppaLaporanSelesai', '.selesai-btn', function(e) {
                 e.preventDefault();
 
                 if ($(this).prop('disabled')) return;

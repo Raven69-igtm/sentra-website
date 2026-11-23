@@ -3,7 +3,7 @@
     <button type="button" class="dinsos-icon-btn" wire:click.stop="toggle" aria-label="Notifikasi">
         <i class="fa-regular fa-bell"></i>
         @if ($count > 0)
-            <span class="dinsos-notif-dot">{{ $count > 9 ? '9+' : $count }}</span>
+            <span class="dinsos-notif-dot">{{ $count > 99 ? '99+' : $count }}</span>
         @endif
     </button>
 

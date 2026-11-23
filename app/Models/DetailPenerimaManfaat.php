@@ -55,21 +55,9 @@ class DetailPenerimaManfaat extends Model
     // NIK
     public function getNikAttribute($value)
     {
-        try {
-            return Crypt::decryptString($value);
-        } catch (\Exception $e) {
-            return $value; 
+        if ($value === null || $value === '') {
+            return $value;
         }
-    }
-
-    public function setNikAttribute($value)
-    {
-        $this->attributes['nik'] = Crypt::encryptString($value);
-    }
-
-    // No Telepon
-    public function getNoTelpAttribute($value)
-    {
         try {
             return Crypt::decryptString($value);
         } catch (\Exception $e) {
@@ -77,8 +65,34 @@ class DetailPenerimaManfaat extends Model
         }
     }
 
-    public function setNoTelpAttribute($value)
+    public function setNikAttribute($value)
     {
-        $this->attributes['notelp'] = Crypt::encryptString($value);
+        if ($value === null || trim((string) $value) === '') {
+            $this->attributes['nik'] = null;
+            return;
+        }
+        $this->attributes['nik'] = Crypt::encryptString((string) $value);
+    }
+
+    // No Telepon (nama kolom DB: `notelp`, tanpa underscore)
+    public function getNotelpAttribute($value)
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+        try {
+            return Crypt::decryptString($value);
+        } catch (\Exception $e) {
+            return $value;
+        }
+    }
+
+    public function setNotelpAttribute($value)
+    {
+        if ($value === null || trim((string) $value) === '') {
+            $this->attributes['notelp'] = null;
+            return;
+        }
+        $this->attributes['notelp'] = Crypt::encryptString((string) $value);
     }
 }

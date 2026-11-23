@@ -24,7 +24,9 @@ return [
         explode(',', (string) env('CORS_ALLOWED_ORIGINS', 'https://sentra.pbltifnganjuk.com,http://localhost:8000,http://127.0.0.1:8000'))
     ))),
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => env('APP_ENV', 'production') === 'production'
+        ? []
+        : ['#^https?://(localhost|127\.0\.0\.1)(:\d+)?$#'],
 
     'allowed_headers' => ['*'],
 

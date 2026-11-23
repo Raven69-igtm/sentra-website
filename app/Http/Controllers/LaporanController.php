@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use App\Models\ActivityLog;
 use App\Models\Laporan;
+use App\Services\LaporanStatusNotifier;
 use Illuminate\Support\Facades\Auth;
 use App\Support\SearchHelper;
 use App\Support\LaporanSearchParser;
@@ -46,7 +48,7 @@ class LaporanController extends Controller
 
         $query = Laporan::with(['detail_pelapor', 'detail_penerima_manfaat', 'detail_terlapor'])
             ->forUser(Auth::user())
-            ->whereIn('status', ['selesai', 'dirujuk']);
+            ->where('status', 'selesai');
 
         $search = trim((string) $request->input('search', ''));
 
@@ -82,6 +84,7 @@ class LaporanController extends Controller
 public function laporan_preview($id)
 {
     $laporan = Laporan::with([
+        'akun',
         'detail_pelapor',
         'detail_penerima_manfaat',
         'detail_penerima_manfaat.informasi_anak',
@@ -101,6 +104,7 @@ public function laporan_show($id)
     }
 
     $laporan = Laporan::with([
+        'akun',
         'detail_pelapor',
         'detail_penerima_manfaat',
         'detail_penerima_manfaat.informasi_anak',
@@ -117,9 +121,9 @@ public function laporan_show($id)
             return redirect()->route('dinsos.laporan.index');
         }
 
-        $query = Laporan::with(['detail_pelapor', 'detail_penerima_manfaat', 'detail_terlapor'])
+        $query = Laporan::with(['akun', 'detail_pelapor', 'detail_penerima_manfaat', 'detail_terlapor'])
             ->forUser(Auth::user())
-            ->whereIn('status', ['diproses', 'diterima']);
+            ->whereIn('status', ['dikirim', 'diterima', 'diproses', 'dirujuk']);
 
         $search = trim((string) $request->input('search', ''));
 
@@ -142,7 +146,7 @@ public function laporan_show($id)
 
         $status = strtolower(trim((string) $request->input('status', '')));
 
-        if (in_array($status, ['diterima', 'diproses'], true)) {
+        if (in_array($status, ['dikirim', 'diterima', 'diproses', 'dirujuk'], true)) {
             $query->where('status', $status);
         }
 
@@ -151,24 +155,74 @@ public function laporan_show($id)
         return view('backend.layout.page_admin.laporan.proses_laporan', compact('laporan'));
     }
 
+    /**
+     * Menerima laporan baru (dikirim -> diterima) langsung dari tabel /laporan
+     * atau halaman detail /laporan-cepat/{id}.
+     */
+    public function terima($id)
+    {
+        abort_if(Auth::user()->isAdminDinsos(), 403, 'Admin Dinsos tidak dapat menerima laporan PPA.');
+
+        try {
+            $laporan = Laporan::with('akun')->forUser(Auth::user())->where('id_laporan', $id)->firstOrFail();
+
+            if ($laporan->status !== 'dikirim') {
+                if (request()->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Hanya laporan berstatus Dikirim yang dapat diterima.',
+                    ], 422);
+                }
+
+                return redirect()->back()->with('error', 'Hanya laporan berstatus Dikirim yang dapat diterima.');
+            }
+
+            $statusLama = $laporan->status;
+            $laporan->status = 'diterima';
+            $laporan->save();
+
+            ActivityLog::record('laporan_status', "Menerima laporan #{$laporan->id_laporan} ({$statusLama} → diterima).", 'laporan', $laporan->id_laporan);
+            LaporanStatusNotifier::notifyStatusChanged($laporan, $statusLama, 'diterima');
+
+            if (request()->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Laporan berhasil diterima.',
+                    'status' => 'diterima',
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Laporan berhasil diterima.');
+        } catch (\Exception $e) {
+            if (request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal menerima laporan: ' . $e->getMessage(),
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', 'Gagal menerima laporan.');
+        }
+    }
+
 public function selesai($id)
     {
         // Penyelesaian laporan operasional memakai endpoint Dinsos sendiri.
         abort_if(Auth::user()->isAdminDinsos(), 403, 'Admin Dinsos tidak dapat menyelesaikan laporan PPA.');
 
         try {
-            $laporan = Laporan::forUser(Auth::user())->where('id_laporan', $id)->firstOrFail();
+            $laporan = Laporan::with('akun')->forUser(Auth::user())->where('id_laporan', $id)->firstOrFail();
             
-            // Pastikan laporan sudah diproses dulu
-            if ($laporan->status !== 'diproses') {
+            // Pastikan laporan sudah diproses atau dirujuk sebelum diselesaikan
+            if (! in_array($laporan->status, ['diproses', 'dirujuk'], true)) {
                 if (request()->ajax()) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Laporan harus diproses terlebih dahulu sebelum diselesaikan.'
+                        'message' => 'Laporan harus diproses atau dirujuk terlebih dahulu sebelum diselesaikan.'
                     ], 422);
                 }
                 
-                return redirect()->route('laporan_proses')->with('error', 'Laporan harus diproses terlebih dahulu.');
+                return redirect()->route('laporan_proses')->with('error', 'Laporan harus diproses atau dirujuk terlebih dahulu.');
             }
             
             // Update status menjadi selesai
@@ -177,6 +231,7 @@ public function selesai($id)
             $laporan->save();
 
             ActivityLog::record('laporan_status', "Menyelesaikan laporan #{$laporan->id_laporan} ({$statusLama} → selesai).", 'laporan', $laporan->id_laporan);
+            LaporanStatusNotifier::notifyStatusChanged($laporan, $statusLama, 'selesai');
 
             // Cek apakah request AJAX
             if (request()->ajax()) {
@@ -208,7 +263,7 @@ public function rujuk($id)
         }
 
         try {
-            $laporan = Laporan::forUser(Auth::user())->where('id_laporan', $id)->firstOrFail();
+            $laporan = Laporan::with('akun')->forUser(Auth::user())->where('id_laporan', $id)->firstOrFail();
             
             // Pastikan laporan sudah diproses dulu
             if ($laporan->status !== 'diproses') {
@@ -228,6 +283,7 @@ public function rujuk($id)
             $laporan->save();
 
             ActivityLog::record('laporan_status', "Merujuk laporan #{$laporan->id_laporan} ({$statusLama} → dirujuk).", 'laporan', $laporan->id_laporan);
+            LaporanStatusNotifier::notifyStatusChanged($laporan, $statusLama, 'dirujuk');
 
             // Cek apakah request AJAX
             if (request()->ajax()) {
@@ -310,7 +366,7 @@ public function update(Request $request, $id_laporan)
 
     try {
         $validatedData = $request->validate([
-            'kategori' => 'required',
+            'kategori' => ['required', Rule::in(Laporan::PPA_CATEGORIES)],
             'judul' => 'nullable|string|max:150',
             'kecamatan' => 'nullable|string|max:100',
             'layanan_pjsrk' => 'nullable|in:rehabilitasi_sosial,pengaduan_bencana,permasalahan_sosial',
@@ -322,6 +378,7 @@ public function update(Request $request, $id_laporan)
             'kasus.waktu' => 'nullable|date_format:H:i',
         ], [
             'kategori.required' => 'Kategori laporan harus diisi',
+            'kategori.in' => 'Kategori laporan harus termasuk kategori resmi PPA',
             'pelapor.nama.required' => 'Nama pelapor harus diisi',
             'pelapor.nik.required' => 'NIK pelapor harus diisi',
             'pelapor.telepon.required' => 'Nomor telepon pelapor harus diisi',
@@ -330,6 +387,7 @@ public function update(Request $request, $id_laporan)
         ]);
 
         $laporan = Laporan::with([
+            'akun',
             'detail_pelapor',
             'detail_penerima_manfaat.informasi_anak',
             'detail_terlapor',
@@ -337,12 +395,6 @@ public function update(Request $request, $id_laporan)
         ])->forUser(Auth::user())->findOrFail($id_laporan);
 
         $statusLama = $laporan->status;
-
-        if (Auth::user()->isAdminDinsos() && !in_array($request->kategori, Laporan::DINSOS_CATEGORIES, true)) {
-            return redirect()->back()
-                ->withInput()
-                ->with('error', 'Admin Dinsos hanya dapat memproses kategori Penelantaran atau Lainnya.');
-        }
 
         $laporan->kategori = $request->kategori;
 
@@ -358,157 +410,136 @@ public function update(Request $request, $id_laporan)
             $laporan->layanan_pjsrk = $request->layanan_pjsrk;
         }
 
-        if ($laporan->status === 'diterima') {
+        if (in_array($laporan->status, ['dikirim', 'diterima'], true)) {
             $laporan->status = 'diproses';
         }
         $laporan->save();
 
+        $pelaporData = [
+            'nik' => $request->input('pelapor.nik'),
+            'nama' => $request->input('pelapor.nama'),
+            'alamat' => $request->input('pelapor.alamat'),
+            'hubungan_dengan_korban' => $request->input('pelapor.hubungan') ?: '-',
+            'no_telp' => $request->input('pelapor.telepon'),
+        ];
+
         if ($laporan->detail_pelapor) {
-            $laporan->detail_pelapor->update([
-                'nik' => $request->pelapor['nik'],
-                'nama' => $request->pelapor['nama'],
-                'alamat' => $request->pelapor['alamat'],
-                'hubungan_dengan_korban' => $request->pelapor['hubungan'],
-                'no_telp' => $request->pelapor['telepon']
-            ]);
+            $laporan->detail_pelapor->update($pelaporData);
         } else {
-            $laporan->detail_pelapor()->create([
-                'nik' => $request->pelapor['nik'],
-                'nama' => $request->pelapor['nama'],
-                'alamat' => $request->pelapor['alamat'],
-                'hubungan_dengan_korban' => $request->pelapor['hubungan'],
-                'no_telp' => $request->pelapor['telepon']
-            ]);
+            $laporan->detail_pelapor()->create($pelaporData);
         }
 
-        $penerima = null;
-        if ($request->has('penerima') && $request->penerima['nama']) {
-            if ($laporan->detail_penerima_manfaat) {
-                $laporan->detail_penerima_manfaat->update([
-                    'nik' => $request->penerima['nik'],
-                    'nama' => $request->penerima['nama'],
-                    'tempat_lahir' => $request->penerima['ttl'],
-                    'tanggal_lahir' => $request->penerima['tanggal'],
-                    'umur' => $request->penerima['umur'],
-                    'jenis_kelamin' => $request->penerima['jk'],
-                    'pekerjaan' => $request->penerima['pekerjaan'],
-                    'agama' => $request->penerima['agama'],
-                    'pendidikan' => $request->penerima['pendidikan'],
-                    'alamat' => $request->penerima['alamat'],
-                    'hubungan_dengan_terlapor' => $request->penerima['hubungan_terlapor'],
-                    'notelp' => $request->penerima['telepon'],
-                    'informasi_tambahan' => $request->penerima['informasi_tambahan'],
-                ]);
-                $penerima = $laporan->detail_penerima_manfaat;
+        $penerima = $laporan->detail_penerima_manfaat;
+        $penerimaNama = trim((string) $request->input('penerima.nama', ''));
+        if ($request->has('penerima') && $penerimaNama !== '') {
+            $penerimaData = [
+                'nik' => $request->input('penerima.nik') ?: null,
+                'nama' => $penerimaNama,
+                'tempat_lahir' => $request->input('penerima.ttl') ?: null,
+                'tanggal_lahir' => $request->input('penerima.tanggal') ?: null,
+                'umur' => $request->input('penerima.umur') !== null && $request->input('penerima.umur') !== ''
+                    ? (int) $request->input('penerima.umur')
+                    : null,
+                'jenis_kelamin' => $request->input('penerima.jk') ?: null,
+                'pekerjaan' => $request->input('penerima.pekerjaan') ?: null,
+                'agama' => $request->input('penerima.agama') ?: null,
+                'pendidikan' => $request->input('penerima.pendidikan') ?: null,
+                'alamat' => $request->input('penerima.alamat') ?: null,
+                'hubungan_dengan_terlapor' => $request->input('penerima.hubungan_terlapor') ?: null,
+                'notelp' => $request->input('penerima.telepon') ?: null,
+                'informasi_tambahan' => $request->input('penerima.informasi_tambahan') ?: null,
+            ];
+
+            if ($penerima) {
+                $penerima->update($penerimaData);
             } else {
-                $penerima = $laporan->detail_penerima_manfaat()->create([
-                    'nik' => $request->penerima['nik'],
-                    'nama' => $request->penerima['nama'],
-                    'tempat_lahir' => $request->penerima['ttl'],
-                    'tanggal_lahir' => $request->penerima['tanggal'],
-                    'umur' => $request->penerima['umur'],
-                    'jenis_kelamin' => $request->penerima['jk'],
-                    'pekerjaan' => $request->penerima['pekerjaan'],
-                    'agama' => $request->penerima['agama'],
-                    'pendidikan' => $request->penerima['pendidikan'],
-                    'alamat' => $request->penerima['alamat'],
-                    'hubungan_dengan_terlapor' => $request->penerima['hubungan_terlapor'],
-                    'notelp' => $request->penerima['telepon'],
-                    'informasi_tambahan' => $request->penerima['informasi_tambahan'],
-                ]);
+                $penerima = $laporan->detail_penerima_manfaat()->create($penerimaData);
             }
         }
 
-        if ($request->has('terlapor') && $request->terlapor['nama']) {
+        $terlaporNama = trim((string) $request->input('terlapor.nama', ''));
+        if ($request->has('terlapor') && $terlaporNama !== '') {
+            $terlaporData = [
+                'nik' => $request->input('terlapor.nik') ?: null,
+                'nama' => $terlaporNama,
+                'umur' => $request->input('terlapor.umur') !== null && $request->input('terlapor.umur') !== ''
+                    ? (int) $request->input('terlapor.umur')
+                    : null,
+                'alamat' => $request->input('terlapor.alamat') ?: null,
+                'jenis_kelamin' => $request->input('terlapor.jk') ?: null,
+                'hubungan_dengan_korban' => $request->input('terlapor.hubungan') ?: null,
+                'informasi_tambahan' => $request->input('terlapor.informasi_tambahan') ?: null,
+            ];
+
             if ($laporan->detail_terlapor) {
-                $laporan->detail_terlapor->update([
-                    'nik' => $request->terlapor['nik'],
-                    'nama' => $request->terlapor['nama'],
-                    'umur' => $request->terlapor['umur'],
-                    'alamat' => $request->terlapor['alamat'],
-                    'jenis_kelamin' => $request->terlapor['jk'],
-                    'hubungan_dengan_korban' => $request->terlapor['hubungan'],
-                    'informasi_tambahan' => $request->terlapor['informasi_tambahan'],
-                ]);
+                $laporan->detail_terlapor->update($terlaporData);
             } else {
-                $laporan->detail_terlapor()->create([
-                    'nik' => $request->terlapor['nik'],
-                    'nama' => $request->terlapor['nama'],
-                    'umur' => $request->terlapor['umur'],
-                    'alamat' => $request->terlapor['alamat'],
-                    'jenis_kelamin' => $request->terlapor['jk'],
-                    'hubungan_dengan_korban' => $request->terlapor['hubungan'],
-                    'informasi_tambahan' => $request->terlapor['informasi_tambahan'],
-                ]);
+                $laporan->detail_terlapor()->create($terlaporData);
             }
         }
 
-        if ($request->has('kasus') && $request->kasus['kronologi']) {
+        if ($request->has('kasus') && $request->input('kasus.kronologi')) {
+            $kasusData = [
+                'tanggal' => $request->input('kasus.tanggal') ?: null,
+                'waktu_kejadian' => $request->input('kasus.waktu') ?: null,
+                'tempat_kejadian' => $request->input('kasus.tempat') ?: '-',
+                'kronologi' => $request->input('kasus.kronologi'),
+            ];
+
             if ($laporan->detail_kasus) {
-                $laporan->detail_kasus->update([
-                    'tanggal' => $request->kasus['tanggal'],
-                    'waktu_kejadian' => $request->input('kasus.waktu') ?: null,
-                    'tempat_kejadian' => $request->kasus['tempat'],
-                    'kronologi' => $request->kasus['kronologi'],
-                ]);
+                $laporan->detail_kasus->update($kasusData);
             } else {
-                $laporan->detail_kasus()->create([
-                    'tanggal' => $request->kasus['tanggal'],
-                    'waktu_kejadian' => $request->input('kasus.waktu') ?: null,
-                    'tempat_kejadian' => $request->kasus['tempat'],
-                    'kronologi' => $request->kasus['kronologi'],
-                ]);
+                $laporan->detail_kasus()->create($kasusData);
             }
         }
 
-        if ($penerima && $request->has('anak')) {
+        // Sinkron dengan Mobile: hanya `nama` anak yang wajib, 6 field lainnya opsional (boleh null)
+        // sehingga data anak parsial yang dikirim dari Mobile tidak pernah terhapus saat diedit admin.
+        if ($penerima && ($request->has('anak') || $request->input('anak_sync') === '1')) {
             $existingAnakIds = [];
-            if (is_array($request->anak)) {
-                foreach ($request->anak as $dataAnak) {
-                    if (empty($dataAnak['nama']) || empty($dataAnak['tanggal']) || 
-                        empty($dataAnak['umur']) || empty($dataAnak['jenis_kelamin']) || 
-                        empty($dataAnak['pendidikan']) || empty($dataAnak['agama']) || 
-                        empty($dataAnak['status'])) {
+            $anakInput = $request->input('anak', []);
+
+            if (is_array($anakInput)) {
+                foreach ($anakInput as $dataAnak) {
+                    $namaAnak = trim((string) ($dataAnak['nama'] ?? ''));
+                    if ($namaAnak === '') {
                         continue;
                     }
-                    if (isset($dataAnak['id'])) {
+
+                    $anakPayload = [
+                        'nama' => $namaAnak,
+                        'tanggal_lahir' => !empty($dataAnak['tanggal']) ? $dataAnak['tanggal'] : null,
+                        'umur' => isset($dataAnak['umur']) && $dataAnak['umur'] !== '' ? (int) $dataAnak['umur'] : null,
+                        'jenis_kelamin' => !empty($dataAnak['jenis_kelamin']) ? $dataAnak['jenis_kelamin'] : null,
+                        'pendidikan' => !empty($dataAnak['pendidikan']) ? $dataAnak['pendidikan'] : null,
+                        'agama' => !empty($dataAnak['agama']) ? $dataAnak['agama'] : null,
+                        'status' => !empty($dataAnak['status']) ? $dataAnak['status'] : null,
+                    ];
+
+                    if (!empty($dataAnak['id'])) {
                         $anak = $penerima->informasi_anak()->find($dataAnak['id']);
                         if ($anak) {
-                            $anak->update([
-                                'nama' => $dataAnak['nama'],
-                                'tanggal_lahir' => $dataAnak['tanggal'],
-                                'umur' => $dataAnak['umur'],
-                                'jenis_kelamin' => $dataAnak['jenis_kelamin'],
-                                'pendidikan' => $dataAnak['pendidikan'],
-                                'agama' => $dataAnak['agama'],
-                                'status' => $dataAnak['status'],
-                            ]);
-                            $existingAnakIds[] = $dataAnak['id'];
+                            $anak->update($anakPayload);
+                            $existingAnakIds[] = $anak->id_anak;
                         }
                     } else {
-                        $anakBaru = $penerima->informasi_anak()->create([
-                            'nama' => $dataAnak['nama'],
-                            'tanggal_lahir' => $dataAnak['tanggal'],
-                            'umur' => $dataAnak['umur'],
-                            'jenis_kelamin' => $dataAnak['jenis_kelamin'],
-                            'pendidikan' => $dataAnak['pendidikan'],
-                            'agama' => $dataAnak['agama'],
-                            'status' => $dataAnak['status'],
-                        ]);
+                        $anakBaru = $penerima->informasi_anak()->create($anakPayload);
                         $existingAnakIds[] = $anakBaru->id_anak;
                     }
                 }
+
                 if (count($existingAnakIds) > 0) {
                     $penerima->informasi_anak()->whereNotIn('id_anak', $existingAnakIds)->delete();
+                } elseif ($request->input('anak_sync') === '1') {
+                    $penerima->informasi_anak()->delete();
                 }
-            } else {
-                $penerima->informasi_anak()->delete();
             }
         }
 
-        // Audit: status berubah (diterima → diproses) atau sekadar pembaruan data.
+        // Audit & Notifikasi Mobile: status berubah (dikirim/diterima → diproses) atau pembaruan data.
         if ($statusLama !== $laporan->status) {
             ActivityLog::record('laporan_status', "Memproses laporan #{$laporan->id_laporan} ({$statusLama} → {$laporan->status}).", 'laporan', $laporan->id_laporan);
+            LaporanStatusNotifier::notifyStatusChanged($laporan, $statusLama, $laporan->status);
         } else {
             ActivityLog::record('data', "Memperbarui data laporan #{$laporan->id_laporan}.", 'laporan', $laporan->id_laporan);
         }
@@ -516,6 +547,8 @@ public function update(Request $request, $id_laporan)
         return redirect()->route('laporan_proses')
             ->with('success', 'Laporan berhasil diproses.');
 
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        throw $e;
     } catch (\Exception $e) {
         return redirect()->route('laporan_proses')
             ->with('error', 'Gagal mengupdate laporan.');

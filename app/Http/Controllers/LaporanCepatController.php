@@ -32,7 +32,7 @@ class LaporanCepatController extends Controller
         }
 
         // Eager load relasi yang dipakai tabel agar tidak query per baris.
-        $query = Laporan::with(['detail_pelapor', 'detail_kasus'])
+        $query = Laporan::with(['akun', 'detail_pelapor', 'detail_kasus'])
             ->forUser(Auth::user())
             ->laporanCepat();
 
@@ -105,6 +105,7 @@ class LaporanCepatController extends Controller
         // forUser() + laporanCepat() memastikan admin hanya membuka laporan
         // dalam scope-nya DAN memang berasal dari fitur Laporan Cepat.
         $laporan = Laporan::with([
+            'akun',
             'detail_pelapor',
             'detail_penerima_manfaat',
             'detail_penerima_manfaat.informasi_anak',

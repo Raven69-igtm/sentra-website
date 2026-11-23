@@ -80,7 +80,8 @@ class LaporanControllerMobile extends Controller
         };
 
         $judul = $data['judul'] ?? null;
-        $kecamatan = $data['kecamatan'] ?? ($data['detail_kasus']['tempat_kejadian'] ?? null);
+        $kecamatanRaw = $data['kecamatan'] ?? ($data['detail_kasus']['tempat_kejadian'] ?? null);
+        $kecamatan = $kecamatanRaw !== null ? Str::limit((string) $kecamatanRaw, 100, '') : null;
         $tempatLahir = $data['detail_penerima_manfaat']['Tempat_lahir']
             ?? $data['detail_penerima_manfaat']['tempat_lahir']
             ?? '-';
@@ -133,19 +134,23 @@ class LaporanControllerMobile extends Controller
             // 4. Insert detail_penerima_manfaat dengan enkripsi
             $id_penerima = DB::table('detail_penerima_manfaat')->insertGetId([
                 'id_laporan' => $id_laporan,
-                'nik' => Crypt::encryptString($data['detail_penerima_manfaat']['nik']),
-                'nama' => $data['detail_penerima_manfaat']['nama'],
+                'nik' => !empty($data['detail_penerima_manfaat']['nik'])
+                    ? Crypt::encryptString((string) $data['detail_penerima_manfaat']['nik'])
+                    : null,
+                'nama' => $data['detail_penerima_manfaat']['nama'] ?? null,
                 'Tempat_lahir' => $tempatLahir,
-                'tanggal_lahir' => $data['detail_penerima_manfaat']['tanggal_lahir'],
-                'umur' => $data['detail_penerima_manfaat']['umur'],
-                'jenis_kelamin' => $data['detail_penerima_manfaat']['jenis_kelamin'],
-                'pekerjaan' => $data['detail_penerima_manfaat']['pekerjaan'],
-                'agama' => $data['detail_penerima_manfaat']['agama'],
-                'alamat' => $data['detail_penerima_manfaat']['alamat'],
-                'pendidikan' => $data['detail_penerima_manfaat']['pendidikan'],
-                'hubungan_dengan_terlapor' => $data['detail_penerima_manfaat']['hubungan_dengan_terlapor'],
-                'notelp' => Crypt::encryptString($data['detail_penerima_manfaat']['notelp']),
-                'informasi_tambahan' => $data['detail_penerima_manfaat']['informasi_tambahan']
+                'tanggal_lahir' => $data['detail_penerima_manfaat']['tanggal_lahir'] ?? null,
+                'umur' => $data['detail_penerima_manfaat']['umur'] ?? null,
+                'jenis_kelamin' => $data['detail_penerima_manfaat']['jenis_kelamin'] ?? null,
+                'pekerjaan' => $data['detail_penerima_manfaat']['pekerjaan'] ?? null,
+                'agama' => $data['detail_penerima_manfaat']['agama'] ?? null,
+                'alamat' => $data['detail_penerima_manfaat']['alamat'] ?? null,
+                'pendidikan' => $data['detail_penerima_manfaat']['pendidikan'] ?? null,
+                'hubungan_dengan_terlapor' => $data['detail_penerima_manfaat']['hubungan_dengan_terlapor'] ?? null,
+                'notelp' => !empty($data['detail_penerima_manfaat']['notelp'])
+                    ? Crypt::encryptString((string) $data['detail_penerima_manfaat']['notelp'])
+                    : null,
+                'informasi_tambahan' => $data['detail_penerima_manfaat']['informasi_tambahan'] ?? null
             ]);
 
             // 5. Insert detail_terlapor dengan enkripsi
@@ -273,9 +278,12 @@ class LaporanControllerMobile extends Controller
             return response()->json(['message' => 'Anda tidak berhak mengakses laporan akun ini'], 403);
         }
 
-        $laporan = LaporanMobile::where('id_akun', $authUser->id_akun)
-            ->with(['detailPelapor', 'detailTerlapor', 'detailPenerimaManfaat', 'detailKasus', 'detailPjsrk', 'detailPenerimaManfaat.informasi_anak'])
-            ->get();
+        $query = LaporanMobile::where('id_akun', $authUser->id_akun)
+            ->with(['detailPelapor', 'detailTerlapor', 'detailPenerimaManfaat', 'detailKasus', 'detailPjsrk', 'detailPenerimaManfaat.informasi_anak']);
+
+        $this->applyScopeFilter($query, $request->query('scope'));
+
+        $laporan = $query->get();
 
         return response()->json(['message' => 'Laporan ditemukan', 'laporan' => $laporan]);
     }
@@ -288,10 +296,13 @@ class LaporanControllerMobile extends Controller
             return response()->json(['message' => 'Anda tidak berhak mengakses laporan akun ini'], 403);
         }
 
-        $laporan = LaporanMobile::where('id_akun', $authUser->id_akun)
+        $query = LaporanMobile::where('id_akun', $authUser->id_akun)
             ->where('status', $status)
-            ->with(['detailPelapor', 'detailTerlapor', 'detailPenerimaManfaat', 'detailKasus', 'detailPjsrk', 'detailPenerimaManfaat.informasi_anak'])
-            ->get();
+            ->with(['detailPelapor', 'detailTerlapor', 'detailPenerimaManfaat', 'detailKasus', 'detailPjsrk', 'detailPenerimaManfaat.informasi_anak']);
+
+        $this->applyScopeFilter($query, $request->query('scope'));
+
+        $laporan = $query->get();
 
         return response()->json(['message' => 'Laporan ditemukan', 'laporan' => $laporan]);
     }
@@ -421,7 +432,7 @@ class LaporanControllerMobile extends Controller
             return response()->json(['message' => 'Anda tidak berhak mencari laporan akun lain'], 403);
         }
 
-        $laporan = LaporanMobile::with([
+        $query = LaporanMobile::with([
             'detailPelapor',
             'detailTerlapor',
             'detailPenerimaManfaat',
@@ -429,10 +440,29 @@ class LaporanControllerMobile extends Controller
             'detailPjsrk',
             'detailPenerimaManfaat.informasi_anak',
         ])
-            ->search($keyword, (int) $authUser->id_akun)
-            ->get();
+            ->search($keyword, (int) $authUser->id_akun);
+
+        $this->applyScopeFilter($query, $request->query('scope'));
+
+        $laporan = $query->get();
 
         return response()->json($laporan);
+    }
+
+    /**
+     * Memisahkan riwayat layanan PPA (layanan_pjsrk kosong/null) dan PJSRK
+     * (layanan_pjsrk terisi) bila parameter query ?scope=ppa|pjsrk diberikan.
+     */
+    private function applyScopeFilter($query, ?string $scope): void
+    {
+        $normalized = strtolower(trim((string) $scope));
+        if ($normalized === 'ppa') {
+            $query->where(function ($q) {
+                $q->whereNull('layanan_pjsrk')->orWhere('layanan_pjsrk', '');
+            });
+        } elseif ($normalized === 'pjsrk') {
+            $query->whereNotNull('layanan_pjsrk')->where('layanan_pjsrk', '!=', '');
+        }
     }
 
 }

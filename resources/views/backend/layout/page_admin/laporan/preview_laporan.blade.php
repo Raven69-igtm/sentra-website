@@ -40,7 +40,7 @@
                                 <div class="col-md-4">
                                     <div class="detail-item">
                                         <span class="detail-label">Tanggal</span>
-                                        <span class="detail-value">{{ $laporan->created_at->format('d-m-Y') }}</span>
+                                        <span class="detail-value">{{ $laporan->created_at->format('d-m-Y H:i') }}</span>
                                     </div>
                                 </div>
                                 @if ($laporan->layanan_pjsrk)

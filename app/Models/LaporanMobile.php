@@ -28,7 +28,8 @@ class LaporanMobile extends Model
     public function scopeSearch(Builder $query, $keyword, $idAkun)
     {
         return $query->where('id_akun', $idAkun)->where(function ($q) use ($keyword) {
-            $q->where('kategori', 'like', "%{$keyword}%")
+            $q->where('id_laporan', 'like', "%{$keyword}%")
+                ->orWhere('kategori', 'like', "%{$keyword}%")
                 ->orWhere('status', 'like', "%{$keyword}%")
                 ->orWhere('judul', 'like', "%{$keyword}%")
                 ->orWhere('layanan_pjsrk', 'like', "%{$keyword}%")

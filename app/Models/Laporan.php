@@ -36,6 +36,62 @@ class Laporan extends Model
     ];
 
     /**
+     * Pilihan baku form PPA — diselaraskan 100% dengan aplikasi Mobile
+     * (`lib/features/report/views/report_screen.dart`).
+     */
+    public const HUBUNGAN_KORBAN_OPTIONS = [
+        'Pelapor / Korban',
+        'Orang tua',
+        'Wali',
+        'Keluarga',
+        'Saudara',
+        'Teman',
+        'Lainnya',
+    ];
+
+    public const JENIS_KELAMIN_OPTIONS = [
+        'Laki-laki',
+        'Perempuan',
+    ];
+
+    public const AGAMA_OPTIONS = [
+        'Islam',
+        'Kristen',
+        'Katolik',
+        'Hindu',
+        'Buddha',
+        'Konghucu',
+        'Lainnya',
+    ];
+
+    public const PENDIDIKAN_PENERIMA_OPTIONS = [
+        'Tidak Sekolah',
+        'SD',
+        'SMP',
+        'SMA',
+        'Diploma',
+        'S1',
+        'S2',
+        'S3',
+        'Lainnya',
+    ];
+
+    public const PENDIDIKAN_ANAK_OPTIONS = [
+        'Tidak Sekolah',
+        'PAUD',
+        'TK',
+        'SD',
+        'SMP',
+        'SMA',
+        'Lainnya',
+    ];
+
+    public const STATUS_ANAK_OPTIONS = [
+        'Anak Kandung',
+        'Anak Angkat',
+    ];
+
+    /**
      * Laporan yang termasuk kategori PPA, termasuk laporan mobile yang
      * tersimpan dengan kategori 'unset' dan belum memiliki layanan PJSRK.
      */
@@ -60,6 +116,26 @@ class Laporan extends Model
         'status',
         'alasan_penolakan',
     ];
+
+    public function akun()
+    {
+        return $this->belongsTo(Akun::class, 'id_akun', 'id_akun');
+    }
+
+    /**
+     * True bila laporan dikirim tanpa login (Laporan Cepat anonim) dan
+     * tercatat di akun penampung `guest` (`anonim@sentra.local`).
+     */
+    public function isAnonim(): bool
+    {
+        $akun = $this->relationLoaded('akun') ? $this->akun : $this->akun()->first();
+        if (! $akun) {
+            return true;
+        }
+
+        return ($akun->role ?? null) === 'guest'
+            || ($akun->email ?? null) === 'anonim@sentra.local';
+    }
 
     public function detail_pelapor()
     {

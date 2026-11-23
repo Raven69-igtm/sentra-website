@@ -34,7 +34,7 @@
     {{-- DESIGN SYSTEM INSTANSI — dimuat terakhir agar menang atas tema.
          Satu sistem untuk Admin PPA & Admin Dinsos; aksen dibedakan lewat
          body.dinsos-admin (lihat token --i-*). --}}
-    <link href="{{ asset('admin/assets_instansi/css/instansi.css') }}" rel="stylesheet">
+    <link href="{{ asset('admin/assets_instansi/css/instansi.css') }}?v={{ filemtime(public_path('admin/assets_instansi/css/instansi.css')) }}" rel="stylesheet">
     @stack('styles')
 
     <style>

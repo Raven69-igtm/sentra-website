@@ -177,7 +177,7 @@
                                             <td class="text-muted">{{ $laporan->kategori }}</td>
                                             <td>@include('backend.components.status-pill', ['status' => $laporan->status])</td>
                                             <td class="text-muted">
-                                                {{ optional($laporan->created_at)->format('d M Y') }}</td>
+                                                {{ optional($laporan->created_at)->format('d M Y, H:i') }}</td>
                                             <td class="text-right">
                                                 <a href="{{ route('laporan.show', $laporan->id_laporan) }}"
                                                     wire:navigate class="btn btn-instansi-soft btn-pill btn-sm">

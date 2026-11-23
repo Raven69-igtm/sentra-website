@@ -51,7 +51,7 @@ class RekapanController extends Controller
             $sheet->fromArray([
                 $p->id_laporan,
                 $p->kategori,
-                optional($p->created_at)->format('Y-m-d'),
+                optional($p->created_at)->format('Y-m-d H:i'),
                 $p->status,
 
                 $p->detail_pelapor->nama ?? '-',

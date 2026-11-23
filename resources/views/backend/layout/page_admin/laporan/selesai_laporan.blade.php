@@ -5,7 +5,7 @@
 
         @include('backend.components.page-header', [
             'title' => 'Laporan Selesai',
-            'subtitle' => 'Arsip laporan yang telah selesai ditangani atau dirujuk',
+            'subtitle' => 'Arsip laporan yang telah selesai ditangani',
             'icon' => 'fa-circle-check',
         ])
 
@@ -22,9 +22,9 @@
                         <label for="filterKategori">Kategori</label>
                         <select id="filterKategori" name="kategori" class="form-control">
                             <option value="">Semua Kategori</option>
-                            @foreach (['Kekerasan Fisik', 'Kekerasan Psikis', 'Kekerasan Seksual', 'Penelantaran', 'Eksploitasi', 'TPPO', 'unset'] as $kategori)
+                            @foreach (array_merge(\App\Models\Laporan::PPA_CATEGORIES, ['unset']) as $kategori)
                                 <option value="{{ $kategori }}"
-                                    {{ request('kategori') === $kategori ? 'selected' : '' }}>{{ $kategori }}</option>
+                                    {{ request('kategori') === $kategori ? 'selected' : '' }}>{{ $kategori === 'unset' ? 'Belum Diklasifikasi' : $kategori }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -74,7 +74,7 @@
                                     <td>
                                         @include('backend.components.status-pill', ['status' => $data->status])
                                     </td>
-                                    <td>{{ $data->created_at->format('d-m-Y') }}</td>
+                                    <td>{{ $data->created_at->format('d-m-Y H:i') }}</td>
                                     <td>{{ $data->detail_pelapor->nama ?? '-' }}</td>
                                     <td>{{ $data->detail_penerima_manfaat->nama ?? '-' }}</td>
                                     <td>{{ $data->detail_terlapor->nama ?? '-' }}</td>

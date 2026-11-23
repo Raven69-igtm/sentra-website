@@ -5,8 +5,7 @@
         aria-expanded="{{ $open ? 'true' : 'false' }}" title="Notifikasi">
         <i class="fa-regular fa-bell"></i>
         @if ($count > 0)
-            <span id="notification-badge" class="icon-badge">{{ $count }}</span>
-            <span id="notification-pulse" class="pulse-css"></span>
+            <span id="notification-badge" class="topbar-notif-badge">{{ $count > 99 ? '99+' : $count }}</span>
         @endif
     </a>
 

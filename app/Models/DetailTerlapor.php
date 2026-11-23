@@ -32,6 +32,9 @@ class DetailTerlapor extends Model
     
     public function getNikAttribute($value)
     {
+        if ($value === null || $value === '') {
+            return $value;
+        }
         try {
             return Crypt::decryptString($value);
         } catch (\Exception $e) {
@@ -41,6 +44,10 @@ class DetailTerlapor extends Model
 
     public function setNikAttribute($value)
     {
-        $this->attributes['nik'] = Crypt::encryptString($value);
+        if ($value === null || trim((string) $value) === '') {
+            $this->attributes['nik'] = null;
+            return;
+        }
+        $this->attributes['nik'] = Crypt::encryptString((string) $value);
     }
 }
